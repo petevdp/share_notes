@@ -1,0 +1,9 @@
+{
+  "editor.formatOnSave": true,
+  "typescript.tsdk": ".vscode/pnpify/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "prettier.resolveGlobalModules": true
+  // "editor.codeActionsOnSave": {
+  //   "source.fixAll": true
+  // }
+}
