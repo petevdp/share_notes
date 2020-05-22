@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from "react";
 import MonacoEditor from "react-monaco-editor";
+import * as collab from "@convergencelabs/monaco-collab-ext/umd/monaco-collab-ext";
+
+const w = window as any;
+w.collab = collab;
 
 interface state {
   code: string;
@@ -15,7 +19,6 @@ export class EditorContainer extends React.Component<props, state> {
     };
   }
   editorDidMount = (editor, monaco) => {
-    console.log("editorDidMount", editor);
     editor.focus();
   };
   onChange = (newValue, e) => {
@@ -34,7 +37,7 @@ export class EditorContainer extends React.Component<props, state> {
             <MonacoEditor
               width="800"
               height="600"
-              language="javascript"
+              language="markdown"
               theme="vs-light"
               value={code}
               options={options}
