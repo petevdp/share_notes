@@ -5,28 +5,30 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start:client": "parcel ./src/client/index.html --hmr-port=1235"
+    "start:client": "parcel ./src/client/index.html --hmr-port=1235 --out-dir=./dist/client",
+    "build-web-workers": "sh build-web-workers.sh",
+    "start:server": "tsc-watch --project ./src/server --onSuccess \"node --inspect=0.0.0.0:9229 ./dist/server/main.js\" --onFailure \"echo WHOOPS! Server compilation failed\""
   },
   "dependencies": {
     "@carbon/grid": "^10.10.2",
     "@carbon/icons-react": "^10.11.0",
     "@convergence/convergence": "^1.0.0-rc.6",
-    "@types/carbon-components-react": "^7.10.3",
-    "@typescript-eslint/parser": "^2.34.0",
-    "baseui": "^9.78.0",
     "carbon-components": "^10.12.0",
     "carbon-components-react": "^7.12.0",
     "carbon-icons": "^7.0.7",
+    "monaco-editor": "^0.20.0",
     "prettier": "^2.0.5",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
-    "react-monaco-editor": "^0.36.0",
-    "styletron-engine-atomic": "^1.4.6",
-    "styletron-react": "^5.2.7",
-    "typescript": "^3.9.2",
-    "yarn": "^1.22.4"
+    "react-monaco-editor": "^0.36.0"
   },
   "devDependencies": {
+    "@types/carbon-components-react": "^7.10.3",
+    "@types/node": "^14.0.5",
+    "rimraf": "^3.0.2",
+    "tsc-watch": "^4.2.7",
+    "tslib": "^2.0.0",
+    "typescript": "^3.9.2",
     "@babel/core": "^7.0.0",
     "@convergencelabs/monaco-collab-ext": "^0.3.0",
     "@types/react": "^16.9.35",

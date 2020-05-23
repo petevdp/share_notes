@@ -1,7 +1,7 @@
 import React from "react";
 import "./app.scss";
 
-import { EditorContainer } from "./components/EditorContainer";
+import { Editor } from "./components/Editor";
 import { GlobalHeader } from "./components/GlobalHeader";
 
 export function App() {
@@ -9,7 +9,7 @@ export function App() {
     <div className="container">
       <GlobalHeader />
       <div className="main-page">
-        <EditorContainer />
+        <Editor />
       </div>
     </div>
   );
