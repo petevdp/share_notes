@@ -2,41 +2,58 @@
   "name": "share_notes",
   "version": "0.0.0",
   "description": "collab on gists",
-  "main": "index.js",
+  "private": true,
   "license": "MIT",
   "scripts": {
-    "start:client": "parcel ./src/client/index.html --hmr-port=1235 --out-dir=./dist/client",
+    "start:client": "webpack-dev-server --config webpack-client.js",
+    "build:client": "webpack --config webpack-client.js",
     "build-web-workers": "sh build-web-workers.sh",
     "start:server": "tsc-watch --project ./src/server --onSuccess \"node --inspect=0.0.0.0:9229 ./dist/server/main.js\" --onFailure \"echo WHOOPS! Server compilation failed\""
   },
   "dependencies": {
     "@carbon/grid": "^10.10.2",
     "@carbon/icons-react": "^10.11.0",
+    "@convergence/color-assigner": "^0.3.0",
     "@convergence/convergence": "^1.0.0-rc.6",
     "carbon-components": "^10.12.0",
     "carbon-components-react": "^7.12.0",
     "carbon-icons": "^7.0.7",
+    "module-alias": "^2.2.2",
     "monaco-editor": "^0.20.0",
     "prettier": "^2.0.5",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
-    "react-monaco-editor": "^0.36.0"
+    "react-monaco-editor": "^0.36.0",
+    "rxjs": "^6.5.5"
   },
   "devDependencies": {
-    "@types/carbon-components-react": "^7.10.3",
-    "@types/node": "^14.0.5",
-    "rimraf": "^3.0.2",
-    "tsc-watch": "^4.2.7",
-    "tslib": "^2.0.0",
-    "typescript": "^3.9.2",
     "@babel/core": "^7.0.0",
     "@convergencelabs/monaco-collab-ext": "^0.3.0",
+    "@types/carbon-components-react": "^7.10.3",
+    "@types/node": "^14.0.5",
     "@types/react": "^16.9.35",
     "@types/react-dom": "^16.9.8",
     "babel-types": "^6.26.0",
+    "css-loader": "^3.5.3",
     "eslint": "^7.0.0",
     "eslint-config-google": "^0.14.0",
+    "file-loader": "^6.0.0",
+    "html-webpack-plugin": "^4.3.0",
     "parcel-bundler": "^1.12.4",
-    "sass": "^1.26.5"
+    "rimraf": "^3.0.2",
+    "sass": "^1.26.5",
+    "sass-loader": "^8.0.2",
+    "style-loader": "^1.2.1",
+    "ts-loader": "^7.0.4",
+    "tsc-watch": "^4.2.7",
+    "tslib": "^2.0.0",
+    "typescript": "^3.9.2",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.11",
+    "webpack-dev-server": "^3.11.0"
+  },
+  "_moduleAliases": {
+    "@shared": "./src/shared",
+    "@root": "./src"
   }
 }

@@ -1,4 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
+import {
+  CONVERGENCE_SERVICE_URL,
+  EDITOR_COLLECTION,
+} from "../../shared/environment";
+
 import * as monaco from "monaco-editor";
 import {
   RemoteCursorManager,
@@ -6,72 +11,62 @@ import {
   EditorContentManager,
 } from "@convergencelabs/monaco-collab-ext";
 
+import {
+  Convergence,
+  ModelService,
+  RealTimeString,
+} from "@convergence/convergence";
+import { MonacoConvergenceAdapter } from "../editor/monacoConvergenceAdapter";
+
 interface state {
   code: string;
 }
 
 interface props {}
 
-const sourceUser = {
-  id: "source",
-  label: "Source User",
-  color: "orange",
+window.MonacoEnvironment = {
+  getWorkerUrl: function (moduleId, label) {
+    if (label === "json") {
+      return "./json.worker.js";
+    }
+    if (label === "css") {
+      return "./css.worker.js";
+    }
+    if (label === "html") {
+      return "./html.worker.js";
+    }
+    if (label === "typescript" || label === "javascript") {
+      return "./ts.worker.js";
+    }
+    return "./editor.worker.js";
+  },
 };
 
-const staticUser = {
-  id: "static",
-  label: "Static User",
-  color: "blue",
-};
+// const defaultEditorContents = "some text";
 
 export function Editor() {
   const containerEltRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const editor = monaco.editor.create(containerEltRef.current, {
-      value: ["function x() {", '\tconsole.log("Hello world!");', "}"].join(
-        "\n"
-      ),
       language: "markdown",
     });
 
-    const remoteCursorManager = new RemoteCursorManager({
-      editor,
-      tooltips: true,
-      tooltipDuration: 2,
-    });
+    // const displayName = "user-" + Math.ceil(Math.random() * 1000);
+    const user = {
+      username: "user1",
+      password: "password",
+    };
+    Convergence.connect(CONVERGENCE_SERVICE_URL, user.username, user.password)
+      .then((domain) => {
+        return domain.models().open("test-editor");
+      })
+      .then((m) => {
+        const stringElement = m.elementAt("contents") as RealTimeString;
+        console.log("element id: ", stringElement.id());
 
-    const sourceUserCursor = remoteCursorManager.addCursor(
-      sourceUser.id,
-      sourceUser.color,
-      sourceUser.label
-    );
-    const staticUserCursor = remoteCursorManager.addCursor(
-      staticUser.id,
-      staticUser.color,
-      staticUser.label
-    );
-
-    const remoteSelectionManager = new RemoteSelectionManager({ editor });
-    remoteSelectionManager.addSelection(
-      sourceUser.id,
-      sourceUser.color,
-      sourceUser.label
-    );
-    remoteSelectionManager.addSelection(
-      staticUser.id,
-      staticUser.color,
-      staticUser.label
-    );
-
-    const targetContentManager = new EditorContentManager({
-      editor,
-    });
-
-    //
-    // Faked other user.
-    //
-    staticUserCursor.setOffset(50);
-    remoteSelectionManager.setSelectionOffsets(staticUser.id, 40, 50);
+        const adapter = new MonacoConvergenceAdapter(editor, stringElement);
+        adapter.bind();
+      });
   }, []);
 
   return <div id="monaco-editor-container" ref={containerEltRef} />;

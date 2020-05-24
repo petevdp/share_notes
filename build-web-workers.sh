@@ -1,5 +1,4 @@
 #!/bin/sh
-
 ROOT=$PWD/node_modules/monaco-editor/esm/vs
 OPTS="--no-source-maps --log-level 1 --out-dir='./dist/client'"        # Parcel options - See: https://parceljs.org/cli.html
 
