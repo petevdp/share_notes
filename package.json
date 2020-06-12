@@ -5,25 +5,31 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "start:client": "webpack-dev-server --config webpack-client.js",
+    "start:client": "webpack-dev-server --config webpack/webpack-client.js",
     "build:client": "webpack --config webpack-client.js",
-    "build-web-workers": "sh build-web-workers.sh",
-    "start:server": "tsc-watch --project ./src/server --onSuccess \"node --inspect=0.0.0.0:9229 ./dist/server/main.js\" --onFailure \"echo WHOOPS! Server compilation failed\""
+    "start:server": "webpack --config webpack/webpack-server.js --watch",
+    "build:server": "webpack --config webpack/webpack-server.js"
   },
   "dependencies": {
     "@carbon/grid": "^10.10.2",
     "@carbon/icons-react": "^10.11.0",
     "@convergence/color-assigner": "^0.3.0",
     "@convergence/convergence": "^1.0.0-rc.6",
+    "@types/express": "^4.17.6",
+    "@types/react-redux": "^7.1.9",
+    "body-parser": "^1.19.0",
     "carbon-components": "^10.12.0",
     "carbon-components-react": "^7.12.0",
     "carbon-icons": "^7.0.7",
-    "module-alias": "^2.2.2",
+    "express": "^4.17.1",
     "monaco-editor": "^0.20.0",
+    "nodemon-webpack-plugin": "^4.3.1",
     "prettier": "^2.0.5",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-monaco-editor": "^0.36.0",
+    "react-router-dom": "^5.2.0",
+    "recoil": "0.0.8",
     "rxjs": "^6.5.5"
   },
   "devDependencies": {
@@ -33,14 +39,14 @@
     "@types/node": "^14.0.5",
     "@types/react": "^16.9.35",
     "@types/react-dom": "^16.9.8",
+    "@types/react-router-dom": "^5.1.5",
+    "@types/recoil": "0.0.0",
     "babel-types": "^6.26.0",
     "css-loader": "^3.5.3",
     "eslint": "^7.0.0",
     "eslint-config-google": "^0.14.0",
     "file-loader": "^6.0.0",
     "html-webpack-plugin": "^4.3.0",
-    "parcel-bundler": "^1.12.4",
-    "rimraf": "^3.0.2",
     "sass": "^1.26.5",
     "sass-loader": "^8.0.2",
     "style-loader": "^1.2.1",
@@ -51,9 +57,5 @@
     "webpack": "^4.43.0",
     "webpack-cli": "^3.3.11",
     "webpack-dev-server": "^3.11.0"
-  },
-  "_moduleAliases": {
-    "@shared": "./src/shared",
-    "@root": "./src"
   }
 }

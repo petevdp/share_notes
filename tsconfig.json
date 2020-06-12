@@ -1,11 +1,13 @@
-// tsconfig.json
 {
   "compilerOptions": {
     "jsx": "react",
     "esModuleInterop": true,
+    "noImplicitAny": true,
     "baseUrl": "src",
     "paths": {
-      "@shared/": ["shared/*"]
+      "Shared/*": ["shared/*"],
+      "Client/*": ["shared/*"],
+      "Server/*": ["server/*"]
     }
   }
 }

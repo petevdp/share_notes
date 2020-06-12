@@ -1,4 +1,10 @@
-// import { Convergence } from "@convergence/convergence";
+import { Convergence } from "@convergence/convergence";
+import bodyParser from "body-parser";
+import express from "express";
+import { createRoomPayload } from "Shared/types";
+import { CONVERGENCE_SERVICE_URL } from "Shared/environment";
+
+console.log(CONVERGENCE_SERVICE_URL);
 
 // const url = "https://convergence-server.myhost.com/mynamespace/mydomain";
 // const credentials = { username: "myuser", password: "mypassword" };
@@ -22,8 +28,7 @@
 //     // Rest the first name's value
 //     firstName.value("Dan");
 
-//     // Listen for course grained changes
-//     firstName.on("value", () => {
+//     // Listen for course grained changes //     firstName.on("value", () => {
 //       console.log(firstName.value);
 //     });
 
@@ -36,6 +41,21 @@
 //     });
 //   });
 
+const app = express();
+app.use(express.json());
+
+app.post("/api/rooms", (req, res) => {
+  console.log(req.body);
+  console.log(typeof req.body);
+  const { name, convergenceJWT } = req.body as createRoomPayload;
+
+  Convergence.connectWithJwt(CONVERGENCE_SERVICE_URL, convergenceJWT);
+
+  res.status(200).send();
+});
+
 const msg: string = "hi there";
 
-console.log(msg);
+app.listen(1236, (hostname) => {
+  console.log("listening on ", 1236);
+});

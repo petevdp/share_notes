@@ -1,15 +1,19 @@
 const path = require("path");
-const HtmlWebPackPlugin = require("html-webpack-plugin");
+const {
+  CLIENT_BUILD_PATH,
+  CLIENT_ROOT,
+  MONACO_ROOT,
+  SHARED_ROOT,
+} = require("./paths");
 
-const CLIENT_ROOT = path.resolve("./src/client");
-const MONACO_ROOT = "monaco-editor/esm/vs";
-const CLIENT_BUILD_PATH = path.resolve(__dirname, "./dist/client");
+const HtmlWebPackPlugin = require("html-webpack-plugin");
 
 module.exports = {
   mode: "development",
   devServer: {
     contentBase: CLIENT_BUILD_PATH,
     compress: true,
+    historyApiFallback: true,
     port: 1234,
   },
   devtool: "inline-source-map",
@@ -65,5 +69,9 @@ module.exports = {
   ],
   resolve: {
     extensions: [".tsx", ".ts", ".js"],
+    alias: {
+      Shared: SHARED_ROOT,
+      Client: CLIENT_ROOT,
+    },
   },
 };
