@@ -1,10 +1,12 @@
-import ReactDOM from "react-dom";
-import React from "react";
-import { Provider } from "react-redux";
+import ReactDOM from 'react-dom';
+import React from 'react';
+import { Provider as ReduxProvider } from 'react-redux';
+import { Client as Styletron } from 'styletron-engine-atomic';
+import { Provider as StyletronProvider } from 'styletron-react';
+import { BaseProvider, LightTheme } from 'baseui';
 
-import { App } from "./App";
-import { store } from "./store";
-import "./index.scss";
+import { App } from './App';
+import { store } from './store';
 
 declare global {
   interface Window {
@@ -14,25 +16,31 @@ declare global {
 
 window.MonacoEnvironment = {
   getWorkerUrl: function (_: unknown, label: string) {
-    if (label === "json") {
-      return "./json.worker.js";
+    if (label === 'json') {
+      return './json.worker.js';
     }
-    if (label === "css") {
-      return "./css.worker.js";
+    if (label === 'css') {
+      return './css.worker.js';
     }
-    if (label === "html") {
-      return "./html.worker.js";
+    if (label === 'html') {
+      return './html.worker.js';
     }
-    if (label === "typescript" || label === "javascript") {
-      return "./ts.worker.js";
+    if (label === 'typescript' || label === 'javascript') {
+      return './ts.worker.js';
     }
-    return "./editor.worker.js";
+    return './editor.worker.js';
   },
 };
 
+const engine = new Styletron();
+
 ReactDOM.render(
-  <Provider store={store}>
-    <App />
-  </Provider>,
-  document.getElementById("root")
+  <ReduxProvider store={store}>
+    <StyletronProvider value={engine}>
+      <BaseProvider theme={LightTheme}>
+        <App />
+      </BaseProvider>
+    </StyletronProvider>
+  </ReduxProvider>,
+  document.getElementById('root'),
 );
