@@ -4,8 +4,9 @@ import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
 import { GlobalHeader } from './components/GlobalHeader';
 import { Home } from './components/Home';
 import { Room } from './components/Room';
-import { attemptConnection } from './store';
+import { attemptConnection } from './convergenceConnection/slice';
 import { useDispatch } from 'react-redux';
+import { useStyletron } from 'styletron-react';
 
 export function App(): ReactElement {
   const dispatch = useDispatch();
@@ -17,11 +18,13 @@ export function App(): ReactElement {
       }),
     );
   });
+  const [css] = useStyletron();
+
   return (
     <Router>
       <div className="container">
         <GlobalHeader />
-        <div>
+        <div className={css({ marginTop: '72px' })}>
           <Switch>
             <Route exact path="/">
               <Home />

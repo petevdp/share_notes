@@ -1,31 +1,26 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useHistory } from 'react-router-dom';
-import { connect, useStore, useDispatch, useSelector } from 'react-redux';
+import { useHistory } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { FormControl } from 'baseui/form-control';
 import { Button } from 'baseui/button';
 import { Input } from 'baseui/input';
-import { createRoom, state, resetRoomCreationStatus } from '../store';
-
-type props = {
-  creatingRoomStatus: 'creating' | string;
-  createRoom: () => void;
-  resetRoomCreationStatus: () => void;
-};
+import { rootState } from '../store';
+import { roomCreationConsumed, createRoom } from '../rooms/slice';
 
 export function Home() {
   const history = useHistory();
   const dispatch = useDispatch();
-  const [roomName, setRoomName] = useState('');
-  const { creatingRoomStatus } = useSelector((state: state) => state);
+  const [roomName] = useState('');
+  const roomCreationStatus = useSelector((state: rootState) => state.rooms.creationStatus);
   useEffect(() => {
-    console.log('creatingroomstatus: ', creatingRoomStatus);
-    if (creatingRoomStatus === 'creating') {
-    } else if (!!creatingRoomStatus) {
+    console.log('creatingroomstatus: ', roomCreationStatus);
+    if (roomCreationStatus === 'creating') {
+    } else if (!!roomCreationStatus) {
       console.log('wut');
-      history.push('/rooms/' + creatingRoomStatus); // is room id
-      dispatch(resetRoomCreationStatus());
+      history.push('/rooms/' + roomCreationStatus); // is room id
+      dispatch(roomCreationConsumed());
     }
-  }, [creatingRoomStatus]);
+  }, [roomCreationStatus]);
 
   return (
     <form

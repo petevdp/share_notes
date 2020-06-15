@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { useStyletron } from 'baseui';
 import { StyledLink } from 'baseui/link';
-import { Button } from 'baseui/button';
 import { Layer } from 'baseui/layer';
 import { ChevronDown, Delete, Overflow as UserIcon, Upload as Icon } from 'baseui/icon';
 import { Unstable_AppNavBar as AppNavBar, POSITION, UserNavItemT } from 'baseui/app-nav-bar';

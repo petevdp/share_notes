@@ -1,15 +1,12 @@
-import { useParams } from "react-router-dom";
+import { useParams } from 'react-router-dom';
 
-import { useDispatch } from "react-redux";
-import { createEditor } from "../store";
-import React, { useEffect } from "react";
-import { connect } from "http2";
+import React, { useEffect } from 'react';
 
 export const Room: React.FC = () => {
   const { roomId } = useParams();
   useEffect(() => {
     if (!roomId) {
-      throw "idk";
+      throw 'idk';
     }
   }, [roomId]);
 
