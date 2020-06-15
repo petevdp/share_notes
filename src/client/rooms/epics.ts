@@ -1,9 +1,9 @@
 import { Epic } from 'redux-observable';
 import { Observable } from 'rxjs';
-import { rootState } from '../store';
+import { rootState } from 'Client/store';
 import { filter, map, withLatestFrom, concatMap } from 'rxjs/operators';
 import { roomData } from './state';
-import { connectionEstablished } from '../convergenceConnection/slice';
+import { connectionEstablished } from 'Client/convergenceConnection/slice';
 import { createRoom, roomCreated, subscribeToUserOwnedRooms, createEditor, editorCreated } from './slice';
 
 export const createRoomEpic: Epic = (action$, state$: Observable<rootState>) => {

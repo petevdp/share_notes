@@ -4,8 +4,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { FormControl } from 'baseui/form-control';
 import { Button } from 'baseui/button';
 import { Input } from 'baseui/input';
-import { rootState } from '../store';
-import { roomCreationConsumed, createRoom } from '../rooms/slice';
+import { rootState } from 'Client/store';
+import { roomCreationConsumed, createRoom } from 'Client/rooms/slice';
 
 export function Home() {
   const history = useHistory();

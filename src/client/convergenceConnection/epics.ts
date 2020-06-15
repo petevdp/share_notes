@@ -1,5 +1,4 @@
 import { Epic } from 'redux-observable';
-import { rootState } from '../store';
 import { filter, concatMap, map } from 'rxjs/operators';
 import { attemptConnection, connectionEstablished } from './slice';
 import Convergence from '@convergence/convergence';
