@@ -13,7 +13,7 @@ module.exports = {
   },
   devtool: 'inline-source-map',
   entry: {
-    app: path.join(CLIENT_ROOT, 'index.tsx'),
+    app: CLIENT_ROOT,
     'json.worker': path.join(MONACO_ROOT, 'language/json/json.worker.js'),
     'css.worker': path.join(MONACO_ROOT, '/language/css/css.worker.js'),
     'html.worker': path.join(MONACO_ROOT, '/language/html/html.worker.js'),
@@ -24,31 +24,15 @@ module.exports = {
     globalObject: 'self',
     path: CLIENT_BUILD_PATH,
   },
-  module: {
-    rules: [
-      {
-        test: /\.tsx?$/,
-        use: {
-          loader: 'ts-loader',
-          options: { transpileOnly: true },
-        },
-        exclude: /node_modules/,
-      },
-      {
-        test: /\.ttf$/,
-        use: ['file-loader'],
-      },
-    ],
-  },
   plugins: [
     new HtmlWebPackPlugin({
       title: 'Share Notes',
-      template: path.join(CLIENT_ROOT, 'index.html'),
+      template: './src/client/index.html',
       inject: 'body',
     }),
   ],
   resolve: {
-    extensions: ['.tsx', '.ts', '.js'],
+    extensions: ['.js'],
     alias: {
       Shared: SHARED_ROOT,
       Client: CLIENT_ROOT,

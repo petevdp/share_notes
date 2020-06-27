@@ -1,0 +1,4 @@
+{
+  "watch": ["nodemon.json", "ormconfig.json", "./dist/server/*/**", "./dist/shared/*/**", "./src/server/schema/*/**"],
+  "ext": "js,graphql,json"
+}

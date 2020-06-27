@@ -1,10 +1,19 @@
-import { Convergence } from "@convergence/convergence";
-import bodyParser from "body-parser";
-import express from "express";
-import { createRoomPayload } from "Shared/types";
-import { CONVERGENCE_SERVICE_URL } from "Shared/environment";
+import 'module-alias/register';
 
-console.log(CONVERGENCE_SERVICE_URL);
+import { User } from './entity/user';
+import { UserController } from './controller/UserController';
+import { bootstrap } from 'vesper';
+import { RoomController } from './controller/RoomController';
+
+const PORT = 1235;
+bootstrap({
+  port: PORT,
+  controllers: [UserController, RoomController],
+  entities: [User],
+  schemas: ['src/server/schema/**/*.graphql'],
+}).then(() => {
+  console.log(`running on localhost:${PORT}`);
+});
 
 // const url = "https://convergence-server.myhost.com/mynamespace/mydomain";
 // const credentials = { username: "myuser", password: "mypassword" };
@@ -40,22 +49,3 @@ console.log(CONVERGENCE_SERVICE_URL);
 //       console.log(`characters '${evt.value}' added at position (${evt.index})`);
 //     });
 //   });
-
-const app = express();
-app.use(express.json());
-
-app.post("/api/rooms", (req, res) => {
-  console.log(req.body);
-  console.log(typeof req.body);
-  const { name, convergenceJWT } = req.body as createRoomPayload;
-
-  Convergence.connectWithJwt(CONVERGENCE_SERVICE_URL, convergenceJWT);
-
-  res.status(200).send();
-});
-
-const msg: string = "hi there";
-
-app.listen(1236, (hostname) => {
-  console.log("listening on ", 1236);
-});

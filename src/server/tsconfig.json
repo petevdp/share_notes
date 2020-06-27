@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/server",
+    "module": "commonjs",
+    "declaration": true,
+    "lib": ["ES2019"],
+    "target": "ES2019",
+    "importHelpers": true,
+    "types": ["node"],
+    "incremental": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "composite": true
+  },
+  "include": ["**/*.ts"],
+  "references": [{ "path": "../shared" }]
+}

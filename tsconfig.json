@@ -1,8 +1,10 @@
 {
   "compilerOptions": {
-    "jsx": "react",
     "esModuleInterop": true,
+    "moduleResolution": "node",
+    "sourceMap": true,
     "noImplicitAny": true,
+    "skipLibCheck": true,
     "baseUrl": "src",
     "paths": {
       "Shared/*": ["shared/*"],

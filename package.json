@@ -5,11 +5,11 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "start:client": "webpack-dev-server --config webpack/webpack-client.js",
-    "build:client": "webpack --config webpack-client.js",
+    "start:client": "webpack-dev-server --config webpack/webpack.config.js",
+    "build:client": "webpack --config config/webpack.config.js",
     "lint": "eslint '*/**/*.{js,ts,tsx}' --quiet --fix",
-    "start:server": "webpack --config webpack/webpack-server.js --watch",
-    "build:server": "webpack --config webpack/webpack-server.js"
+    "start:compile": "tsc --build --watch ./src/tsconfig.json",
+    "start:server": "nodemon --config ./nodemon.json"
   },
   "dependencies": {
     "@convergence/color-assigner": "^0.3.0",
@@ -23,8 +23,10 @@
     "baseui": "^9.84.0",
     "body-parser": "^1.19.0",
     "express": "^4.17.1",
+    "module-alias": "^2.2.2",
     "monaco-editor": "^0.20.0",
     "nodemon-webpack-plugin": "^4.3.1",
+    "pg": "^8.2.1",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-monaco-editor": "^0.36.0",
@@ -34,7 +36,9 @@
     "redux-observable": "^1.2.0",
     "rxjs": "^6.5.5",
     "styletron-engine-atomic": "^1.4.6",
-    "styletron-react": "^5.2.7"
+    "styletron-react": "^5.2.7",
+    "typeorm": "^0.2.25",
+    "vesper": "^0.1.9"
   },
   "devDependencies": {
     "@babel/core": "^7.0.0",
@@ -55,6 +59,7 @@
     "eslint-plugin-react": "^7.20.0",
     "file-loader": "^6.0.0",
     "html-webpack-plugin": "^4.3.0",
+    "nodemon": "^2.0.4",
     "prettier": "^2.0.5",
     "sass": "^1.26.5",
     "sass-loader": "^8.0.2",
@@ -66,5 +71,9 @@
     "webpack": "^4.43.0",
     "webpack-cli": "^3.3.11",
     "webpack-dev-server": "^3.11.0"
+  },
+  "_moduleAliases": {
+    "Server": "./dist/server",
+    "Shared": "./dist/shared"
   }
 }
