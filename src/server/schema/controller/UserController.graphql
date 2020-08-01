@@ -1,8 +1,0 @@
-type Query {
-  users: [User]
-  user(id: Int): User
-}
-
-type Mutation {
-  userCreate(id: Int, username: String): User
-}

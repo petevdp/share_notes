@@ -12,23 +12,19 @@ import {
   RemoteReferenceCreatedEvent,
   ReferenceClearedEvent,
   ReferenceDisposedEvent,
-} from "@convergence/convergence";
-import * as monaco from "monaco-editor";
-import {
-  RemoteCursorManager,
-  RemoteSelectionManager,
-  EditorContentManager,
-} from "@convergencelabs/monaco-collab-ext";
-import { ColorAssigner as ConvergenceColorAssigner } from "@convergence/color-assigner";
-import { LocalIndexReference } from "@convergence/convergence/typings/model/reference/LocalIndexReference";
-import { RemoteSelection } from "@convergencelabs/monaco-collab-ext/typings/RemoteSelection";
-import { filter } from "rxjs/operators";
+} from '@convergence/convergence';
+import * as monaco from 'monaco-editor';
+import { RemoteCursorManager, RemoteSelectionManager, EditorContentManager } from '@convergencelabs/monaco-collab-ext';
+import { ColorAssigner as ConvergenceColorAssigner } from '@convergence/color-assigner';
+import { LocalIndexReference } from '@convergence/convergence/typings/model/reference/LocalIndexReference';
+import { RemoteSelection } from '@convergencelabs/monaco-collab-ext/typings/RemoteSelection';
+import { filter } from 'rxjs/operators';
 
 Convergence.connect;
 
 const referenceKeys = {
-  CURSOR: "cursor",
-  SELECTION: "selection",
+  CURSOR: 'cursor',
+  SELECTION: 'selection',
 };
 
 export class MonacoConvergenceAdapter {
@@ -39,10 +35,7 @@ export class MonacoConvergenceAdapter {
   private _remoteSelectionManager: RemoteSelectionManager;
   private _cursorReference: LocalIndexReference;
 
-  constructor(
-    private _monacoEditor: monaco.editor.ICodeEditor,
-    private realtimeEditorText: RealTimeString
-  ) {
+  constructor(private _monacoEditor: monaco.editor.ICodeEditor, private realtimeEditorText: RealTimeString) {
     this._colorAssigner = new ConvergenceColorAssigner();
   }
 
@@ -68,10 +61,10 @@ export class MonacoConvergenceAdapter {
         this.realtimeEditorText.model().completeBatch();
       },
       onDelete: (index, length) => {
-        console.log("replacing ", index);
+        console.log('replacing ', index);
         this.realtimeEditorText.remove(index, length);
       },
-      remoteSourceId: "convergence",
+      remoteSourceId: 'convergence',
     });
 
     this.realtimeEditorText.events().subscribe({
@@ -101,9 +94,7 @@ export class MonacoConvergenceAdapter {
       tooltips: true,
       tooltipDuration: 2,
     });
-    this._cursorReference = this.realtimeEditorText.indexReference(
-      referenceKeys.CURSOR
-    );
+    this._cursorReference = this.realtimeEditorText.indexReference(referenceKeys.CURSOR);
 
     const references = this.realtimeEditorText.references({
       key: referenceKeys.CURSOR,
@@ -142,7 +133,7 @@ export class MonacoConvergenceAdapter {
     const remoteCursor = this._remoteCursorManager.addCursor(
       reference.sessionId(),
       color,
-      reference.user().displayName
+      reference.user().displayName,
     );
 
     reference.events().subscribe((e) => {
@@ -168,9 +159,7 @@ export class MonacoConvergenceAdapter {
       editor: this._monacoEditor,
     });
 
-    this._selectionReference = this.realtimeEditorText.rangeReference(
-      referenceKeys.SELECTION
-    );
+    this._selectionReference = this.realtimeEditorText.rangeReference(referenceKeys.SELECTION);
     this._setLocalSelection();
     this._selectionReference.share();
 
@@ -199,12 +188,8 @@ export class MonacoConvergenceAdapter {
   _setLocalSelection() {
     const selection = this._monacoEditor.getSelection();
     if (!selection.isEmpty()) {
-      const start = this._monacoEditor
-        .getModel()
-        .getOffsetAt(selection.getStartPosition());
-      const end = this._monacoEditor
-        .getModel()
-        .getOffsetAt(selection.getEndPosition());
+      const start = this._monacoEditor.getModel().getOffsetAt(selection.getStartPosition());
+      const end = this._monacoEditor.getModel().getOffsetAt(selection.getEndPosition());
       this._selectionReference.set({ start, end });
     } else if (this._selectionReference.isSet()) {
       this._selectionReference.clear();
@@ -213,10 +198,7 @@ export class MonacoConvergenceAdapter {
 
   _addRemoteSelection(reference: RangeReference) {
     const color = this._colorAssigner.getColorAsHex(reference.sessionId());
-    const remoteSelection = this._remoteSelectionManager.addSelection(
-      reference.sessionId(),
-      color
-    );
+    const remoteSelection = this._remoteSelectionManager.addSelection(reference.sessionId(), color);
 
     if (reference.isSet()) {
       const selection = reference.value();

@@ -1,96 +1,20 @@
 import * as React from 'react';
 import { useStyletron } from 'baseui';
 import { StyledLink } from 'baseui/link';
+import { rootState } from 'Client/store';
 import { Layer } from 'baseui/layer';
 import { ChevronDown, Delete, Overflow as UserIcon, Upload as Icon } from 'baseui/icon';
-import { Unstable_AppNavBar as AppNavBar, POSITION, UserNavItemT } from 'baseui/app-nav-bar';
+import { Unstable_AppNavBar as AppNavBar, POSITION, UserNavItemT, MainNavItemT } from 'baseui/app-nav-bar';
+import {} from 'baseui/header-navigation';
+import { Button } from 'baseui/button';
+import { useSelector, useDispatch } from 'react-redux';
+import { loginWithGithub } from 'Client/session/slice';
+import { GITHUB_0AUTH_URL, GITHUB_CLIENT_ID } from 'Shared/environment';
+
 function renderItem(item: any) {
   return item.label;
 }
-const MAIN_NAV = [
-  {
-    icon: Icon,
-    item: { label: 'Primary alpha1' },
-    mapItemToNode: renderItem,
-    mapItemToString: renderItem,
-  },
-  {
-    icon: Icon,
-    item: { label: 'Primary alpha2' },
-    mapItemToNode: renderItem,
-    mapItemToString: renderItem,
-  },
-  {
-    icon: ChevronDown,
-    item: { label: 'Primary alpha3' },
-    mapItemToNode: renderItem,
-    mapItemToString: renderItem,
-    navExitIcon: Delete,
-    navPosition: { desktop: POSITION.horizontal },
-    nav: [
-      {
-        icon: Icon,
-        item: { label: 'Secondary menu1' },
-        mapItemToNode: renderItem,
-        mapItemToString: renderItem,
-        nav: [
-          {
-            icon: Icon,
-            item: { label: 'Tertiary menu1' },
-            mapItemToNode: renderItem,
-            mapItemToString: renderItem,
-          },
-          {
-            icon: Icon,
-            item: { label: 'Tertiary menu2' },
-            mapItemToNode: renderItem,
-            mapItemToString: renderItem,
-          },
-          {
-            icon: Icon,
-            item: { label: 'Secondary menu3' },
-            mapItemToNode: renderItem,
-            mapItemToString: renderItem,
-          },
-          {
-            icon: Icon,
-            item: { label: 'Secondary menu4' },
-            mapItemToNode: renderItem,
-            mapItemToString: renderItem,
-          },
-        ],
-      },
-      {
-        icon: Icon,
-        item: { label: 'Secondary menu2' },
-        mapItemToNode: renderItem,
-        mapItemToString: renderItem,
-      },
-    ],
-  },
-  {
-    icon: ChevronDown,
-    item: { label: 'Primary alpha4' },
-    mapItemToNode: renderItem,
-    mapItemToString: renderItem,
-    navExitIcon: Delete,
-    navPosition: { desktop: POSITION.horizontal },
-    nav: [
-      {
-        icon: ChevronDown,
-        item: { label: 'Secondary menu1' },
-        mapItemToNode: renderItem,
-        mapItemToString: renderItem,
-      },
-      {
-        icon: Icon,
-        item: { label: 'Secondary menu2' },
-        mapItemToNode: renderItem,
-        mapItemToString: renderItem,
-      },
-    ],
-  },
-];
+const MAIN_NAV: MainNavItemT[] = [];
 const USER_NAV = [
   {
     icon: UserIcon,
@@ -132,8 +56,20 @@ function isActive(arr: Array<any>, item: any, activeItem: any): boolean {
 }
 export function GlobalHeader() {
   const [css] = useStyletron();
+  const isLoggedIn = useSelector((state: rootState) => !!state.session.token);
+  const dispatch = useDispatch();
   const [isNavBarVisible, setIsNavBarVisible] = React.useState(false);
   const [activeNavItem, setActiveNavItem] = React.useState(undefined as undefined | UserNavItemT);
+
+  const loginWithGithub = () => {
+    const url = new URL(GITHUB_0AUTH_URL);
+    url.searchParams.set('client_id', GITHUB_CLIENT_ID);
+    url.searchParams.set('redirect_url', 'http://localhost:1236');
+    url.searchParams.set('scope', 'gist,read:user');
+    console.log(url);
+    window.location.href = url.toString();
+    return;
+  };
   const containerStyles = css({
     boxSizing: 'border-box',
     width: '100vw',
@@ -154,24 +90,46 @@ export function GlobalHeader() {
       App Something
     </StyledLink>
   );
+
+  const navProps = {
+    userNav: USER_NAV,
+    username: 'Umka Marshmallow',
+    usernameSubtitle: '5.0',
+    userImgUrl: '',
+  };
+
+  const renderLoginButton = () => <Button onClick={() => loginWithGithub()}>Log In</Button>;
+
+  let mainNav = MAIN_NAV;
+  if (!isLoggedIn) {
+    mainNav = [
+      ...mainNav,
+      {
+        icon: Icon,
+        item: { label: '' },
+        mapItemToNode: renderLoginButton,
+        mapItemToString: () => 'idk',
+      },
+    ];
+  }
+
   return (
     <Layer>
       <div className={containerStyles}>
         <AppNavBar
           appDisplayName={appDisplayName}
-          mainNav={MAIN_NAV}
+          mainNav={mainNav}
           isNavItemActive={({ item }) => {
-            return item === activeNavItem || isActive(MAIN_NAV, item, activeNavItem);
+            return item === activeNavItem || isActive(mainNav, item, activeNavItem);
           }}
           onNavItemSelect={({ item }) => {
             if (item === activeNavItem) return;
             setActiveNavItem(item);
           }}
-          userNav={USER_NAV}
-          username="Umka Marshmallow"
-          usernameSubtitle="5.0"
-          userImgUrl=""
-        />
+          {...(isLoggedIn ? navProps : {})}
+        >
+          Does This Work
+        </AppNavBar>
       </div>
     </Layer>
   );

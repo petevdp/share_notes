@@ -8,7 +8,7 @@
   "database": "development",
   "synchronize": true,
   "logging": false,
-  "entities": ["dist/server/entity/**/*.js"],
+  "entities": ["dist/server/models/**/*.js"],
   "migrations": ["dist/server/migration/**/*.js"],
   "subscribers": ["dist/server/subscriber/**/*.js"]
 }

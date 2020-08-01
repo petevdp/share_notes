@@ -1,19 +1,29 @@
 import 'module-alias/register';
 
-import { User } from './entity/user';
-import { UserController } from './controller/UserController';
-import { bootstrap } from 'vesper';
-import { RoomController } from './controller/RoomController';
+import express from 'express';
+import { GITHUB_CLIENT_ID } from 'Shared/environment';
+import { ApolloServer } from 'apollo-server-express';
+import { authRouter } from './auth';
+import { createConnection } from 'typeorm';
+import { buildSchema } from 'type-graphql';
+import { UserResolver } from './resolvers/userResolver';
+import { RoomResolver } from './resolvers/roomResolver';
 
 const PORT = 1235;
-bootstrap({
-  port: PORT,
-  controllers: [UserController, RoomController],
-  entities: [User],
-  schemas: ['src/server/schema/**/*.graphql'],
-}).then(() => {
-  console.log(`running on localhost:${PORT}`);
-});
+
+async function runServer() {
+  const connection = await createConnection();
+  const schema = await buildSchema({ resolvers: [UserResolver, RoomResolver] });
+  const app = express();
+  const apolloServer = new ApolloServer({ schema });
+  app.use('/auth', authRouter);
+  apolloServer.applyMiddleware({ app });
+  app.listen({ port: PORT }, () => {
+    console.log('running on ', PORT, apolloServer.graphqlPath);
+  });
+}
+
+runServer();
 
 // const url = "https://convergence-server.myhost.com/mynamespace/mydomain";
 // const credentials = { username: "myuser", password: "mypassword" };

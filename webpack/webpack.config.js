@@ -7,11 +7,17 @@ module.exports = {
   mode: 'development',
   devServer: {
     contentBase: CLIENT_BUILD_PATH,
+    proxy: {
+      '/auth': {
+        target: `http://localhost:${1236}`,
+        pathRewrite: { '^/auth': '' },
+      },
+    },
     compress: true,
     historyApiFallback: true,
     port: 1234,
   },
-  devtool: 'inline-source-map',
+  devtool: 'source-map',
   entry: {
     app: CLIENT_ROOT,
     'json.worker': path.join(MONACO_ROOT, 'language/json/json.worker.js'),
@@ -27,12 +33,26 @@ module.exports = {
   plugins: [
     new HtmlWebPackPlugin({
       title: 'Share Notes',
-      template: './src/client/index.html',
+      template: path.join(CLIENT_ROOT, 'index.html'),
       inject: 'body',
     }),
   ],
+  module: {
+    rules: [
+      {
+        test: /\.tsx?$/,
+        exclude: /node_modules/,
+        use: {
+          loader: 'ts-loader',
+          options: {
+            projectReferences: true,
+          },
+        },
+      },
+    ],
+  },
   resolve: {
-    extensions: ['.js'],
+    extensions: ['.ts', '.tsx', '.js'],
     alias: {
       Shared: SHARED_ROOT,
       Client: CLIENT_ROOT,

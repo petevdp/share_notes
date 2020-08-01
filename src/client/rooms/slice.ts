@@ -1,8 +1,5 @@
-import { createSlice, PayloadAction, Observable, createAction } from '@reduxjs/toolkit';
-import { sliceState, roomCreationDetails, roomData } from './state';
-import { StateObservable, Epic } from 'redux-observable';
-import { filter, map, withLatestFrom, concatMap } from 'rxjs/operators';
-import { userOwnedRoomsEpic } from './epics';
+import { createSlice, createAction } from '@reduxjs/toolkit';
+import { sliceState, roomCreationDetails } from './state';
 
 const initialState: sliceState = {
   creationHistory: [],
@@ -30,7 +27,7 @@ export const roomsSlice = createSlice({
   reducers: {},
   extraReducers: (builder) =>
     builder
-      .addCase(createRoom, (state, action) => ({
+      .addCase(createRoom, (state) => ({
         ...state,
         creationStatus: 'creating',
       }))

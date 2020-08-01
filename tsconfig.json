@@ -5,7 +5,9 @@
     "sourceMap": true,
     "noImplicitAny": true,
     "skipLibCheck": true,
-    "baseUrl": "src",
+    "baseUrl": "./src",
+    "rootDir": "./src",
+    "outDir": "./dist",
     "paths": {
       "Shared/*": ["shared/*"],
       "Client/*": ["client/*"],

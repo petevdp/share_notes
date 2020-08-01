@@ -2,8 +2,7 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "composite": true,
-    "jsx": "react",
-    "outDir": "../../dist/client"
+    "jsx": "react"
   },
   "include": ["**/*.ts", "**/*.tsx"],
   "references": [{ "path": "../shared" }]

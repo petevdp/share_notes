@@ -3,8 +3,12 @@ services:
   convergence:
     image: convergencelabs/convergence-omnibus
     ports:
-      - 8000:80
+      - '8000:80'
   db:
     image: postgres
     ports:
-      - 5432:5432
+      - '5432:5432'
+  redis:
+    image: redis
+    ports:
+      - '6379:6379'

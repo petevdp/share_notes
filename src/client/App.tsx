@@ -2,14 +2,19 @@ import React, { useEffect, ReactElement } from 'react';
 
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
 import { GlobalHeader } from './components/GlobalHeader';
+import { SESSION_TOKEN_COOKIE_KEY } from 'Shared/environment';
 import { Home } from './components/Home';
 import { Room } from './components/Room';
 import { attemptConnection } from './convergenceConnection/slice';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useStyletron } from 'styletron-react';
+import { rootState } from './store';
+import { getCookie } from './utils';
+import { setSessionToken } from './session/slice';
 
 export function App(): ReactElement {
   const dispatch = useDispatch();
+  const sessionToken = useSelector<rootState>((state) => state.session.token);
   useEffect(() => {
     dispatch(
       attemptConnection({
@@ -17,6 +22,11 @@ export function App(): ReactElement {
         password: 'password',
       }),
     );
+
+    const tokenCookie = getCookie(SESSION_TOKEN_COOKIE_KEY);
+    if (!sessionToken && tokenCookie) {
+      dispatch(setSessionToken(tokenCookie));
+    }
   });
   const [css] = useStyletron();
 
