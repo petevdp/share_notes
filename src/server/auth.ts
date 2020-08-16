@@ -6,7 +6,12 @@ import { config } from 'dotenv';
 import ApolloClient, { gql } from 'apollo-boost';
 import { Tedis } from 'tedis';
 import { URL } from 'url';
-import { GITHUB_0AUTH_ACCESS_TOKEN_URL, GITHUB_CLIENT_ID, GITHUB_GRAPHQL_API_URL } from 'Shared/environment';
+import {
+  GITHUB_0AUTH_ACCESS_TOKEN_URL,
+  GITHUB_CLIENT_ID,
+  GITHUB_GRAPHQL_API_URL,
+  DEV_SERVER_PORT,
+} from 'Shared/environment';
 import { resolve } from 'path';
 import cookieParser from 'cookie-parser';
 
@@ -15,9 +20,7 @@ export const authRouter = Router();
 
 authRouter.use(bodyParser.json({ type: 'application/*+json' }));
 authRouter.use(cookieParser());
-
-config({ path: resolve(__dirname, '../../.env.secret') });
-
+config();
 interface github0AuthIdentityParams {
   client_id: string;
   client_secret: string;
@@ -32,14 +35,11 @@ interface github0AuthResponse {
 }
 
 authRouter.get('/', async (req, res) => {
-  console.log('ping!');
-  console.log(req.body);
   const tedis = new Tedis({
     host: '127.0.0.1',
     port: 6379,
   });
 
-  console.log('params: ', req.query);
   const oathCode = req.query.code as string;
 
   const params: github0AuthIdentityParams = {
@@ -47,6 +47,7 @@ authRouter.get('/', async (req, res) => {
     client_id: GITHUB_CLIENT_ID,
     client_secret: process.env.GITHUB_CLIENT_SECRET,
   };
+  console.log('params: ', params);
 
   const githubRes = await axios.get<string>(GITHUB_0AUTH_ACCESS_TOKEN_URL, { params });
 
@@ -60,7 +61,7 @@ authRouter.get('/', async (req, res) => {
     headers: { Authorization: `${githubResData.token_type} ${githubResData.access_token}` },
   });
 
-  const queryResult = await githubClient.query<{ id: string }>({
+  const queryResult = await githubClient.query<{ viewer: { id: string } }>({
     query: gql`
       {
         viewer {
@@ -69,9 +70,12 @@ authRouter.get('/', async (req, res) => {
       }
     `,
   });
-  tedis.hset('session', githubResData.access_token, queryResult.data.id).then((res) => {
+  console.log('queryResult: ', queryResult.data);
+  console;
+
+  tedis.hset('session', githubResData.access_token, queryResult.data.viewer.id).then((res) => {
     console.log('session res: ', res);
   });
   res.cookie('session-token', githubResData.access_token);
-  res.redirect('http://localhost:1234');
+  res.redirect(`http://localhost:${DEV_SERVER_PORT}`);
 });

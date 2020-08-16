@@ -1,13 +1,15 @@
 {
   "compilerOptions": {
     "esModuleInterop": true,
+    "experimentalDecorators": true,
     "moduleResolution": "node",
     "sourceMap": true,
     "noImplicitAny": true,
+    "module": "commonjs",
     "skipLibCheck": true,
-    "baseUrl": "./src",
-    "rootDir": "./src",
+    "rootDir": ".",
     "outDir": "./dist",
+    "baseUrl": "./src",
     "paths": {
       "Shared/*": ["shared/*"],
       "Client/*": ["client/*"],

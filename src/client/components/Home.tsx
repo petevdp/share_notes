@@ -6,6 +6,18 @@ import { Button } from 'baseui/button';
 import { Input } from 'baseui/input';
 import { rootState } from 'Client/store';
 import { roomCreationConsumed, createRoom } from 'Client/rooms/slice';
+import { useQuery, gql } from '@apollo/client';
+
+const USER_ROOMS = gql`
+  query {
+    user {
+      ownedRooms {
+        id
+        name
+      }
+    }
+  }
+`;
 
 export function Home() {
   const history = useHistory();
@@ -22,18 +34,27 @@ export function Home() {
     }
   }, [roomCreationStatus]);
 
+  const { loading, error, data } = useQuery(USER_ROOMS);
+
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        console.log('creating');
-        dispatch(createRoom({ name: roomName }));
-      }}
-    >
-      <FormControl label={() => 'Room Name'}>
-        <Input />
-      </FormControl>
-      <Button type="submit">Create</Button>
-    </form>
+    <>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          console.log('creating');
+          dispatch(createRoom({ name: roomName }));
+        }}
+      >
+        <FormControl label={() => 'Room Name'}>
+          <Input />
+        </FormControl>
+        <Button type="submit">Create</Button>
+      </form>
+      <div>
+        {loading && 'loading...'}
+        {error && 'error'}
+        {data && data}
+      </div>
+    </>
   );
 }

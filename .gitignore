@@ -2,5 +2,5 @@ node_modules
 .cache/*
 dist/*
 bundle/*
-.env.secret
+.env
 **/*.tsbuildinfo

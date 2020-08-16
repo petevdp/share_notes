@@ -7,6 +7,8 @@ import { BaseProvider, LightTheme } from 'baseui';
 
 import { App } from './App';
 import { store } from './store';
+import { ApolloProvider, ApolloClient, InMemoryCache } from '@apollo/client';
+import { GRAPHQL_URL } from 'Shared/environment';
 
 declare global {
   interface Window {
@@ -33,14 +35,20 @@ window.MonacoEnvironment = {
 };
 
 const engine = new Styletron();
+export const apolloClient = new ApolloClient({
+  uri: GRAPHQL_URL,
+  cache: new InMemoryCache(),
+});
 
 ReactDOM.render(
-  <ReduxProvider store={store}>
-    <StyletronProvider value={engine}>
-      <BaseProvider theme={LightTheme}>
-        <App />
-      </BaseProvider>
-    </StyletronProvider>
-  </ReduxProvider>,
+  <ApolloProvider client={apolloClient}>
+    <ReduxProvider store={store}>
+      <StyletronProvider value={engine}>
+        <BaseProvider theme={LightTheme}>
+          <App />
+        </BaseProvider>
+      </StyletronProvider>
+    </ReduxProvider>
+  </ApolloProvider>,
   document.getElementById('root'),
 );

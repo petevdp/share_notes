@@ -4,7 +4,7 @@ import { ObjectType, Field, ID } from 'type-graphql';
 
 @ObjectType()
 @Entity()
-export class Room extends BaseEntity {
+export class Room {
   @Field(() => ID)
   @PrimaryGeneratedColumn()
   id: number;
@@ -14,6 +14,6 @@ export class Room extends BaseEntity {
   name: string;
 
   @Field(() => User)
-  @ManyToOne((type) => User, (user) => user.ownedRooms)
+  @ManyToOne((type) => User, (user) => user.ownedRooms, { cascade: true })
   owner: User;
 }

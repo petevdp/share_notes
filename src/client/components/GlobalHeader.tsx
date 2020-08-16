@@ -9,7 +9,7 @@ import {} from 'baseui/header-navigation';
 import { Button } from 'baseui/button';
 import { useSelector, useDispatch } from 'react-redux';
 import { loginWithGithub } from 'Client/session/slice';
-import { GITHUB_0AUTH_URL, GITHUB_CLIENT_ID } from 'Shared/environment';
+import { GITHUB_0AUTH_URL, GITHUB_CLIENT_ID, AUTH_REDIRECT_URL } from 'Shared/environment';
 
 function renderItem(item: any) {
   return item.label;
@@ -63,8 +63,9 @@ export function GlobalHeader() {
 
   const loginWithGithub = () => {
     const url = new URL(GITHUB_0AUTH_URL);
+    console.log(AUTH_REDIRECT_URL);
     url.searchParams.set('client_id', GITHUB_CLIENT_ID);
-    url.searchParams.set('redirect_url', 'http://localhost:1236');
+    url.searchParams.set('redirect_url', AUTH_REDIRECT_URL);
     url.searchParams.set('scope', 'gist,read:user');
     console.log(url);
     window.location.href = url.toString();

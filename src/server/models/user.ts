@@ -4,7 +4,7 @@ import { ObjectType, Field, ID } from 'type-graphql';
 
 @ObjectType()
 @Entity()
-export class User extends BaseEntity {
+export class User {
   @Field(() => ID)
   @PrimaryGeneratedColumn()
   id: number;

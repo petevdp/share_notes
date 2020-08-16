@@ -1,4 +1,4 @@
 {
-  "watch": ["nodemon.json", "ormconfig.json", "./dist/server/*/**", "./dist/shared/*/**", "./src/server/schema/*/**"],
-  "ext": "js,graphql,json"
+  "watch": ["nodemon.json", "ormconfig.json", "./dist/src/server/*/**", "./dist/src/shared/*/**"],
+  "ext": "js,json"
 }

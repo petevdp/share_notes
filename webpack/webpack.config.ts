@@ -1,22 +1,13 @@
+import 'module-alias/register';
 const path = require('path');
-const { CLIENT_BUILD_PATH, CLIENT_ROOT, MONACO_ROOT, SHARED_ROOT } = require('./paths');
+import { CLIENT_BUILD_PATH, CLIENT_ROOT, MONACO_ROOT, SHARED_ROOT } from './paths';
+import { API_PORT, DEV_SERVER_PORT } from 'Shared/environment';
 
-const HtmlWebPackPlugin = require('html-webpack-plugin');
+import HtmlWebPackPlugin from 'html-webpack-plugin';
+import { Configuration } from 'webpack';
 
-module.exports = {
+const config: Configuration = {
   mode: 'development',
-  devServer: {
-    contentBase: CLIENT_BUILD_PATH,
-    proxy: {
-      '/auth': {
-        target: `http://localhost:${1236}`,
-        pathRewrite: { '^/auth': '' },
-      },
-    },
-    compress: true,
-    historyApiFallback: true,
-    port: 1234,
-  },
   devtool: 'source-map',
   entry: {
     app: CLIENT_ROOT,
@@ -59,3 +50,14 @@ module.exports = {
     },
   },
 };
+
+// the devServer Property appears to be missing on the Configuration typescript interface, so we have to define this separately
+const devServer = {
+  contentBase: CLIENT_BUILD_PATH,
+  proxy: { '/api': `http://localhost:${API_PORT}` },
+  compress: true,
+  historyApiFallback: true,
+  port: DEV_SERVER_PORT,
+};
+
+export default { ...config, devServer };

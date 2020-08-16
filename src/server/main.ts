@@ -1,29 +1,33 @@
 import 'module-alias/register';
 
 import express from 'express';
-import { GITHUB_CLIENT_ID } from 'Shared/environment';
+import { GITHUB_CLIENT_ID, API_PORT } from 'Shared/environment';
 import { ApolloServer } from 'apollo-server-express';
 import { authRouter } from './auth';
-import { createConnection } from 'typeorm';
+import * as TypeORM from 'typeorm';
+import { Container } from 'typedi';
 import { buildSchema } from 'type-graphql';
 import { UserResolver } from './resolvers/userResolver';
 import { RoomResolver } from './resolvers/roomResolver';
+import { createDatabaseConnection } from './db';
 
-const PORT = 1235;
+TypeORM.useContainer(Container);
 
 async function runServer() {
-  const connection = await createConnection();
-  const schema = await buildSchema({ resolvers: [UserResolver, RoomResolver] });
+  const c = await createDatabaseConnection();
+  const schema = await buildSchema({ resolvers: [UserResolver, RoomResolver], container: Container });
   const app = express();
   const apolloServer = new ApolloServer({ schema });
   app.use('/auth', authRouter);
   apolloServer.applyMiddleware({ app });
-  app.listen({ port: PORT }, () => {
-    console.log('running on ', PORT, apolloServer.graphqlPath);
+  app.listen({ port: API_PORT }, () => {
+    console.log('running on ', API_PORT);
   });
 }
 
-runServer();
+if (require.main === module) {
+  runServer();
+}
 
 // const url = "https://convergence-server.myhost.com/mynamespace/mydomain";
 // const credentials = { username: "myuser", password: "mypassword" };

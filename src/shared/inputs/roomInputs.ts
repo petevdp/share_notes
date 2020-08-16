@@ -6,5 +6,5 @@ export class CreateRoomInput {
   name: string;
 
   @Field(() => ID)
-  ownerId: string;
+  ownerId: number;
 }
