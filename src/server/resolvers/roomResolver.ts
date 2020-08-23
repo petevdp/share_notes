@@ -1,44 +1,47 @@
 import { Resolver, Query, Mutation, Arg, FieldResolver, Root } from 'type-graphql';
-import { Room } from 'Server/models/room';
+import { Room, ClientSideRoom } from 'Server/models/room';
 import { CreateRoomInput, RoomInput } from 'Shared/inputs/roomInputs';
 import { User } from 'Server/models/user';
 import { Service } from 'typedi';
 import { InjectRepository } from 'typeorm-typedi-extensions';
 import { Repository } from 'typeorm';
-import { v4 as uuidv4 } from 'uuid';
+import { HashIdService } from 'Server/services/hashIdService';
+import { ClientSideRoomService } from 'Server/services/clientSideRoomService';
+import { stringify } from 'querystring';
 
 @Service()
-@Resolver((of) => Room)
+@Resolver((of) => ClientSideRoom)
 export class RoomResolver {
   constructor(
     @InjectRepository(Room) private readonly roomRepository: Repository<Room>,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
+    private readonly clientSideRoomService: ClientSideRoomService,
   ) {}
 
-  @Query(() => Room)
+  @Query(() => ClientSideRoom)
   async room(@Arg('data') roomInput: RoomInput) {
-    return this.roomRepository.findOne(roomInput);
+    return this.clientSideRoomService.findRoom(roomInput);
   }
 
-  @Query(() => [Room])
+  @Query(() => [ClientSideRoom])
   async rooms() {
-    return this.roomRepository.find();
+    const rooms = await this.roomRepository.find();
+    return this.clientSideRoomService.getClientSideRooms(rooms);
   }
 
-  @FieldResolver()
-  async owner(@Root() room: Room) {
-    return await this.roomRepository.findOne({ id: room.id }, { relations: ['owner'] }).then((r) => r.owner);
+  @FieldResolver(() => User)
+  owner(@Root() room: ClientSideRoom) {
+    return this.roomRepository.findOne({ id: room.id }, { relations: ['owner'] }).then((r) => r.owner);
   }
 
-  @Mutation(() => Room)
+  @Mutation(() => ClientSideRoom)
   async createRoom(@Arg('data') userData: CreateRoomInput) {
     const owner = await this.userRepository.findOne({ id: userData.ownerId });
-    const uuid = uuidv4();
-    const room = this.roomRepository.create({
+    let room = this.roomRepository.create({
       ...userData,
-      uuid,
       owner,
     });
-    await this.roomRepository.save(room);
+    room = await this.roomRepository.save(room);
+    return this.clientSideRoomService.getClientSideRoom(room);
   }
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useHistory, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { FormControl } from 'baseui/form-control';
 import { Button } from 'baseui/button';
@@ -9,11 +9,10 @@ import { Editor } from 'Client/components/NewEditor';
 import { UserInput } from 'Shared/inputs/userInputs';
 import { CreateRoomInput } from 'Shared/inputs/roomInputs';
 import { useQuery, gql, useMutation } from '@apollo/client';
-import * as UrlSafeBase64 from 'url-safe-base64';
 
 interface userRoomsOutput {
   user: {
-    ownedRooms: { id: number; name: string }[];
+    ownedRooms: { id: number; name: string; hashId: string }[];
   };
 }
 
@@ -23,33 +22,35 @@ const USER_ROOMS = gql`
       ownedRooms {
         id
         name
+        hashId
       }
     }
   }
 `;
 interface createRoomOutput {
-  room: {
-    uuid: string;
+  createRoom: {
+    hashId: string;
   };
 }
 
 const CREATE_ROOM = gql`
-  mutation createRoom($data: CreateRoomInput!) {
-    uuid
+  mutation CreateRoom($data: CreateRoomInput!) {
+    createRoom(data: $data) {
+      hashId
+    }
   }
 `;
 
 export function Home() {
   const history = useHistory();
-  const [roomName] = useState('');
+  const [roomName, setRoomName] = useState('');
   const [createRoom, { error: createRoomError, error: createRoomLoading, data: createRoomData }] = useMutation<
     createRoomOutput
   >(CREATE_ROOM);
 
   useEffect(() => {
     if (createRoomData) {
-      const base64uuid = UrlSafeBase64.encode(createRoomData.room.uuid);
-      history.push('/rooms/' + base64uuid);
+      history.push(`/rooms/${createRoomData.createRoom.hashId}`);
     }
   }, [createRoomData]);
 
@@ -61,9 +62,11 @@ export function Home() {
   const roomElements =
     data &&
     data.user.ownedRooms.map((r) => (
-      <span key={r.id}>
-        id: {r.id} name: {r.name}
-      </span>
+      <div key={r.id}>
+        <Link to={`/rooms/${r.hashId}`}>
+          id: {r.id} name: {r.name} hash: {r.hashId}
+        </Link>
+      </div>
     ));
 
   return (
@@ -79,16 +82,13 @@ export function Home() {
         }}
       >
         <FormControl label={() => 'Room Name'}>
-          <Input />
+          <Input value={roomName} onChange={(e) => setRoomName(e.currentTarget.value)} />
         </FormControl>
         <Button type="submit">Create</Button>
       </form>
       {loading && 'loading'}
       {error && 'error'}
       {data && roomElements}
-      <div>
-        <Editor />
-      </div>
     </>
   );
 }

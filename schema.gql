@@ -3,6 +3,13 @@
 # !!!   DO NOT MODIFY THIS FILE BY YOURSELF   !!!
 # -----------------------------------------------
 
+type ClientSideRoom {
+  hashId: String!
+  id: ID!
+  name: String!
+  owner: User!
+}
+
 input CreateRoomInput {
   name: String!
   ownerId: ID!
@@ -13,33 +20,26 @@ input CreateUserInput {
 }
 
 type Mutation {
-  createRoom(data: CreateRoomInput!): Room!
+  createRoom(data: CreateRoomInput!): ClientSideRoom!
   createUser(data: CreateUserInput!): User!
 }
 
 type Query {
   currentUser(data: UserInput!): User!
-  room(data: RoomInput!): Room!
-  rooms: [Room!]!
+  room(data: RoomInput!): ClientSideRoom!
+  rooms: [ClientSideRoom!]!
   user(data: UserInput!): User!
   users: [User!]!
 }
 
-type Room {
-  id: ID!
-  name: String!
-  owner: User!
-  uuid: String
-}
-
 input RoomInput {
+  hashId: String
   id: ID
-  uuid: String
 }
 
 type User {
   id: ID!
-  ownedRooms: [Room!]!
+  ownedRooms: [ClientSideRoom!]!
   username: String!
 }
 

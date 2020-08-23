@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, JoinColumn, BaseEntity } from 'typeorm';
-import { Room } from './room';
+import { Room, ClientSideRoom } from './room';
 import { ObjectType, Field, ID } from 'type-graphql';
 
 @ObjectType()
@@ -13,7 +13,7 @@ export class User {
   @Column()
   username: string;
 
-  @Field(() => [Room])
+  @Field(() => [ClientSideRoom])
   @OneToMany((type) => Room, (room) => room.owner)
   @JoinColumn()
   ownedRooms: Room[];

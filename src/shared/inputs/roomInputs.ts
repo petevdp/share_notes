@@ -3,7 +3,7 @@ import { InputType, Field, ID } from 'type-graphql';
 @InputType()
 export class RoomInput {
   @Field(() => String, { nullable: true })
-  uuid?: string;
+  hashId?: string;
 
   @Field(() => ID, { nullable: true })
   id?: number;

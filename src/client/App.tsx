@@ -32,7 +32,7 @@ export function App(): ReactElement {
               <Home />
             </Route>
             <Route exact path="/rooms"></Route>
-            <Route path="/rooms/:base64RoomUuid">
+            <Route path="/rooms/:roomHashId">
               <Room />
             </Route>
           </Switch>

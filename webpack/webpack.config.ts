@@ -11,7 +11,7 @@ console.log(p);
 
 const config: Configuration = {
   mode: 'development',
-  devtool: 'source-map',
+  devtool: 'inline-source-map',
   entry: {
     app: CLIENT_ROOT,
     'json.worker': path.join(MONACO_ROOT, 'language/json/json.worker.js'),

@@ -70,9 +70,6 @@ authRouter.get('/', async (req, res) => {
       }
     `,
   });
-  console.log('queryResult: ', queryResult.data);
-  console;
-
   tedis.hset('session', githubResData.access_token, queryResult.data.viewer.id).then((res) => {
     console.log('session res: ', res);
   });

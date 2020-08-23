@@ -24,6 +24,24 @@
 
 # todo
 
+## now
+
 - fix 0auth DONE
 - setup type-graphql DONE
-- get room data populating
+- get room data populating DONE
+
+- assign links to rooms, send to empty page DONE
+- one editor per room DONE
+
+- simple room creation DONE
+- real time editing in rooms DONE
+
+- multiple editors per room ???
+
+- create new gist with room data
+- load data from a gist
+- save back to gist
+
+## later
+
+- form/input validation
