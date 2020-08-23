@@ -1,11 +1,11 @@
 import 'module-alias/register';
 const path = require('path');
-import { CLIENT_BUILD_PATH, CLIENT_ROOT, MONACO_ROOT, SHARED_ROOT } from '../src/server/paths';
+import { CLIENT_BUILD_PATH, CLIENT_ROOT, MONACO_ROOT, SHARED_ROOT } from 'Server/paths';
 import * as p from 'Server/paths';
 import { API_PORT, DEV_SERVER_PORT } from 'Shared/environment';
 
 import HtmlWebPackPlugin from 'html-webpack-plugin';
-import { Configuration } from 'webpack';
+import { Configuration, Entry } from 'webpack';
 
 console.log(p);
 
@@ -29,6 +29,10 @@ const config: Configuration = {
       title: 'Share Notes',
       template: path.join(CLIENT_ROOT, 'index.html'),
       inject: 'body',
+      // resolve all relative urls as a full url
+      base: {
+        href: '/',
+      },
     }),
   ],
   module: {
