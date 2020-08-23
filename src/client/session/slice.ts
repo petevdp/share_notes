@@ -1,6 +1,5 @@
 import { createSlice, createAction } from '@reduxjs/toolkit';
 import { sliceState } from './state';
-import { StateObservable } from 'redux-observable';
 
 const initialState: sliceState = {};
 

@@ -1,6 +1,4 @@
 import { Epic } from 'redux-observable';
-import { Observable } from 'rxjs';
-import { rootState } from 'Client/store';
 import { GITHUB_0AUTH_URL, GITHUB_CLIENT_ID, AUTH_REDIRECT_URL } from 'Shared/environment';
 import { filter, map, tap } from 'rxjs/operators';
 import { loginWithGithub } from './slice';

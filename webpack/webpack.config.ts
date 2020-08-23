@@ -1,10 +1,13 @@
 import 'module-alias/register';
 const path = require('path');
-import { CLIENT_BUILD_PATH, CLIENT_ROOT, MONACO_ROOT, SHARED_ROOT } from './paths';
+import { CLIENT_BUILD_PATH, CLIENT_ROOT, MONACO_ROOT, SHARED_ROOT } from '../src/server/paths';
+import * as p from 'Server/paths';
 import { API_PORT, DEV_SERVER_PORT } from 'Shared/environment';
 
 import HtmlWebPackPlugin from 'html-webpack-plugin';
 import { Configuration } from 'webpack';
+
+console.log(p);
 
 const config: Configuration = {
   mode: 'development',
@@ -38,6 +41,18 @@ const config: Configuration = {
           options: {
             projectReferences: true,
           },
+        },
+      },
+      // monaco uses some css and font modules we need to load
+      {
+        test: /\.css$/i,
+        use: ['style-loader', 'css-loader'],
+      },
+      {
+        test: /\.(png|jpe?g|gif|svg|eot|ttf|woff|woff2)$/i,
+        loader: 'url-loader',
+        options: {
+          limit: 8192,
         },
       },
     ],

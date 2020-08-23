@@ -9,9 +9,13 @@ export class Room {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Field(() => String)
+  @Field()
   @Column()
   name: string;
+
+  @Field({ nullable: true })
+  @Column('uuid', { nullable: true })
+  uuid?: string;
 
   @Field(() => User)
   @ManyToOne((type) => User, (user) => user.ownedRooms, { cascade: true })

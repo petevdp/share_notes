@@ -5,11 +5,13 @@
 
 require('module-alias/register');
 const { createConnection } = require('typeorm');
+const path = require('path');
 const { Room } = require('Server/models/room');
 const { User } = require('Server/models/user');
 const { createDatabaseConnection } = require('Server/db');
 const { Tedis } = require('tedis');
 const repl = require('repl');
+const { responsePathAsArray } = require('graphql');
 
 (async () => {
   global.tedis = new Tedis({

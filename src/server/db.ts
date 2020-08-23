@@ -1,4 +1,5 @@
 import * as TypeORM from 'typeorm';
+import * as path from 'path';
 export async function createDatabaseConnection() {
   return await TypeORM.createConnection({
     name: 'default',

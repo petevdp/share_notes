@@ -5,7 +5,6 @@ import { GlobalHeader } from './components/GlobalHeader';
 import { SESSION_TOKEN_COOKIE_KEY } from 'Shared/environment';
 import { Home } from './components/Home';
 import { Room } from './components/Room';
-import { attemptConnection } from './convergenceConnection/slice';
 import { useDispatch, useSelector } from 'react-redux';
 import { useStyletron } from 'styletron-react';
 import { rootState } from './store';
@@ -16,13 +15,6 @@ export function App(): ReactElement {
   const dispatch = useDispatch();
   const sessionToken = useSelector<rootState>((state) => state.session.token);
   useEffect(() => {
-    dispatch(
-      attemptConnection({
-        username: 'user',
-        password: 'password',
-      }),
-    );
-
     const tokenCookie = getCookie(SESSION_TOKEN_COOKIE_KEY);
     if (!sessionToken && tokenCookie) {
       dispatch(setSessionToken(tokenCookie));
@@ -40,7 +32,7 @@ export function App(): ReactElement {
               <Home />
             </Route>
             <Route exact path="/rooms"></Route>
-            <Route path="/rooms/:roomId">
+            <Route path="/rooms/:base64RoomUuid">
               <Room />
             </Route>
           </Switch>
