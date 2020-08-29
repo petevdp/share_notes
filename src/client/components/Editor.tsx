@@ -1,45 +1,67 @@
-// import React, { useEffect, useState, useRef } from 'react';
-// import { CONVERGENCE_SERVICE_URL, EDITOR_COLLECTION } from 'Shared/environment';
+import { Doc } from 'yjs';
+import React, { useEffect, useRef } from 'react';
+import { useStyletron } from 'baseui';
+import { MonacoBinding } from 'y-monaco';
+import * as monaco from 'monaco-editor';
+import { WebsocketProvider } from 'y-websocket';
+import { useQuery, gql, useLazyQuery } from '@apollo/client';
+import { text } from 'body-parser';
+import { getCookie } from 'Client/utils';
+import { YJS_WEBSOCKET_URL_WS, YJS_ROOM, SESSION_TOKEN_COOKIE_KEY } from 'Shared/environment';
+import { getRoomResponse } from 'Client/queries';
 
-// import * as monaco from 'monaco-editor';
-// import { RemoteCursorManager, RemoteSelectionManager, EditorContentManager } from '@convergencelabs/monaco-collab-ext';
+const GET_GIST = gql`
+  query github__getGist {
+    viewer {
+      id
+      name
+      gist(name: "23f7f252797a55b887d50cf768d68102") {
+        id
+        files {
+          name
+          text
+        }
+      }
+    }
+  }
+`;
 
-// import { Convergence, ModelService, RealTimeString } from '@convergence/convergence';
-// import { MonacoConvergenceAdapter } from '../editor/monacoConvergenceAdapter';
-// import { useParams } from 'react-router-dom';
-// import { domainState, roomEditorStatusesState, editorAdaptersState, roomModelState } from '../atoms';
+interface getGistResponse {
+  viewer: {
+    id: string;
+    name: string;
+    gist: {
+      id: string;
+      files: {
+        name: string;
+        text: string;
+      }[];
+    };
+  };
+}
 
-// interface state {
-//   code: string;
-// }
+export const Editor: React.FC<{ hashId: string; getRoomResponse: getRoomResponse }> = ({ hashId, getRoomResponse }) => {
+  const [css] = useStyletron();
+  const monacoContainerRef = useRef<HTMLDivElement>(null);
+  // const  { loading, error, data } = useQuery<getGistResponse>(GET_GIST);
 
-// interface props {}
+  // console.log('data: ', data);
+  useEffect(() => {
+    const ydoc = new Doc();
+    const provider = new WebsocketProvider(YJS_WEBSOCKET_URL_WS, YJS_ROOM, ydoc as any);
+    const textCRDT = ydoc.getText(hashId);
+    // if (data) {
+    //   textCRDT.insert(0, data.viewer.gist.files[0].text);
+    // }
+    const editor = monaco.editor.create(monacoContainerRef.current, {
+      language: 'markdown',
+    });
 
-// // const defaultEditorContents = "some text";
-// interface editorProps {
-//   editorId: string;
-// }
+    new MonacoBinding(textCRDT, editor.getModel(), new Set([editor]), provider.awareness);
+    provider.connect();
 
-// export function Editor({ editorId }: editorProps) {
-//   const containerEltRef = useRef<HTMLDivElement>(null);
-//   const [domain] = useRecoilState(domainState);
-//   const [roomModel] = useRecoilState(roomModelState);
-//   const [editorStatuses] = useRecoilState(roomEditorStatusesState);
+    return () => provider.disconnect();
+  }, [hashId]);
 
-//   useEffect(() => {
-//     const editor = monaco.editor.create(containerEltRef.current, {
-//       language: 'markdown',
-//     });
-//     domain
-//       .models()
-//       .open(editorId)
-//       .then((model) => {
-//         const stringElement = model.elementAt('content') as RealTimeString;
-
-//         const adapter = new MonacoConvergenceAdapter(editor, stringElement);
-//         adapter.bind();
-//       });
-//   }, []);
-
-//   return <div id="monaco-editor-container" ref={containerEltRef} />;
-// }
+  return <div className={css({ height: '500px' })} id="monaco-editor-container" ref={monacoContainerRef} />;
+};

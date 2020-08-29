@@ -8,6 +8,8 @@ import { Repository } from 'typeorm';
 import { HashIdService } from 'Server/services/hashIdService';
 import { ClientSideRoomService } from 'Server/services/clientSideRoomService';
 import { stringify } from 'querystring';
+import { YdocService } from 'Server/services/ydocService';
+// import { YdocService } from 'Server/services/ydocService';
 
 @Service()
 @Resolver((of) => ClientSideRoom)
@@ -16,10 +18,13 @@ export class RoomResolver {
     @InjectRepository(Room) private readonly roomRepository: Repository<Room>,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     private readonly clientSideRoomService: ClientSideRoomService,
+    private readonly ydocService: YdocService,
   ) {}
 
   @Query(() => ClientSideRoom)
   async room(@Arg('data') roomInput: RoomInput) {
+    console.log('ydoc: ');
+    console.log(this.ydocService.doc);
     return this.clientSideRoomService.findRoom(roomInput);
   }
 

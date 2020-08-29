@@ -10,6 +10,9 @@ export class Room {
   @Column()
   name: string;
 
+  @Column({ nullable: true })
+  gistName: string;
+
   @ManyToOne((type) => User, (user) => user.ownedRooms, { cascade: true })
   owner: User;
 }
@@ -21,6 +24,9 @@ export class ClientSideRoom {
 
   @Field()
   name: string;
+
+  @Field({ nullable: true })
+  gistName: string;
 
   @Field(() => User)
   owner: User;

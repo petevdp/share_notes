@@ -5,47 +5,17 @@ import { FormControl } from 'baseui/form-control';
 import { Button } from 'baseui/button';
 import { Input } from 'baseui/input';
 import { rootState } from 'Client/store';
-import { Editor } from 'Client/components/NewEditor';
 import { UserInput } from 'Shared/inputs/userInputs';
 import { CreateRoomInput } from 'Shared/inputs/roomInputs';
+import { USER_ROOMS, userRoomsResponse, CREATE_ROOM, createRoomResponse } from 'Client/queries';
 import { useQuery, gql, useMutation } from '@apollo/client';
-
-interface userRoomsOutput {
-  user: {
-    ownedRooms: { id: number; name: string; hashId: string }[];
-  };
-}
-
-const USER_ROOMS = gql`
-  query GetUserOwnedRooms($data: UserInput!) {
-    user(data: $data) {
-      ownedRooms {
-        id
-        name
-        hashId
-      }
-    }
-  }
-`;
-interface createRoomOutput {
-  createRoom: {
-    hashId: string;
-  };
-}
-
-const CREATE_ROOM = gql`
-  mutation CreateRoom($data: CreateRoomInput!) {
-    createRoom(data: $data) {
-      hashId
-    }
-  }
-`;
 
 export function Home() {
   const history = useHistory();
   const [roomName, setRoomName] = useState('');
+  const [gistName, setGistName] = useState('');
   const [createRoom, { error: createRoomError, error: createRoomLoading, data: createRoomData }] = useMutation<
-    createRoomOutput
+    createRoomResponse
   >(CREATE_ROOM);
 
   useEffect(() => {
@@ -55,7 +25,7 @@ export function Home() {
   }, [createRoomData]);
 
   const userInput: UserInput = { id: 1 };
-  const { loading, error, data } = useQuery<userRoomsOutput>(USER_ROOMS, {
+  const { loading, error, data } = useQuery<userRoomsResponse>(USER_ROOMS, {
     variables: { data: userInput },
   });
 
@@ -76,12 +46,16 @@ export function Home() {
           e.preventDefault();
           const roomInput: CreateRoomInput = {
             name: roomName,
+            gistName: gistName || undefined,
             ownerId: 1,
           };
           createRoom({ variables: { data: roomInput } });
         }}
       >
         <FormControl label={() => 'Room Name'}>
+          <Input value={roomName} onChange={(e) => setRoomName(e.currentTarget.value)} />
+        </FormControl>
+        <FormControl label={() => 'Gist name'}>
           <Input value={roomName} onChange={(e) => setRoomName(e.currentTarget.value)} />
         </FormControl>
         <Button type="submit">Create</Button>

@@ -1,2 +1,2 @@
 declare module 'module-alias/register';
-declare module 'y-websocket/bin/utils.js';
+declare module 'y-websocket/bin/utils';

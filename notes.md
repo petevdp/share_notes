@@ -1,4 +1,4 @@
-# authentication design
+# authentication
 
 - anonymous users for room participants
 - optionally sign in to github to create rooms
@@ -22,6 +22,24 @@
 * github_id
 * ownedRooms
 
+## room creation
+
+when you create a room,
+provide room name
+provide gist
+
+if given gist, load gist contents into editors
+(make request to github, and load contents into ydoc on the server side)
+
+## save back to gist
+
+if gist already created:
+
+- provide diff with gist for each file
+  - save all
+  - save one
+- send request to save on the client side
+
 # todo
 
 ## now
@@ -36,11 +54,13 @@
 - simple room creation DONE
 - real time editing in rooms DONE
 
-- multiple editors per room ???
+- Define a service that gives us a ydoc instance for the application's room DONE
 
+- load data from a gist DONE
 - create new gist with room data
-- load data from a gist
 - save back to gist
+
+- multiple editors per room ???
 
 ## later
 

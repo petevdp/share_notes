@@ -1,32 +1,18 @@
 import { useParams } from 'react-router-dom';
 import React, { useEffect } from 'react';
-import * as UrlSafeBase64 from 'url-safe-base64';
-
-import { RoomInput } from 'Shared/inputs/roomInputs';
 import { useQuery, gql } from '@apollo/client';
-import { Editor } from './NewEditor';
+import { Editor } from './Editor';
+import { GET_ROOM, getRoomResponse } from 'Client/queries';
 
-interface getRoomResult {
-  room: {
-    name: string;
-  };
-}
-
-const queries = {
-  getRoom: gql`
-    query GetRoom($data: RoomInput!) {
-      room(data: $data) {
-        id
-        name
-      }
-    }
-  `,
-};
+const queries = {};
 
 export const Room: React.FC = () => {
   const { roomHashId } = useParams();
-  const { loading, error, data } = useQuery<getRoomResult>(queries.getRoom, {
+  const { loading, error, data } = useQuery<getRoomResponse>(GET_ROOM, {
     variables: { data: { hashId: roomHashId } },
+    context: {
+      api: 'github',
+    },
   });
 
   return (
@@ -34,7 +20,7 @@ export const Room: React.FC = () => {
       {loading && 'loading'}
       {error && 'error'}
       {data && data.room.name}
-      <Editor hashId={roomHashId}></Editor>
+      <Editor hashId={roomHashId} getRoomResponse={data}></Editor>
     </span>
   );
 };

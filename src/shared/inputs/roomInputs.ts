@@ -1,4 +1,5 @@
 import { InputType, Field, ID } from 'type-graphql';
+import { kStringMaxLength } from 'buffer';
 
 @InputType()
 export class RoomInput {
@@ -12,6 +13,9 @@ export class RoomInput {
 export class CreateRoomInput {
   @Field(() => String)
   name: string;
+
+  @Field(() => String, { nullable: true })
+  gistName: string;
 
   @Field(() => ID)
   ownerId: number;

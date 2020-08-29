@@ -8,7 +8,6 @@ import { Unstable_AppNavBar as AppNavBar, POSITION, UserNavItemT, MainNavItemT }
 import {} from 'baseui/header-navigation';
 import { Button } from 'baseui/button';
 import { useSelector, useDispatch } from 'react-redux';
-import { loginWithGithub } from 'Client/session/slice';
 import { GITHUB_0AUTH_URL, GITHUB_CLIENT_ID, AUTH_REDIRECT_URL } from 'Shared/environment';
 
 function renderItem(item: any) {
