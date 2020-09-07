@@ -62,9 +62,13 @@ if gist already created:
 - generalize query to work with non-user-owned gists
 - create new gist with room data
 
-- multiple editors per room
+- multiple editors per room DONE
+
   - prove provider swap can be done cleanly DONE
   - get good event listener for room additions/changes DONE
+  - integrate multi-editors with loading gist data for new rooms DONE
+
+- try refactoring to use observable
 
 ## later
 

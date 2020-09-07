@@ -19,7 +19,6 @@ export function getKeysForMap(map: Y.Map<unknown>) {
   let keys = [];
   let curr = keyIterator.next();
   while (!curr.done) {
-    console.log('pushing key');
     keys.push(curr.value);
     curr = keyIterator.next();
   }

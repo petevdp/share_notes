@@ -38,21 +38,25 @@ export const Room: React.FC = () => {
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const isCreatingRoom = useSelector<rootState, boolean>((s) => s.room.isCreatingRoom);
   const dispatch = useDispatch();
+  const [getGist, { data: getGistData }] = useLazyQuery<getGistResponse>(GET_GIST);
+  const { data: getRoomData } = useQuery<getRoomResponse>(GET_ROOM, {
+    variables: { data: { hashId: roomHashId } },
+  });
 
   const [ydoc] = useState(() => new Y.Doc());
   const [editor, setEditor] = useState<undefined | CodeMirror.Editor>();
   const [provider, setProvider] = useState<undefined | WebsocketProvider>();
-  const [binding, setBinding] = useState<any>(undefined);
+  const [binding, setBinding] = useState<CodemirrorBinding | undefined>(undefined);
   const [filenames, setFilenames] = useState<string[]>([]);
   const [documents] = useState(() => ydoc.getMap(`${roomDocPath}/documents`));
   // const [filenamesType] = useState(() => ydoc.getArray(`${roomDocPath}/filenames`));
   const [isSynced, setIsSynced] = useState(false);
+  const [gistDataIsAdded, setGistDataIsAdded] = useState(false);
   const [currentFilename, setCurrentFilename] = useState<undefined | string>();
 
   useEffect(() => {
     const provider = new WebsocketProvider(YJS_WEBSOCKET_URL_WS, YJS_ROOM, ydoc);
     documents.observe((e) => {
-      console.log('filenames in observer: ');
       const filenames = getKeysForMap(documents);
       setFilenames(filenames);
     });
@@ -60,35 +64,56 @@ export const Room: React.FC = () => {
     provider.on('sync', () => {
       setIsSynced(true);
     });
-    setEditor(CodeMirror(editorContainerRef.current));
+
+    setEditor(CodeMirror(editorContainerRef.current, { readOnly: true }));
     setProvider(provider);
+    return () => {
+      provider?.destroy();
+      binding?.destroy();
+    };
   }, []);
 
   useEffect(() => {
-    if (editor && provider && isSynced) {
+    if (isCreatingRoom && getRoomData) {
+      getGist({ variables: { name: getRoomData.room.gistName } });
+    }
+  }, [getRoomData, isCreatingRoom]);
+
+  useEffect(() => {
+    if (editor && provider && isSynced && !currentFilename) {
       const keys = getKeysForMap(documents);
       if (keys.length > 0) {
         switchCurrentFile(keys[0] as string);
-      } else {
+      } else if (!isCreatingRoom) {
         addNewFile();
       }
     }
   }, [editor, provider, isSynced]);
 
-  const { data: getRoomData } = useQuery<getRoomResponse>(GET_ROOM, {
-    variables: { data: { hashId: roomHashId } },
-  });
-
-  const [getGist, { data: gistData, loading: gistLoading }] = useLazyQuery<getGistResponse>(GET_GIST);
+  useEffect(() => {
+    if (isCreatingRoom && editor && provider && getGistData && isSynced && getKeysForMap(documents).length === 0) {
+      const { files } = getGistData.viewer.gist;
+      for (let file of files) {
+        documents.set(file.name, new Y.Text(file.text));
+      }
+      files.length > 0 && switchCurrentFile(files[0].name);
+    }
+  }, [isCreatingRoom, editor, provider, getGistData, isSynced]);
 
   const switchCurrentFile = (filename: string, currProvider = provider) => {
-    binding?.destroy();
+    if (filename === currentFilename) {
+      return;
+    }
     const keys = getKeysForMap(documents);
     if (!keys.includes(filename)) {
       documents.set(filename, new Y.Text());
     }
-    const type = documents.get(filename);
+    const type = documents.get(filename) as Y.Text;
+    binding?.destroy();
     const newBinding = new CodemirrorBinding(type, editor, currProvider.awareness);
+    if (editor.getOption('readOnly')) {
+      editor.setOption('readOnly', false);
+    }
     setBinding(newBinding);
     setCurrentFilename(filename);
   };
