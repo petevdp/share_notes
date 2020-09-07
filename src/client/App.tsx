@@ -10,6 +10,7 @@ import { useStyletron } from 'styletron-react';
 import { rootState } from './store';
 import { getCookie } from './utils';
 import { setSessionToken } from './session/slice';
+import { EditorSwap } from './components/EditorSwapTest';
 
 export function App(): ReactElement {
   const dispatch = useDispatch();
@@ -22,6 +23,7 @@ export function App(): ReactElement {
   });
   const [css] = useStyletron();
 
+  // return <EditorSwap />;
   return (
     <Router>
       <div className="container">

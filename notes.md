@@ -57,11 +57,17 @@ if gist already created:
 - Define a service that gives us a ydoc instance for the application's room DONE
 
 - load data from a gist DONE
-- create new gist with room data
+- load data from a gist on room creation from the client DONE
 - save back to gist
+- generalize query to work with non-user-owned gists
+- create new gist with room data
 
-- multiple editors per room ???
+- multiple editors per room
+  - prove provider swap can be done cleanly DONE
+  - get good event listener for room additions/changes DONE
 
 ## later
 
 - form/input validation
+
+# how to swap bindings

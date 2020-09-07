@@ -8,18 +8,21 @@ import { rootState } from 'Client/store';
 import { UserInput } from 'Shared/inputs/userInputs';
 import { CreateRoomInput } from 'Shared/inputs/roomInputs';
 import { USER_ROOMS, userRoomsResponse, CREATE_ROOM, createRoomResponse } from 'Client/queries';
+import { startCreatingRoom } from 'Client/room/slice';
 import { useQuery, gql, useMutation } from '@apollo/client';
 
 export function Home() {
   const history = useHistory();
   const [roomName, setRoomName] = useState('');
   const [gistName, setGistName] = useState('');
+  const dispatch = useDispatch();
   const [createRoom, { error: createRoomError, error: createRoomLoading, data: createRoomData }] = useMutation<
     createRoomResponse
   >(CREATE_ROOM);
 
   useEffect(() => {
     if (createRoomData) {
+      dispatch(startCreatingRoom());
       history.push(`/rooms/${createRoomData.createRoom.hashId}`);
     }
   }, [createRoomData]);
@@ -56,7 +59,7 @@ export function Home() {
           <Input value={roomName} onChange={(e) => setRoomName(e.currentTarget.value)} />
         </FormControl>
         <FormControl label={() => 'Gist name'}>
-          <Input value={roomName} onChange={(e) => setRoomName(e.currentTarget.value)} />
+          <Input value={gistName} onChange={(e) => setGistName(e.currentTarget.value)} />
         </FormControl>
         <Button type="submit">Create</Button>
       </form>

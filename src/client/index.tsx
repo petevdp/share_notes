@@ -39,7 +39,6 @@ window.MonacoEnvironment = {
 // link setting github authorization header
 const githubAuthLink = new ApolloLink((operation, forward) => {
   const token = Cookies.get(SESSION_TOKEN_COOKIE_KEY);
-  console.log('pls');
   operation.setContext(({ headers }: any) => ({
     headers: {
       Authorization: `bearer ${token}`,
@@ -56,7 +55,10 @@ const githubAuthLink = new ApolloLink((operation, forward) => {
 const allowedQueryPrefixes = ['github', 'default'] as const;
 type QueryPrefix = typeof allowedQueryPrefixes[number];
 const linkByPrefix: Record<QueryPrefix | 'default', ApolloLink> = {
-  default: new HttpLink({ uri: GRAPHQL_URL }),
+  default: new HttpLink({
+    uri: GRAPHQL_URL,
+    headers: { Authorization: `${Cookies.get(SESSION_TOKEN_COOKIE_KEY)}` },
+  }),
   github: from([
     githubAuthLink,
     new HttpLink({

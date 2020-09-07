@@ -49,3 +49,33 @@ export interface createRoomResponse {
     hashId: string;
   };
 }
+
+export const GET_GIST = gql`
+  query github__getGist($name: String!) {
+    viewer {
+      id
+      name
+      gist(name: $name) {
+        id
+        files {
+          name
+          text
+        }
+      }
+    }
+  }
+`;
+
+export interface getGistResponse {
+  viewer: {
+    id: string;
+    name: string;
+    gist: {
+      id: string;
+      files: {
+        name: string;
+        text: string;
+      }[];
+    };
+  };
+}

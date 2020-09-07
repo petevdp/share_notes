@@ -2,11 +2,13 @@ import { combineReducers } from 'redux';
 import { createEpicMiddleware } from 'redux-observable';
 import { configureStore } from '@reduxjs/toolkit';
 import { sessionSlice } from './session/slice';
+import { roomSlice } from './room/slice';
 
 const epicMiddleware = createEpicMiddleware();
 
 const rootReducer = combineReducers({
   session: sessionSlice.reducer,
+  room: roomSlice.reducer,
 });
 
 export type rootState = ReturnType<typeof rootReducer>;

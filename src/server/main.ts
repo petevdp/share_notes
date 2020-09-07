@@ -14,9 +14,6 @@ import { UserResolver } from './resolvers/userResolver';
 import { RoomResolver } from './resolvers/roomResolver';
 import { createDatabaseConnection } from './db';
 import { setupWSConnection, docs, WSSharedDoc } from 'y-websocket/bin/utils';
-import { print } from 'graphql';
-import { YdocService } from './services/ydocService';
-import { Doc } from 'yjs';
 
 TypeORM.useContainer(Container);
 async function runServer() {
@@ -33,22 +30,21 @@ async function runServer() {
       emitSchemaFile: true,
     });
 
-    const apolloServer = new ApolloServer({ schema });
+    const apolloServer = new ApolloServer({
+      schema,
+      context: ({ req, res }) => {
+        return { githubSessionToken: req.get('Authorization') };
+      },
+    });
     app.use('/auth', authRouter);
     apolloServer.applyMiddleware({ app });
     return http.createServer(app);
   })();
 
-  // set up ydoc websocket endpoint and ydoc service
+  // setup websocket server
   (() => {
-    const doc = new WSSharedDoc(YJS_ROOM) as Doc;
-    docs.set(YJS_ROOM, doc);
-    Container.set(YdocService, new YdocService(doc));
-
     const websocketServer = new WebSocket.Server({ server: httpServer, path: '/socket/yjs-room' });
-    websocketServer.on('connection', (conn, req) =>
-      setupWSConnection(conn, req, { gc: req.url.slice(1) !== 'prosemirror-versions' }),
-    );
+    websocketServer.on('connection', (conn, req) => setupWSConnection(conn, req, { gc: true }));
   })();
 
   httpServer.listen({ port: API_PORT }, () => {
