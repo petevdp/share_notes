@@ -1,35 +1,19 @@
 import { useParams } from 'react-router-dom';
 import React, { useEffect, useRef, useState } from 'react';
-import { useQuery, useLazyQuery, useApolloClient } from '@apollo/client';
-import { CodeMirrorBinding, CodemirrorBinding } from 'y-codemirror';
+import { useQuery, useLazyQuery } from '@apollo/client';
+import { CodemirrorBinding } from 'y-codemirror';
 import { GET_ROOM, getRoomResponse, getGistResponse, GET_GIST } from 'Client/queries';
 import { useSelector, useDispatch } from 'react-redux';
 import { rootState } from 'Client/store';
 import { useStyletron } from 'styletron-react';
 import { WebsocketProvider } from 'y-websocket';
 import { Button } from 'baseui/button';
-import { Heading } from 'baseui/heading';
 import { YJS_WEBSOCKET_URL_WS, YJS_ROOM } from 'Shared/environment';
-import { completeCreatingRoom } from 'Client/room/slice';
-import { iteratorOfArray, getKeysForMap } from 'Client/ydocUtils';
-import { createIterator } from 'lib0/iterator';
-import * as monaco from 'monaco-editor';
-import { MonacoBinding } from 'y-monaco';
-import { equalFlat } from 'lib0/array';
+import { getKeysForMap } from 'Client/ydocUtils';
 import CodeMirror from 'codemirror';
 import * as Y from 'yjs';
 
 import 'codemirror/lib/codemirror.css';
-import { listenerCount } from 'process';
-type allowedYjsValues =
-  | String
-  | Number
-  | Boolean
-  | Object
-  | Array<any>
-  | Uint8Array
-  | Y.AbstractType<Y.YEvent>
-  | undefined;
 
 export const Room: React.FC = () => {
   const [css] = useStyletron();
@@ -37,7 +21,6 @@ export const Room: React.FC = () => {
   const roomDocPath = `room/${roomHashId}`;
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const isCreatingRoom = useSelector<rootState, boolean>((s) => s.room.isCreatingRoom);
-  const dispatch = useDispatch();
   const [getGist, { data: getGistData }] = useLazyQuery<getGistResponse>(GET_GIST);
   const { data: getRoomData } = useQuery<getRoomResponse>(GET_ROOM, {
     variables: { data: { hashId: roomHashId } },
@@ -51,12 +34,12 @@ export const Room: React.FC = () => {
   const [documents] = useState(() => ydoc.getMap(`${roomDocPath}/documents`));
   // const [filenamesType] = useState(() => ydoc.getArray(`${roomDocPath}/filenames`));
   const [isSynced, setIsSynced] = useState(false);
-  const [gistDataIsAdded, setGistDataIsAdded] = useState(false);
+  const [] = useState(false);
   const [currentFilename, setCurrentFilename] = useState<undefined | string>();
 
   useEffect(() => {
     const provider = new WebsocketProvider(YJS_WEBSOCKET_URL_WS, YJS_ROOM, ydoc);
-    documents.observe((e) => {
+    documents.observe(() => {
       const filenames = getKeysForMap(documents);
       setFilenames(filenames);
     });
