@@ -29,7 +29,7 @@ export function App(): ReactElement {
       if (!currentUserData) {
         getCurrentUser();
       } else {
-        dispatch(setUserData(currentUserData));
+        dispatch(setUserData(currentUserData.currentUser));
       }
     }
   }, [session, currentUserData]);

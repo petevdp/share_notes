@@ -8,7 +8,7 @@ import { rootState } from 'Client/store';
 import { UserInput } from 'Shared/inputs/userInputs';
 import { CreateRoomInput } from 'Shared/inputs/roomInputs';
 import { USER_ROOMS, userRoomsResponse, CREATE_ROOM, createRoomResponse } from 'Client/queries';
-import { startCreatingRoom } from 'Client/room/actions';
+import { startCreatingRoom } from 'Client/room/types';
 import { useQuery, gql, useMutation } from '@apollo/client';
 
 export function Home() {

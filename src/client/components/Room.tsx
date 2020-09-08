@@ -2,7 +2,7 @@ import { useParams } from 'react-router-dom';
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useQuery, useLazyQuery } from '@apollo/client';
 import { CodemirrorBinding } from 'y-codemirror';
-import { GET_ROOM, getRoomResponse, getGistResponse, GET_VIEWER_GIST } from 'Client/queries';
+import { GET_ROOM, getRoomResponse, getGistResponse, GET_GIST, getCurrentUserResult } from 'Client/queries';
 import { useSelector } from 'react-redux';
 import { rootState } from 'Client/store';
 import { useStyletron } from 'styletron-react';
@@ -14,6 +14,10 @@ import CodeMirror from 'codemirror';
 import * as Y from 'yjs';
 
 import 'codemirror/lib/codemirror.css';
+import { sessionSliceState, currentUser } from 'Client/session/types';
+import { userInfo } from 'os';
+
+type roomOwnershipState = 'loading' | 'yes' | 'no';
 
 export const Room: React.FC = () => {
   const [css] = useStyletron();
@@ -21,8 +25,10 @@ export const Room: React.FC = () => {
   const roomDocPath = `room/${roomHashId}`;
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const isCreatingRoom = useSelector<rootState, boolean>((s) => s.room.isCreatingRoom);
-  const [getGist, { data: getGistData }] = useLazyQuery<getGistResponse>(GET_VIEWER_GIST);
-  const { data: getRoomData } = useQuery<getRoomResponse>(GET_ROOM, {
+  const currentUserData = useSelector<rootState, currentUser | undefined>((s) => s.session?.user);
+
+  const [getGist, { data: getGistData }] = useLazyQuery<getGistResponse>(GET_GIST);
+  const { data: roomDataResult } = useQuery<getRoomResponse>(GET_ROOM, {
     variables: { data: { hashId: roomHashId } },
   });
 
@@ -36,9 +42,14 @@ export const Room: React.FC = () => {
   const [isSynced, setIsSynced] = useState(false);
   const [currentFilename, setCurrentFilename] = useState<undefined | string>();
 
-  // const isRoomOwner = useMemo(() => {
-  //   getGistData
-  // })
+  // undefined == not sure yet
+  const isRoomOwner: roomOwnershipState = useMemo(() => {
+    if (currentUserData && roomDataResult) {
+      currentUserData.githubLogin === roomDataResult.room.owner.githubLogin ? 'yes' : 'no';
+    } else {
+      return 'loading';
+    }
+  }, [currentUserData, roomDataResult]);
 
   useEffect(() => {
     const provider = new WebsocketProvider(YJS_WEBSOCKET_URL_WS, YJS_ROOM, ydoc);
@@ -60,10 +71,10 @@ export const Room: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (getRoomData) {
-      getGist({ variables: { name: getRoomData.room.gistName } });
+    if (roomDataResult) {
+      getGist({ variables: { name: roomDataResult.room.gistName, ownerLogin: roomDataResult.room.owner.githubLogin } });
     }
-  }, [getRoomData, isCreatingRoom]);
+  }, [roomDataResult, isCreatingRoom]);
 
   useEffect(() => {
     if (editor && provider && isSynced && !currentFilename) {
@@ -77,8 +88,15 @@ export const Room: React.FC = () => {
   }, [editor, provider, isSynced]);
 
   useEffect(() => {
-    if (isCreatingRoom && editor && provider && getGistData && isSynced && getKeysForMap(documents).length === 0) {
-      const { files } = getGistData.viewer.gist;
+    if (
+      isCreatingRoom &&
+      editor &&
+      provider &&
+      getGistData?.user?.gist &&
+      isSynced &&
+      getKeysForMap(documents).length === 0
+    ) {
+      const { files } = getGistData.user.gist;
       for (let file of files) {
         documents.set(file.name, new Y.Text(file.text));
       }
@@ -117,7 +135,7 @@ export const Room: React.FC = () => {
 
   return (
     <span>
-      <h4>{getRoomData && getRoomData.room.name}</h4>
+      <h4>{roomDataResult && roomDataResult.room.name}</h4>
       <div>current: {currentFilename}</div>
       <div>
         {filenameElements}

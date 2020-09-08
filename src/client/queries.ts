@@ -16,11 +16,11 @@ export const GET_ROOM = gql`
 
 export interface getRoomResponse {
   room: {
-    id: number;
+    id: string;
     name: string;
     gistName: string;
     owner: {
-      id: number;
+      id: string;
       githubLogin: string;
     };
   };
@@ -40,7 +40,7 @@ export const USER_ROOMS = gql`
 
 export interface userRoomsResponse {
   user: {
-    ownedRooms: { id: number; name: string; hashId: string }[];
+    ownedRooms: { id: string; name: string; hashId: string }[];
   };
 }
 
@@ -70,13 +70,13 @@ export const GET_CURRENT_USER = gql`
 export interface getCurrentUserResult {
   currentUser: {
     githubLogin: string;
-    id: number;
+    id: string;
   };
 }
 
-export const GET_VIEWER_GIST = gql`
-  query github__getGist($name: String!) {
-    viewer {
+export const GET_GIST = gql`
+  query github__getGist($name: String!, $ownerLogin: String!) {
+    user(login: $ownerLogin) {
       id
       name
       gist(name: $name) {
@@ -91,10 +91,10 @@ export const GET_VIEWER_GIST = gql`
 `;
 
 export interface getGistResponse {
-  viewer: {
+  user: {
     id: string;
     name: string;
-    gist: {
+    gist?: {
       id: string;
       files: {
         name: string;
