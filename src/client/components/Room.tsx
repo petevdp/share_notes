@@ -1,9 +1,9 @@
 import { useParams } from 'react-router-dom';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useQuery, useLazyQuery } from '@apollo/client';
 import { CodemirrorBinding } from 'y-codemirror';
-import { GET_ROOM, getRoomResponse, getGistResponse, GET_GIST } from 'Client/queries';
-import { useSelector, useDispatch } from 'react-redux';
+import { GET_ROOM, getRoomResponse, getGistResponse, GET_VIEWER_GIST } from 'Client/queries';
+import { useSelector } from 'react-redux';
 import { rootState } from 'Client/store';
 import { useStyletron } from 'styletron-react';
 import { WebsocketProvider } from 'y-websocket';
@@ -21,7 +21,7 @@ export const Room: React.FC = () => {
   const roomDocPath = `room/${roomHashId}`;
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const isCreatingRoom = useSelector<rootState, boolean>((s) => s.room.isCreatingRoom);
-  const [getGist, { data: getGistData }] = useLazyQuery<getGistResponse>(GET_GIST);
+  const [getGist, { data: getGistData }] = useLazyQuery<getGistResponse>(GET_VIEWER_GIST);
   const { data: getRoomData } = useQuery<getRoomResponse>(GET_ROOM, {
     variables: { data: { hashId: roomHashId } },
   });
@@ -34,8 +34,11 @@ export const Room: React.FC = () => {
   const [documents] = useState(() => ydoc.getMap(`${roomDocPath}/documents`));
   // const [filenamesType] = useState(() => ydoc.getArray(`${roomDocPath}/filenames`));
   const [isSynced, setIsSynced] = useState(false);
-  const [] = useState(false);
   const [currentFilename, setCurrentFilename] = useState<undefined | string>();
+
+  // const isRoomOwner = useMemo(() => {
+  //   getGistData
+  // })
 
   useEffect(() => {
     const provider = new WebsocketProvider(YJS_WEBSOCKET_URL_WS, YJS_ROOM, ydoc);
@@ -57,7 +60,7 @@ export const Room: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (isCreatingRoom && getRoomData) {
+    if (getRoomData) {
       getGist({ variables: { name: getRoomData.room.gistName } });
     }
   }, [getRoomData, isCreatingRoom]);
@@ -101,9 +104,9 @@ export const Room: React.FC = () => {
     setCurrentFilename(filename);
   };
 
-  const addNewFile = (currentProvider = provider) => {
+  const addNewFile = () => {
     const newFilename = `new-file${filenames.length}`;
-    switchCurrentFile(newFilename, currentProvider);
+    switchCurrentFile(newFilename);
   };
 
   const filenameElements = filenames.map((n) => (
@@ -121,6 +124,7 @@ export const Room: React.FC = () => {
         <Button kind={'secondary'} onClick={() => addNewFile()}>
           Add
         </Button>
+        <Button>Save back to Gist</Button>
       </div>
       <div className={css({ height: '500px' })} id="monaco-editor-container" ref={editorContainerRef} />;
     </span>

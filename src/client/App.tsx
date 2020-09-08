@@ -9,18 +9,30 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useStyletron } from 'styletron-react';
 import { rootState } from './store';
 import { getCookie } from './utils';
-import { setSessionToken } from './session/slice';
-import { EditorSwap } from './components/EditorSwapTest';
+import { setSessionToken, sessionSliceState, setUserData } from './session/types';
+import { useLazyQuery } from '@apollo/client';
+import { GET_CURRENT_USER, getCurrentUserResult } from './queries';
 
 export function App(): ReactElement {
   const dispatch = useDispatch();
-  const sessionToken = useSelector<rootState>((state) => state.session.token);
+  const session = useSelector<rootState, sessionSliceState>((state) => state.session);
+  const [getCurrentUser, { data: currentUserData }] = useLazyQuery<getCurrentUserResult>(GET_CURRENT_USER);
   useEffect(() => {
     const tokenCookie = getCookie(SESSION_TOKEN_COOKIE_KEY);
-    if (!sessionToken && tokenCookie) {
+    if (!session.token && tokenCookie) {
       dispatch(setSessionToken(tokenCookie));
     }
-  });
+  }, []);
+
+  useEffect(() => {
+    if (session.token && !session.user) {
+      if (!currentUserData) {
+        getCurrentUser();
+      } else {
+        dispatch(setUserData(currentUserData));
+      }
+    }
+  }, [session, currentUserData]);
   const [css] = useStyletron();
 
   return (

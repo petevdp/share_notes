@@ -9,7 +9,7 @@ import * as TypeORM from 'typeorm';
 import { Container } from 'typedi';
 import { buildSchema } from 'type-graphql';
 import { API_PORT, YJS_ROOM } from 'Shared/environment';
-import { getAuthRouter } from './auth';
+import { getAuthRouter } from './authRouter';
 import { Context } from './context';
 import { UserResolver } from './resolvers/userResolver';
 import { RoomResolver } from './resolvers/roomResolver';

@@ -35,7 +35,7 @@ input RoomInput {
 }
 
 type User {
-  githubDatabaseId: Float!
+  githubDatabaseId: ID!
   githubLogin: String!
   id: ID!
   ownedRooms: [ClientSideRoom!]!

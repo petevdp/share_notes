@@ -54,12 +54,15 @@ if gist already created:
 - simple room creation DONE
 - real time editing in rooms DONE
 
-- Define a service that gives us a ydoc instance for the application's room DONE
+- Define a service that gives us a ydoc instance for the application's room DONE, unused
 
 - load data from a gist DONE
 - load data from a gist on room creation from the client DONE
-- save back to gist
 - generalize query to work with non-user-owned gists
+
+- save back to gist
+  - retreive gist data for room
+  - get current user data on client side DONE
 - create new gist with room data
 
 - multiple editors per room DONE
@@ -69,38 +72,21 @@ if gist already created:
   - integrate multi-editors with loading gist data for new rooms DONE
 
 - try refactoring to use observable DONE, never again
+- use github username in profile
+- decent styling for presence indicators
+
+- diff viewer
+
+## tech det
+
+- hot module repalcements
 
 ## later
 
 - form/input validation
 
-# Rooms observable refactor
-
-react state updates
-setting filenames
-setting current editor name
-
-## actions(user)
-
-- add file
-- switch active file
-
-## actions(async)
-
-- sync(bool)
-- roomDataResponse(?object)
-- changeFile
-- gistDataResponse
-- leaveRoom;
-
-## state
-
-- isSynced(bool)
-- roomData
-- gistData
-- filenames
-
 ## questions
 
 - what does TypeGraphql.ID do?
 - how to unset browser session token
+- will the current implementation work with private gists?

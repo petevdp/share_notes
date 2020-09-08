@@ -6,6 +6,10 @@ export const GET_ROOM = gql`
       id
       name
       gistName
+      owner {
+        id
+        githubLogin
+      }
     }
   }
 `;
@@ -15,6 +19,10 @@ export interface getRoomResponse {
     id: number;
     name: string;
     gistName: string;
+    owner: {
+      id: number;
+      githubLogin: string;
+    };
   };
 }
 
@@ -50,7 +58,23 @@ export interface createRoomResponse {
   };
 }
 
-export const GET_GIST = gql`
+export const GET_CURRENT_USER = gql`
+  query getUser {
+    currentUser {
+      id
+      githubLogin
+    }
+  }
+`;
+
+export interface getCurrentUserResult {
+  currentUser: {
+    githubLogin: string;
+    id: number;
+  };
+}
+
+export const GET_VIEWER_GIST = gql`
   query github__getGist($name: String!) {
     viewer {
       id
