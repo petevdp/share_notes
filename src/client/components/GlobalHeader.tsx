@@ -62,11 +62,9 @@ export function GlobalHeader() {
 
   const loginWithGithub = () => {
     const url = new URL(GITHUB_0AUTH_URL);
-    console.log(AUTH_REDIRECT_URL);
     url.searchParams.set('client_id', GITHUB_CLIENT_ID);
     url.searchParams.set('redirect_url', AUTH_REDIRECT_URL);
     url.searchParams.set('scope', 'gist,read:user');
-    console.log(url);
     window.location.href = url.toString();
     return;
   };

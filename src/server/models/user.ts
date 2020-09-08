@@ -9,11 +9,14 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Field(() => ID)
+  @Column()
+  githubDatabaseId: number;
+
   @Field(() => String)
   @Column()
-  username: string;
+  githubLogin: string;
 
-  @Field(() => [ClientSideRoom])
   @OneToMany((type) => Room, (room) => room.owner)
   @JoinColumn()
   ownedRooms: Room[];

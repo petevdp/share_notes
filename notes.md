@@ -68,10 +68,39 @@ if gist already created:
   - get good event listener for room additions/changes DONE
   - integrate multi-editors with loading gist data for new rooms DONE
 
-- try refactoring to use observable
+- try refactoring to use observable DONE, never again
 
 ## later
 
 - form/input validation
 
-# how to swap bindings
+# Rooms observable refactor
+
+react state updates
+setting filenames
+setting current editor name
+
+## actions(user)
+
+- add file
+- switch active file
+
+## actions(async)
+
+- sync(bool)
+- roomDataResponse(?object)
+- changeFile
+- gistDataResponse
+- leaveRoom;
+
+## state
+
+- isSynced(bool)
+- roomData
+- gistData
+- filenames
+
+## questions
+
+- what does TypeGraphql.ID do?
+- how to unset browser session token

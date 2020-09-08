@@ -23,7 +23,6 @@ export function App(): ReactElement {
   });
   const [css] = useStyletron();
 
-  // return <EditorSwap />;
   return (
     <Router>
       <div className="container">

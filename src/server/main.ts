@@ -9,34 +9,44 @@ import * as TypeORM from 'typeorm';
 import { Container } from 'typedi';
 import { buildSchema } from 'type-graphql';
 import { API_PORT, YJS_ROOM } from 'Shared/environment';
-import { authRouter } from './auth';
+import { getAuthRouter } from './auth';
+import { Context } from './context';
 import { UserResolver } from './resolvers/userResolver';
 import { RoomResolver } from './resolvers/roomResolver';
 import { createDatabaseConnection } from './db';
 import { setupWSConnection, docs, WSSharedDoc } from 'y-websocket/bin/utils';
+import { OrmManager } from 'typeorm-typedi-extensions';
+import { TedisService } from './services/tedisService';
+import { getAuthChecker } from './authChecker';
+import { User } from './models/user';
 
 TypeORM.useContainer(Container);
 async function runServer() {
-  await createDatabaseConnection();
+  const dbConnection = await createDatabaseConnection();
   console.log('schema path: ', __dirname + '/schema.gql');
 
   // build graphql schema, create http server
   const httpServer = await (async () => {
     const app = express();
-
+    const tedisService = Container.get(TedisService);
+    // const userRepository = Container.get()
     const schema = await buildSchema({
       resolvers: [UserResolver, RoomResolver],
       container: Container,
       emitSchemaFile: true,
+      authChecker: getAuthChecker(tedisService),
     });
 
     const apolloServer = new ApolloServer({
       schema,
-      context: ({ req, res }) => {
-        return { githubSessionToken: req.get('Authorization') };
+      context: async ({ req, res }) => {
+        const token = req.get('Authorization');
+        return { githubSessionToken: token };
       },
     });
-    app.use('/auth', authRouter);
+
+    const userRepository = dbConnection.getRepository(User);
+    app.use('/auth', getAuthRouter(tedisService, userRepository));
     apolloServer.applyMiddleware({ app });
     return http.createServer(app);
   })();

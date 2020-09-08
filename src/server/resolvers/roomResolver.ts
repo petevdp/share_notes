@@ -1,4 +1,4 @@
-import { Resolver, Query, Mutation, Arg, FieldResolver, Root, Ctx } from 'type-graphql';
+import { Resolver, Query, Mutation, Arg, FieldResolver, Root, Ctx, Authorized } from 'type-graphql';
 import { Room, ClientSideRoom } from 'Server/models/room';
 import { CreateRoomInput, RoomInput } from 'Shared/inputs/roomInputs';
 import { User } from 'Server/models/user';
@@ -28,13 +28,15 @@ export class RoomResolver {
   }
 
   @FieldResolver(() => User)
-  owner(@Root() room: ClientSideRoom) {
-    return this.roomRepository.findOne({ id: room.id }, { relations: ['owner'] }).then((r) => r.owner);
+  async owner(@Root() room: ClientSideRoom): Promise<User> {
+    const owner = await this.roomRepository.findOne({ id: room.id }, { relations: ['owner'] }).then((r) => r.owner);
+    return owner;
   }
 
   @Mutation(() => ClientSideRoom)
-  async createRoom(@Arg('data') userData: CreateRoomInput, @Ctx() context: { githubSessionToken: string }) {
+  async createRoom(@Arg('data') userData: CreateRoomInput) {
     const owner = await this.userRepository.findOne({ id: userData.ownerId });
+
     let room = this.roomRepository.create({
       ...userData,
       owner,

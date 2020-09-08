@@ -17,17 +17,12 @@ input CreateRoomInput {
   ownerId: ID!
 }
 
-input CreateUserInput {
-  username: String!
-}
-
 type Mutation {
   createRoom(data: CreateRoomInput!): ClientSideRoom!
-  createUser(data: CreateUserInput!): User!
 }
 
 type Query {
-  currentUser(data: UserInput!): User!
+  currentUser: User!
   room(data: RoomInput!): ClientSideRoom!
   rooms: [ClientSideRoom!]!
   user(data: UserInput!): User!
@@ -40,11 +35,13 @@ input RoomInput {
 }
 
 type User {
+  githubDatabaseId: Float!
+  githubLogin: String!
   id: ID!
   ownedRooms: [ClientSideRoom!]!
-  username: String!
 }
 
 input UserInput {
-  id: ID!
+  id: ID
+  login: ID
 }

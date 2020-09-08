@@ -1,20 +1,20 @@
 import { createSlice, createAction } from '@reduxjs/toolkit';
+import { getRoomResponse, getGistResponse } from 'Client/queries';
+import { initRoom, receivedRoomData, documentNamesChanged, setCurrentDocumentName } from './actions';
 
-export interface roomSliceState {
+export type roomSliceState = {
   isCreatingRoom: boolean;
-}
-
-export const startCreatingRoom = createAction('startCreatingRoom');
-export const completeCreatingRoom = createAction('createAction');
+};
 
 export const roomSlice = createSlice({
   name: 'room',
-  initialState: {
-    isCreatingRoom: false,
-  },
+  initialState: { isCreatingRoom: false } as roomSliceState,
   reducers: {},
   extraReducers: (builder) =>
-    builder
-      .addCase(startCreatingRoom, (state, action) => ({ ...state, isCreatingRoom: true }))
-      .addCase(completeCreatingRoom, (state, action) => ({ ...state, isCreatingRoom: false })),
+    builder.addCase(initRoom, (s, a) => ({
+      ...s,
+      room: {
+        hashId: a.payload.roomHashId,
+      },
+    })),
 });
