@@ -9,7 +9,8 @@ import { useStyletron } from 'styletron-react';
 import { WebsocketProvider } from 'y-websocket';
 import { Button } from 'baseui/button';
 import { YJS_WEBSOCKET_URL_WS, YJS_ROOM } from 'Shared/environment';
-import { getKeysForMap } from 'Client/ydocUtils';
+import { getKeysForMap, getEntriesForMap } from 'Client/ydocUtils';
+import { request as octokitRequest } from '@octokit/request';
 import CodeMirror from 'codemirror';
 import * as Y from 'yjs';
 
@@ -17,15 +18,13 @@ import 'codemirror/lib/codemirror.css';
 import { sessionSliceState, currentUser } from 'Client/session/types';
 import { userInfo } from 'os';
 
-type roomOwnershipState = 'loading' | 'yes' | 'no';
-
-export const Room: React.FC = () => {
+export function Room() {
   const [css] = useStyletron();
   const { roomHashId } = useParams();
   const roomDocPath = `room/${roomHashId}`;
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const isCreatingRoom = useSelector<rootState, boolean>((s) => s.room.isCreatingRoom);
-  const currentUserData = useSelector<rootState, currentUser | undefined>((s) => s.session?.user);
+  const session = useSelector<rootState, sessionSliceState>((s) => s.session);
 
   const [getGist, { data: getGistData }] = useLazyQuery<getGistResponse>(GET_GIST);
   const { data: roomDataResult } = useQuery<getRoomResponse>(GET_ROOM, {
@@ -37,19 +36,20 @@ export const Room: React.FC = () => {
   const [provider, setProvider] = useState<undefined | WebsocketProvider>();
   const [binding, setBinding] = useState<CodemirrorBinding | undefined>(undefined);
   const [filenames, setFilenames] = useState<string[]>([]);
-  const [documents] = useState(() => ydoc.getMap(`${roomDocPath}/documents`));
+  const [documents] = useState(() => ydoc.getMap(`${roomDocPath}/documents`) as Y.Map<Y.Text>);
   // const [filenamesType] = useState(() => ydoc.getArray(`${roomDocPath}/filenames`));
   const [isSynced, setIsSynced] = useState(false);
   const [currentFilename, setCurrentFilename] = useState<undefined | string>();
 
   // undefined == not sure yet
-  const isRoomOwner: roomOwnershipState = useMemo(() => {
-    if (currentUserData && roomDataResult) {
-      currentUserData.githubLogin === roomDataResult.room.owner.githubLogin ? 'yes' : 'no';
+  const isRoomOwner = useMemo(() => {
+    if (session.user && roomDataResult) {
+      console.log('room data res: ', roomDataResult);
+      return session.user.githubLogin === roomDataResult.room.owner.githubLogin ? 'yes' : 'no';
     } else {
       return 'loading';
     }
-  }, [currentUserData, roomDataResult]);
+  }, [session, roomDataResult]);
 
   useEffect(() => {
     const provider = new WebsocketProvider(YJS_WEBSOCKET_URL_WS, YJS_ROOM, ydoc);
@@ -127,6 +127,34 @@ export const Room: React.FC = () => {
     switchCurrentFile(newFilename);
   };
 
+  const saveBackToGist = async () => {
+    if (isRoomOwner === 'yes' && getGistData.user.gist) {
+      const params = new URLSearchParams({
+        accept: 'application/vnd.github.v3+json',
+        gist_id: getGistData.user.gist.id,
+        files: documents.toJSON(),
+      });
+
+      const entriesForGithub = getEntriesForMap(documents).reduce((obj, [filename, ytext]) => {
+        return {
+          ...obj,
+          filename: {
+            filename,
+            content: ytext.toString(),
+          },
+        };
+      }, {});
+
+      const res = await octokitRequest('PATCH /gists/{id}', {
+        id: roomDataResult.room.gistName,
+        files: entriesForGithub,
+        headers: {
+          Authorization: `bearer ${session.token}`,
+        },
+      });
+    }
+  };
+
   const filenameElements = filenames.map((n) => (
     <Button key={n} onClick={() => switchCurrentFile(n)}>
       {n}
@@ -142,9 +170,9 @@ export const Room: React.FC = () => {
         <Button kind={'secondary'} onClick={() => addNewFile()}>
           Add
         </Button>
-        <Button>Save back to Gist</Button>
+        <Button onClick={() => saveBackToGist()}>Save back to Gist</Button>
       </div>
       <div className={css({ height: '500px' })} id="monaco-editor-container" ref={editorContainerRef} />;
     </span>
   );
-};
+}

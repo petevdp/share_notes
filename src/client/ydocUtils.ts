@@ -24,3 +24,14 @@ export function getKeysForMap(map: Y.Map<unknown>) {
   }
   return keys;
 }
+
+export function getEntriesForMap<T>(map: Y.Map<T>) {
+  const entryIterator = map.entries();
+  let entries: [string, T][] = [];
+  let curr = entryIterator.next();
+  while (!curr.done) {
+    entries.push(curr.value);
+    curr = entryIterator.next();
+  }
+  return entries;
+}

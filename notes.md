@@ -74,7 +74,7 @@ if gist already created:
 - try refactoring to use observable DONE, never again
 - use github username in profile
 - decent styling for presence indicators
-
+- handle non-gist cases
 - diff viewer
 
 ## tech det
