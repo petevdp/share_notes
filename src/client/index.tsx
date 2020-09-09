@@ -1,5 +1,5 @@
 import ReactDOM from 'react-dom';
-import React, { forwardRef } from 'react';
+import React from 'react';
 import { Provider as ReduxProvider } from 'react-redux';
 import { Client as Styletron } from 'styletron-engine-atomic';
 import { Provider as StyletronProvider } from 'styletron-react';
@@ -11,30 +11,6 @@ import { ApolloProvider, ApolloClient, InMemoryCache, ApolloLink, HttpLink, from
 import Cookies from 'js-cookie';
 import { getMainDefinition } from 'apollo-utilities';
 import { GRAPHQL_URL, GITHUB_GRAPHQL_API_URL, SESSION_TOKEN_COOKIE_KEY } from 'Shared/environment';
-
-declare global {
-  interface Window {
-    MonacoEnvironment: any;
-  }
-}
-
-window.MonacoEnvironment = {
-  getWorkerUrl: function (_: unknown, label: string) {
-    if (label === 'json') {
-      return '/json.worker.js';
-    }
-    if (label === 'css') {
-      return '/css.worker.js';
-    }
-    if (label === 'html') {
-      return '/html.worker.js';
-    }
-    if (label === 'typescript' || label === 'javascript') {
-      return '/ts.worker.js';
-    }
-    return '/editor.worker.js';
-  },
-};
 
 // link setting github authorization header
 const githubAuthLink = new ApolloLink((operation, forward) => {
