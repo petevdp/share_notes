@@ -87,7 +87,7 @@ export function GlobalHeader() {
       }}
       href={'#'}
     >
-      App Something
+      App okay so HMR works
     </StyledLink>
   );
 

@@ -3,21 +3,23 @@ const path = require('path');
 import { CLIENT_BUILD_PATH, CLIENT_ROOT, SHARED_ROOT } from 'Server/paths';
 import * as p from 'Server/paths';
 import { API_PORT, DEV_SERVER_PORT } from 'Shared/environment';
+import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
 
 import HtmlWebPackPlugin from 'html-webpack-plugin';
-import { Configuration, Entry } from 'webpack';
+import { Configuration } from 'webpack';
 
 console.log(p);
 
 const config: Configuration = {
   mode: 'development',
   devtool: 'inline-source-map',
-  entry: { app: CLIENT_ROOT },
+  entry: { index: CLIENT_ROOT },
   output: {
     globalObject: 'self',
     path: CLIENT_BUILD_PATH,
   },
   plugins: [
+    new ReactRefreshWebpackPlugin(),
     new HtmlWebPackPlugin({
       title: 'Share Notes',
       template: path.join(CLIENT_ROOT, 'index.html'),
@@ -32,13 +34,21 @@ const config: Configuration = {
     rules: [
       {
         test: /\.tsx?$/,
-        exclude: /node_modules/,
-        use: {
-          loader: 'ts-loader',
-          options: {
-            projectReferences: true,
+        // include: path.join(__dirname, 'src'),
+        use: [
+          {
+            loader: 'babel-loader',
+            options: { plugins: ['react-refresh/babel'] },
           },
-        },
+          {
+            loader: 'ts-loader',
+            options: {
+              // type errors will be caught by npm run start:compile on front and backend, so we don't need to typecheck here
+              transpileOnly: true,
+              projectReferences: true,
+            },
+          },
+        ].filter(Boolean),
       },
       // monaco uses some css and font modules we need to load
       {
@@ -68,6 +78,7 @@ const devServer = {
   contentBase: CLIENT_BUILD_PATH,
   proxy: { '/api': `http://localhost:${API_PORT}` },
   compress: true,
+  hot: true,
   historyApiFallback: true,
   port: DEV_SERVER_PORT,
 };
