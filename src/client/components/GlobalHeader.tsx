@@ -9,6 +9,7 @@ import {} from 'baseui/header-navigation';
 import { Button } from 'baseui/button';
 import { useSelector, useDispatch } from 'react-redux';
 import { GITHUB_0AUTH_URL, GITHUB_CLIENT_ID, AUTH_REDIRECT_URL } from 'Shared/environment';
+import { sessionSliceState } from 'Client/session/types';
 
 function renderItem(item: any) {
   return item.label;
@@ -55,7 +56,8 @@ function isActive(arr: Array<any>, item: any, activeItem: any): boolean {
 }
 export function GlobalHeader() {
   const [css] = useStyletron();
-  const isLoggedIn = useSelector((state: rootState) => !!state.session.token);
+  const session = useSelector<rootState, sessionSliceState>((state: rootState) => state.session);
+  const isLoggedIn = !!session.user;
   const dispatch = useDispatch();
   const [isNavBarVisible, setIsNavBarVisible] = React.useState(false);
   const [activeNavItem, setActiveNavItem] = React.useState(undefined as undefined | UserNavItemT);
@@ -91,7 +93,7 @@ export function GlobalHeader() {
 
   const navProps = {
     userNav: USER_NAV,
-    username: 'Umka Marshmallow',
+    username: session.user?.githubLogin,
     usernameSubtitle: '5.0',
     userImgUrl: '',
   };
