@@ -34,7 +34,7 @@ const config: Configuration = {
     rules: [
       {
         test: /\.tsx?$/,
-        // include: path.join(__dirname, 'src'),
+        include: [CLIENT_ROOT, SHARED_ROOT],
         use: [
           {
             loader: 'babel-loader',
