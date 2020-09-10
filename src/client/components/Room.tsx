@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom';
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useQuery, useLazyQuery } from '@apollo/client';
-import { CodemirrorBinding } from 'y-codemirror';
+// import { CodemirrorBinding } from 'y-codemirror';
 import { GET_ROOM, getRoomResponse, getGistResponse, GET_GIST, getCurrentUserResult } from 'Client/queries';
 import { useSelector } from 'react-redux';
 import { rootState } from 'Client/store';
@@ -11,10 +11,10 @@ import { Button } from 'baseui/button';
 import { YJS_WEBSOCKET_URL_WS, YJS_ROOM } from 'Shared/environment';
 import { getKeysForMap, getEntriesForMap } from 'Client/ydocUtils';
 import { request as octokitRequest } from '@octokit/request';
-import CodeMirror from 'codemirror';
+// import CodeMirror from 'codemirror';
+import { editor as monacoEditor } from 'monaco-editor';
+import { MonacoBinding } from 'y-monaco';
 import * as Y from 'yjs';
-
-import 'codemirror/lib/codemirror.css';
 import { sessionSliceState, currentUser } from 'Client/session/types';
 import { userInfo } from 'os';
 
@@ -32,9 +32,13 @@ export function Room() {
   });
 
   const [ydoc] = useState(() => new Y.Doc());
-  const [editor, setEditor] = useState<undefined | CodeMirror.Editor>();
-  const [provider, setProvider] = useState<undefined | WebsocketProvider>();
-  const [binding, setBinding] = useState<CodemirrorBinding | undefined>(undefined);
+  const editor = useMemo(() => {
+    if (editorContainerRef.current) {
+      return monacoEditor.create(editorContainerRef.current, { readOnly: true });
+    }
+  }, [editorContainerRef.current]);
+  const provider = useMemo(() => new WebsocketProvider(YJS_WEBSOCKET_URL_WS, YJS_ROOM, ydoc), []);
+  const [binding, setBinding] = useState<any>();
   const [filenames, setFilenames] = useState<string[]>([]);
   const [documents] = useState(() => ydoc.getMap(`${roomDocPath}/documents`) as Y.Map<Y.Text>);
   // const [filenamesType] = useState(() => ydoc.getArray(`${roomDocPath}/filenames`));
@@ -62,8 +66,6 @@ export function Room() {
       setIsSynced(true);
     });
 
-    setEditor(CodeMirror(editorContainerRef.current, { readOnly: true }));
-    setProvider(provider);
     return () => {
       provider?.destroy();
       binding?.destroy();
@@ -114,9 +116,9 @@ export function Room() {
     }
     const type = documents.get(filename) as Y.Text;
     binding?.destroy();
-    const newBinding = new CodemirrorBinding(type, editor, currProvider.awareness);
-    if (editor.getOption('readOnly')) {
-      editor.setOption('readOnly', false);
+    const newBinding = new MonacoBinding(type, editor.getModel(), new Set([editor]), currProvider.awareness);
+    if (editor.getOption(monacoEditor.EditorOption.readOnly)) {
+      editor.updateOptions({ readOnly: false });
     }
     setBinding(newBinding);
     setCurrentFilename(filename);

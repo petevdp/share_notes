@@ -56,6 +56,7 @@ if gist already created:
 - styling pass - room
 
   - room styling mockup - DONE
+  - refactor room realtimeeditor functionality to hook
   - implement
 
 - generalize conditions we get gist to when there are no documents for the room in yjs
@@ -63,6 +64,10 @@ if gist already created:
 - rename files
 - new room button
 - fork room
+
+- diff viewer
+  - re-add monaco DONE
+  - check diff mode
 
 ## done
 
@@ -97,6 +102,7 @@ if gist already created:
 
 - 0auth modal
 - diff viewer
+- transition to frontend-only?
 
 ## questions
 

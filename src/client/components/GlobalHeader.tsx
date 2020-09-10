@@ -12,6 +12,30 @@ import { useSelector, useDispatch } from 'react-redux';
 import { GITHUB_0AUTH_URL, GITHUB_CLIENT_ID, AUTH_REDIRECT_URL } from 'Shared/environment';
 import { sessionSliceState, logOut } from 'Client/session/types';
 
+declare global {
+  interface Window {
+    MonacoEnvironment: any;
+  }
+}
+
+window.MonacoEnvironment = {
+  getWorkerUrl: function (_: unknown, label: string) {
+    if (label === 'json') {
+      return '/json.worker.js';
+    }
+    if (label === 'css') {
+      return '/css.worker.js';
+    }
+    if (label === 'html') {
+      return '/html.worker.js';
+    }
+    if (label === 'typescript' || label === 'javascript') {
+      return '/ts.worker.js';
+    }
+    return '/editor.worker.js';
+  },
+};
+
 function renderItem(item: any) {
   return item.label;
 }
@@ -115,6 +139,7 @@ export function GlobalHeader() {
       ...mainNav,
       {
         icon: Icon,
+        // 'Log In' is used as key to identify the item, please fix
         item: { label: 'Log In' },
         mapItemToNode: renderLoginButton,
         mapItemToString: (item) => item.label,

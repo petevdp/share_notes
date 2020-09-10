@@ -1,6 +1,6 @@
 import 'module-alias/register';
 const path = require('path');
-import { CLIENT_BUILD_PATH, CLIENT_ROOT, SHARED_ROOT } from 'Server/paths';
+import { CLIENT_BUILD_PATH, CLIENT_ROOT, SHARED_ROOT, MONACO_ROOT } from 'Server/paths';
 import * as p from 'Server/paths';
 import { API_PORT, DEV_SERVER_PORT } from 'Shared/environment';
 import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
@@ -13,7 +13,14 @@ console.log(p);
 const config: Configuration = {
   mode: 'development',
   devtool: 'inline-source-map',
-  entry: { index: CLIENT_ROOT },
+  entry: {
+    app: CLIENT_ROOT,
+    'json.worker': path.join(MONACO_ROOT, 'language/json/json.worker.js'),
+    'css.worker': path.join(MONACO_ROOT, '/language/css/css.worker.js'),
+    'html.worker': path.join(MONACO_ROOT, '/language/html/html.worker.js'),
+    'ts.worker': path.join(MONACO_ROOT, '/language/typescript/ts.worker.js'),
+    'editor.worker': path.join(MONACO_ROOT, '/editor/editor.worker.js'),
+  },
   output: {
     globalObject: 'self',
     path: CLIENT_BUILD_PATH,
