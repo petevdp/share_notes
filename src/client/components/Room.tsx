@@ -18,42 +18,43 @@ import * as Y from 'yjs';
 import { sessionSliceState, currentUser } from 'Client/session/types';
 import { userInfo } from 'os';
 
-export function Room() {
-  const [css] = useStyletron();
-  const { roomHashId } = useParams();
+/**
+ * yjs setup state and data fetching for the editor
+ */
+function useRealTimeEditor(
+  editorContainerRef: React.MutableRefObject<HTMLElement>,
+  roomHashId: string,
+  roomData: getRoomResponse,
+) {
   const roomDocPath = `room/${roomHashId}`;
-  const editorContainerRef = useRef<HTMLDivElement>(null);
+
+  // selectors
   const isCreatingRoom = useSelector<rootState, boolean>((s) => s.room.isCreatingRoom);
   const session = useSelector<rootState, sessionSliceState>((s) => s.session);
 
   const [getGist, { data: getGistData }] = useLazyQuery<getGistResponse>(GET_GIST);
-  const { data: roomDataResult } = useQuery<getRoomResponse>(GET_ROOM, {
-    variables: { data: { hashId: roomHashId } },
-  });
 
   const [ydoc] = useState(() => new Y.Doc());
+  const [binding, setBinding] = useState<any>();
+  const [filenames, setFilenames] = useState<string[]>([]);
+  const [documents] = useState(() => ydoc.getMap(`${roomDocPath}/documents`) as Y.Map<Y.Text>);
+  const [isSynced, setIsSynced] = useState(false);
+  const [currentFilename, setCurrentFilename] = useState<undefined | string>();
+
+  const provider = useMemo(() => new WebsocketProvider(YJS_WEBSOCKET_URL_WS, YJS_ROOM, ydoc), []);
   const editor = useMemo(() => {
     if (editorContainerRef.current) {
       return monacoEditor.create(editorContainerRef.current, { readOnly: true });
     }
   }, [editorContainerRef.current]);
-  const provider = useMemo(() => new WebsocketProvider(YJS_WEBSOCKET_URL_WS, YJS_ROOM, ydoc), []);
-  const [binding, setBinding] = useState<any>();
-  const [filenames, setFilenames] = useState<string[]>([]);
-  const [documents] = useState(() => ydoc.getMap(`${roomDocPath}/documents`) as Y.Map<Y.Text>);
-  // const [filenamesType] = useState(() => ydoc.getArray(`${roomDocPath}/filenames`));
-  const [isSynced, setIsSynced] = useState(false);
-  const [currentFilename, setCurrentFilename] = useState<undefined | string>();
-
-  // undefined == not sure yet
   const isRoomOwner = useMemo(() => {
-    if (session.user && roomDataResult) {
-      console.log('room data res: ', roomDataResult);
-      return session.user.githubLogin === roomDataResult.room.owner.githubLogin ? 'yes' : 'no';
+    if (session.user && roomData) {
+      console.log('room data res: ', roomData);
+      return session.user.githubLogin === roomData.room.owner.githubLogin ? 'yes' : 'no';
     } else {
       return 'loading';
     }
-  }, [session, roomDataResult]);
+  }, [session, roomData]);
 
   useEffect(() => {
     const provider = new WebsocketProvider(YJS_WEBSOCKET_URL_WS, YJS_ROOM, ydoc);
@@ -73,10 +74,10 @@ export function Room() {
   }, []);
 
   useEffect(() => {
-    if (roomDataResult) {
-      getGist({ variables: { name: roomDataResult.room.gistName, ownerLogin: roomDataResult.room.owner.githubLogin } });
+    if (roomData) {
+      getGist({ variables: { name: roomData.room.gistName, ownerLogin: roomData.room.owner.githubLogin } });
     }
-  }, [roomDataResult, isCreatingRoom]);
+  }, [roomData]);
 
   useEffect(() => {
     if (editor && provider && isSynced && !currentFilename) {
@@ -147,8 +148,8 @@ export function Room() {
         };
       }, {});
 
-      const res = await octokitRequest('PATCH /gists/{id}', {
-        id: roomDataResult.room.gistName,
+      await octokitRequest('PATCH /gists/{id}', {
+        id: roomData.room.gistName,
         files: entriesForGithub,
         headers: {
           Authorization: `bearer ${session.token}`,
@@ -157,8 +158,20 @@ export function Room() {
     }
   };
 
-  const filenameElements = filenames.map((n) => (
-    <Button key={n} onClick={() => switchCurrentFile(n)}>
+  return { filenames, currentFilename, addNewFile, switchCurrentFile, saveBackToGist };
+}
+
+export function Room() {
+  const [css] = useStyletron();
+  const { roomHashId } = useParams();
+  const editorContainerRef = useRef<HTMLDivElement>(null);
+  const { data: roomDataResult } = useQuery<getRoomResponse>(GET_ROOM, {
+    variables: { data: { hashId: roomHashId } },
+  });
+  const realTimeEditor = useRealTimeEditor(editorContainerRef, roomHashId, roomDataResult);
+
+  const filenameElements = realTimeEditor.filenames.map((n) => (
+    <Button key={n} onClick={() => realTimeEditor.switchCurrentFile(n)}>
       {n}
     </Button>
   ));
@@ -166,13 +179,13 @@ export function Room() {
   return (
     <span>
       <h4>{roomDataResult && roomDataResult.room.name}</h4>
-      <div>current: {currentFilename}</div>
+      <div>current: {realTimeEditor.currentFilename}</div>
       <div>
         {filenameElements}
-        <Button kind={'secondary'} onClick={() => addNewFile()}>
+        <Button kind={'secondary'} onClick={() => realTimeEditor.addNewFile()}>
           Add
         </Button>
-        <Button onClick={() => saveBackToGist()}>Save back to Gist</Button>
+        <Button onClick={() => realTimeEditor.saveBackToGist()}>Save back to Gist</Button>
       </div>
       <div className={css({ height: '500px' })} id="monaco-editor-container" ref={editorContainerRef} />;
     </span>
