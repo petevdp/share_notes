@@ -10,6 +10,7 @@ import {
   GITHUB_CLIENT_ID,
   GITHUB_GRAPHQL_API_URL,
   DEV_SERVER_PORT,
+  SESSION_TOKEN_COOKIE_KEY,
 } from 'Shared/environment';
 import cookieParser from 'cookie-parser';
 
@@ -39,7 +40,7 @@ export const getAuthRouter = (tedisService: TedisService, userRepository: Reposi
   authRouter.use(bodyParser.json({ type: 'application/*+json' }));
   authRouter.use(cookieParser());
 
-  authRouter.get('/', async (req, res) => {
+  authRouter.get('/redirect', async (req, res) => {
     const oathCode = req.query.code as string;
 
     const params: github0AuthIdentityParams = {
@@ -77,12 +78,20 @@ export const getAuthRouter = (tedisService: TedisService, userRepository: Reposi
         });
         user = await userRepository.save(user);
       }
-      res.cookie('session-token', githubResData.access_token);
+      res.cookie(SESSION_TOKEN_COOKIE_KEY, githubResData.access_token);
       tedisService.tedis.hset(USER_ID_BY_SESSION_KEY, githubResData.access_token, user.id);
     } else {
       throw "couldn't find github user";
     }
     res.redirect(`http://localhost:${DEV_SERVER_PORT}`);
+  });
+
+  authRouter.get('/logout', (req, res) => {
+    if (req.cookies(SESSION_TOKEN_COOKIE_KEY)) {
+      tedisService.tedis.hdel(USER_ID_BY_SESSION_KEY, req.cookies(SESSION_TOKEN_COOKIE_KEY));
+      res.cookie(SESSION_TOKEN_COOKIE_KEY, undefined);
+    }
+    res.status(200);
   });
 
   return authRouter;

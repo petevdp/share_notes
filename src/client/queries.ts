@@ -74,6 +74,20 @@ export interface getCurrentUserResult {
   };
 }
 
+export const GET_VIEWER_GITHUB_DETAILS = gql`
+  query github__getUserDetails {
+    viewer {
+      avatarUrl
+    }
+  }
+`;
+
+export interface getCurrentUserGithubDetailsResponse {
+  viewer: {
+    avatarUrl: string;
+  };
+}
+
 export const GET_GIST = gql`
   query github__getGist($name: String!, $ownerLogin: String!) {
     user(login: $ownerLogin) {
@@ -89,7 +103,6 @@ export const GET_GIST = gql`
     }
   }
 `;
-
 export interface getGistResponse {
   user: {
     id: string;

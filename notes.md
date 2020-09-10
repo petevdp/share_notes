@@ -45,8 +45,24 @@ if gist already created:
 - choose between monaco and codemirror DONE, codemirror
 - decent styling for presence indicators
 - handle non-gist cases
-- investigate diff viewer
-- styling pass
+- styling pass - global header
+
+  - gloablheader mockup DONE
+  - use github avatar DONE
+  - add logout button DONE
+  - add create room button
+
+- logout button functionality DONE
+- styling pass - room
+
+  - room styling mockup - DONE
+  - implement
+
+- generalize conditions we get gist to when there are no documents for the room in yjs
+- get list of gists
+- rename files
+- new room button
+- fork room
 
 ## done
 
@@ -74,12 +90,17 @@ if gist already created:
 
 ## tech debt
 
-- hot module replacement
 - form/input validation
 - reduce bundle size
+
+## discovery
+
+- 0auth modal
+- diff viewer
 
 ## questions
 
 - what does TypeGraphql.ID do?
 - how to unset browser session token
 - will the current implementation work with private gists?
+- can I provide an interface for commit messages?

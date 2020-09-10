@@ -9,12 +9,13 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useStyletron } from 'styletron-react';
 import { rootState } from './store';
 import { getCookie } from './utils';
-import { setSessionToken, sessionSliceState, setUserData } from './session/types';
-import { useLazyQuery } from '@apollo/client';
+import { setSessionToken, sessionSliceState, setUserData, fetchSessionGithubDetails } from './session/types';
+import { useLazyQuery, useApolloClient } from '@apollo/client';
 import { GET_CURRENT_USER, getCurrentUserResult } from './queries';
 
 export function App(): ReactElement {
   const dispatch = useDispatch();
+  const apolloClient = useApolloClient();
   const session = useSelector<rootState, sessionSliceState>((state) => state.session);
   const [getCurrentUser, { data: currentUserData }] = useLazyQuery<getCurrentUserResult>(GET_CURRENT_USER);
   useEffect(() => {
@@ -33,6 +34,12 @@ export function App(): ReactElement {
       }
     }
   }, [session, currentUserData]);
+
+  useEffect(() => {
+    if (session.token) {
+      dispatch(fetchSessionGithubDetails(apolloClient));
+    }
+  }, [session.token]);
   const [css] = useStyletron();
 
   return (

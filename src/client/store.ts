@@ -1,7 +1,7 @@
-import { combineReducers } from 'redux';
-import { createEpicMiddleware } from 'redux-observable';
-import { configureStore } from '@reduxjs/toolkit';
+import { createEpicMiddleware, combineEpics } from 'redux-observable';
+import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import { sessionSlice } from './session/slice';
+import { fetchCurrentUserDetailsEpic, logOutEpic } from './session/epics';
 import { roomSlice } from './room/slice';
 
 const epicMiddleware = createEpicMiddleware();
@@ -13,22 +13,11 @@ const rootReducer = combineReducers({
 
 export type rootState = ReturnType<typeof rootReducer>;
 
-// const reducer = createReducer(initialState, (builder) =>
-//   builder
-//     .addCase(createRoom, createRoomReducer)
-//     .addCase(roomCreated, (state, action) => ({
-//       ...state,
-//       creatingRoomStatus: action.payload, // roomId
-//     }))
-//     .addCase(resetRoomCreationStatus, (state, action) => ({
-//       ...state,
-//       creatingRoomStatus: undefined,
-//     })),
-// );
-
 export const store = configureStore({
   reducer: rootReducer,
   middleware: [epicMiddleware],
 });
+
+epicMiddleware.run(combineEpics(fetchCurrentUserDetailsEpic, logOutEpic));
 
 export type AppDispatch = typeof store.dispatch;

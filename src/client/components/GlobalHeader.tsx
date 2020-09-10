@@ -3,40 +3,23 @@ import { useStyletron } from 'baseui';
 import { StyledLink } from 'baseui/link';
 import { rootState } from 'Client/store';
 import { Layer } from 'baseui/layer';
-import { ChevronDown, Delete, Overflow as UserIcon, Upload as Icon } from 'baseui/icon';
-import { Unstable_AppNavBar as AppNavBar, POSITION, UserNavItemT, MainNavItemT } from 'baseui/app-nav-bar';
+import { Delete, Overflow as UserIcon, Upload as Icon } from 'baseui/icon';
+import { Unstable_AppNavBar as AppNavBar, UserNavItemT, MainNavItemT, AppNavBarPropsT } from 'baseui/app-nav-bar';
+import { MenuAdapter, MenuAdapterPropsT } from 'baseui/list';
 import {} from 'baseui/header-navigation';
-import { Button } from 'baseui/button';
+import { Button as span } from 'baseui/button';
 import { useSelector, useDispatch } from 'react-redux';
 import { GITHUB_0AUTH_URL, GITHUB_CLIENT_ID, AUTH_REDIRECT_URL } from 'Shared/environment';
-import { sessionSliceState } from 'Client/session/types';
+import { sessionSliceState, logOut } from 'Client/session/types';
 
 function renderItem(item: any) {
   return item.label;
 }
 const MAIN_NAV: MainNavItemT[] = [];
-const USER_NAV = [
+const USER_NAV: UserNavItemT[] = [
   {
     icon: UserIcon,
-    item: { label: 'Account item1' },
-    mapItemToNode: renderItem,
-    mapItemToString: renderItem,
-  },
-  {
-    icon: UserIcon,
-    item: { label: 'Account item2' },
-    mapItemToNode: renderItem,
-    mapItemToString: renderItem,
-  },
-  {
-    icon: UserIcon,
-    item: { label: 'Account item3' },
-    mapItemToNode: renderItem,
-    mapItemToString: renderItem,
-  },
-  {
-    icon: UserIcon,
-    item: { label: 'Account item4' },
+    item: { label: 'Log Out', onClick: () => alert('wow') },
     mapItemToNode: renderItem,
     mapItemToString: renderItem,
   },
@@ -54,6 +37,14 @@ function isActive(arr: Array<any>, item: any, activeItem: any): boolean {
   }
   return active;
 }
+
+interface avatarNavProps {
+  userNav?: UserNavItemT[];
+  username?: string;
+  usernameSubtitle?: string;
+  userImgUrl?: string;
+}
+
 export function GlobalHeader() {
   const [css] = useStyletron();
   const session = useSelector<rootState, sessionSliceState>((state: rootState) => state.session);
@@ -61,6 +52,31 @@ export function GlobalHeader() {
   const dispatch = useDispatch();
   const [isNavBarVisible, setIsNavBarVisible] = React.useState(false);
   const [activeNavItem, setActiveNavItem] = React.useState(undefined as undefined | UserNavItemT);
+
+  const githubLogin = session.user?.githubLogin;
+  const avatarUrl = session.githubUserDetails?.avatarUrl;
+
+  const { loading: navPropsLoading, data: navProps } = React.useMemo(() => {
+    let data: null | avatarNavProps;
+    let loading = false;
+    if (githubLogin && avatarUrl) {
+      data = {
+        userImgUrl: session.githubUserDetails.avatarUrl,
+        username: session.user.githubLogin,
+        userNav: USER_NAV,
+      };
+    } else {
+      loading = true;
+      data = null;
+    }
+    // const navProps = {
+    //   userNav: USER_NAV,
+    //   username: session.user?.githubLogin,
+    //   usernameSubtitle: '5.0',
+    //   userImgUrl: '',
+    // };
+    return { loading, data };
+  }, [githubLogin, avatarUrl]);
 
   const loginWithGithub = () => {
     const url = new URL(GITHUB_0AUTH_URL);
@@ -70,6 +86,7 @@ export function GlobalHeader() {
     window.location.href = url.toString();
     return;
   };
+
   const containerStyles = css({
     boxSizing: 'border-box',
     width: '100vw',
@@ -87,18 +104,10 @@ export function GlobalHeader() {
       }}
       href={'#'}
     >
-      App okay so HMR works
+      Share Notes
     </StyledLink>
   );
-
-  const navProps = {
-    userNav: USER_NAV,
-    username: session.user?.githubLogin,
-    usernameSubtitle: '5.0',
-    userImgUrl: '',
-  };
-
-  const renderLoginButton = () => <Button onClick={() => loginWithGithub()}>Log In</Button>;
+  const renderLoginButton = () => <span onClick={() => loginWithGithub()}>Log In</span>;
 
   let mainNav = MAIN_NAV;
   if (!isLoggedIn) {
@@ -106,9 +115,9 @@ export function GlobalHeader() {
       ...mainNav,
       {
         icon: Icon,
-        item: { label: '' },
+        item: { label: 'Log In' },
         mapItemToNode: renderLoginButton,
-        mapItemToString: () => 'idk',
+        mapItemToString: (item) => item.label,
       },
     ];
   }
@@ -123,10 +132,14 @@ export function GlobalHeader() {
             return item === activeNavItem || isActive(mainNav, item, activeNavItem);
           }}
           onNavItemSelect={({ item }) => {
-            if (item === activeNavItem) return;
-            setActiveNavItem(item);
+            if (item.item.label === 'Log Out') {
+              dispatch(logOut());
+            }
+            console.log('nav item selected: ', item);
+            // if (item === activeNavItem) return;
+            // setActiveNavItem(item);
           }}
-          {...(isLoggedIn ? navProps : {})}
+          {...(navProps || {})}
         >
           Does This Work
         </AppNavBar>
