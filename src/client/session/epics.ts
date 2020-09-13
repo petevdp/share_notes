@@ -1,25 +1,49 @@
 import { Epic } from 'redux-observable';
-import { filter, map, concatMap, withLatestFrom } from 'rxjs/operators';
-import { fetchSessionGithubDetails, setSessionGithubDetails, logOut, clearSessionData } from './types';
-import { Observable } from 'rxjs';
-import { GET_VIEWER_GITHUB_DETAILS, getCurrentUserGithubDetailsResponse } from 'Client/queries';
-import { getCookie } from 'Client/utils';
-import { rootState } from 'Client/store';
+import { filter, map, concatMap, first } from 'rxjs/operators';
+import { setSessionGithubDetails, logOut, clearSessionData, setCurrentUserData, setSessionToken } from './types';
+import { merge } from 'rxjs';
+import {
+  GET_VIEWER_GITHUB_DETAILS,
+  getCurrentUserGithubDetailsResponse,
+  GET_CURRENT_USER,
+  getCurrentUserResult,
+} from 'Client/queries';
+import { request as gqlRequest, GraphQLClient } from 'graphql-request';
+import { getCookie, getGithubGraphqlClient } from 'Client/utils';
+import { GITHUB_GRAPHQL_API_URL, GRAPHQL_URL, SESSION_TOKEN_COOKIE_KEY } from 'Shared/environment';
 
-export const fetchCurrentUserDetailsEpic: Epic = (action$) => {
-  return action$.pipe(
-    filter(fetchSessionGithubDetails.match),
-    concatMap(async ({ payload: apolloClient }) => {
-      console.log('getting details');
-      const { data } = await apolloClient.query<getCurrentUserGithubDetailsResponse>({
-        query: GET_VIEWER_GITHUB_DETAILS,
-      });
-      console.log('details: ', data);
+export const setSessionTokenEpic: Epic = (action$, state$) =>
+  state$.pipe(
+    // on store init, if we haven't yet set the session token(might have persisted state), do so
+    first(),
+    filter((s) => !s.session.token && !!getCookie(SESSION_TOKEN_COOKIE_KEY)),
+    map(() => setSessionToken(getCookie(SESSION_TOKEN_COOKIE_KEY))),
+  );
 
-      return setSessionGithubDetails(data.viewer);
+/**
+ * depends on session
+ */
+export const fetchCurrentUserDataOnSetSessionTokenEpic: Epic = (action$) =>
+  action$.pipe(
+    // when we have a session token
+    filter(setSessionToken.match),
+    first(),
+    concatMap(({ payload: token }) => {
+      // get user data from server
+      const getCurrentUserData = gqlRequest<getCurrentUserResult>(GRAPHQL_URL, GET_CURRENT_USER).then((r) =>
+        setCurrentUserData(r.currentUser),
+      );
+
+      const githubClient = getGithubGraphqlClient(token);
+      // get user data from github
+      const getGithubUserDetails = githubClient
+        .request<getCurrentUserGithubDetailsResponse>(GET_VIEWER_GITHUB_DETAILS)
+        .then((r) => setSessionGithubDetails(r.viewer));
+
+      // update the store as we get responses
+      return merge(getCurrentUserData, getGithubUserDetails);
     }),
   );
-};
 
 export const logOutEpic: Epic = (action$) =>
   action$.pipe(

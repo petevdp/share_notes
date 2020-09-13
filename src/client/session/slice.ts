@@ -2,7 +2,7 @@ import { createSlice, createAction } from '@reduxjs/toolkit';
 import {
   sessionSliceState,
   setSessionToken,
-  setUserData,
+  setCurrentUserData,
   setSessionGithubDetails,
   logOut,
   clearSessionData,
@@ -17,7 +17,7 @@ export const sessionSlice = createSlice({
   extraReducers: (builder) =>
     builder
       .addCase(setSessionToken, (state, action) => ({ ...state, token: action.payload }))
-      .addCase(setUserData, (state, action) => ({ ...state, user: action.payload }))
+      .addCase(setCurrentUserData, (state, action) => ({ ...state, user: action.payload }))
       .addCase(setSessionGithubDetails, (state, action) => ({ ...state, githubUserDetails: action.payload }))
       .addCase(clearSessionData, () => ({})),
 });

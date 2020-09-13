@@ -1,10 +1,13 @@
 import { createAction } from '@reduxjs/toolkit';
-import { getCurrentUserResult } from 'Client/queries';
-import { ApolloClient, NormalizedCacheObject } from '@apollo/client';
 
 export interface currentUser {
   githubLogin: string;
   id: string;
+  ownedRooms: {
+    id: string;
+    name: string;
+    hashId: string;
+  }[];
 }
 
 export interface githubUserDetails {
@@ -16,14 +19,12 @@ export interface sessionSliceState {
   githubUserDetails?: githubUserDetails;
 }
 
-export const setSessionToken = createAction('setSessionToken', (token) => ({ payload: token }));
-export const setUserData = createAction('setUserData', (data: currentUser) => ({ payload: data }));
-export const fetchSessionGithubDetails = createAction(
-  'fetchCurrentUserDetails',
-  (apolloClient: ApolloClient<object>) => ({
-    payload: apolloClient,
-  }),
-);
+export const setSessionToken = createAction('setSessionToken', (token: string) => ({ payload: token }));
+
+export const setCurrentUserData = createAction('setUserData', (data: currentUser) => ({ payload: data }));
+export const fetchCurrentUserData = createAction('fetchCurrentUserData');
+
+export const fetchSessionGithubDetails = createAction('fetchSessionGithubDetails');
 export const setSessionGithubDetails = createAction('setSessionGithubDetails', (details: githubUserDetails) => ({
   payload: details,
 }));

@@ -7,6 +7,7 @@ import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
 
 import HtmlWebPackPlugin from 'html-webpack-plugin';
 import { Configuration } from 'webpack';
+import { API_URL } from '../dist/src/shared/environment';
 
 console.log(p);
 
@@ -83,7 +84,14 @@ const config: Configuration = {
 // the devServer Property appears to be missing on the Configuration typescript interface, so we have to define this separately
 const devServer = {
   contentBase: CLIENT_BUILD_PATH,
-  proxy: { '/api': `http://localhost:${API_PORT}` },
+  proxy: {
+    '/api': {
+      target: API_URL,
+      pathRewrite: { '^/api': '' },
+      secure: false,
+      changeOrigin: true,
+    },
+  },
   compress: true,
   hot: true,
   historyApiFallback: true,

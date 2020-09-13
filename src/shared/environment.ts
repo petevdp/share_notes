@@ -11,12 +11,12 @@ export const DEV_SERVER_PORT = 1234;
 export const API_PORT = 1236;
 
 export const API_URL = `http://localhost:${API_PORT}`;
-export const AUTH_REDIRECT_URL = `http://localhost:${API_PORT}/auth`;
+export const AUTH_REDIRECT_URL = `/auth`;
 
 // export const YJS_WEBSOCKET_URL_WS = `ws://localhost:1237`;
 export const YJS_WEBSOCKET_URL_WS = `ws://localhost:1236/socket`;
 
 export const YJS_ROOM = 'yjs-room';
-export const GRAPHQL_URL = `${API_URL}/graphql`;
+export const GRAPHQL_URL = `/api/graphql`;
 export const GITHUB_CLIENT_ID = 'f95d66e4ad46b486f7a0';
 export const SESSION_TOKEN_COOKIE_KEY = 'session-token';

@@ -97,6 +97,7 @@ if gist already created:
 
 - form/input validation
 - reduce bundle size
+- move @type packages to devDeps
 
 ## discovery
 

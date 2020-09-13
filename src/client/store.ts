@@ -1,8 +1,16 @@
 import { createEpicMiddleware, combineEpics } from 'redux-observable';
 import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import { sessionSlice } from './session/slice';
-import { fetchCurrentUserDetailsEpic, logOutEpic } from './session/epics';
+import { logOutEpic, fetchCurrentUserDataOnSetSessionTokenEpic, setSessionTokenEpic } from './session/epics';
 import { roomSlice } from './room/slice';
+import {
+  initRoomEpic,
+  switchCurrentFileEpic,
+  addNewFileEpic,
+  saveBackToGistEpic,
+  destroyRoomEpic,
+  createRoomEpic,
+} from './room/epics';
 
 const epicMiddleware = createEpicMiddleware();
 
@@ -18,6 +26,18 @@ export const store = configureStore({
   middleware: [epicMiddleware],
 });
 
-epicMiddleware.run(combineEpics(fetchCurrentUserDetailsEpic, logOutEpic));
+const epics = [
+  setSessionTokenEpic,
+  fetchCurrentUserDataOnSetSessionTokenEpic,
+  logOutEpic,
+  createRoomEpic,
+  initRoomEpic,
+  switchCurrentFileEpic,
+  addNewFileEpic,
+  saveBackToGistEpic,
+  destroyRoomEpic,
+];
+
+epicMiddleware.run(combineEpics(...epics));
 
 export type AppDispatch = typeof store.dispatch;

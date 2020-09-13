@@ -38,8 +38,6 @@ export const getAuthRouter = (tedisService: TedisService, userRepository: Reposi
   const authRouter = Router();
 
   authRouter.use(bodyParser.json({ type: 'application/*+json' }));
-  authRouter.use(cookieParser());
-
   authRouter.get('/redirect', async (req, res) => {
     const oathCode = req.query.code as string;
 
@@ -89,7 +87,7 @@ export const getAuthRouter = (tedisService: TedisService, userRepository: Reposi
   authRouter.get('/logout', (req, res) => {
     if (req.cookies(SESSION_TOKEN_COOKIE_KEY)) {
       tedisService.tedis.hdel(USER_ID_BY_SESSION_KEY, req.cookies(SESSION_TOKEN_COOKIE_KEY));
-      res.cookie(SESSION_TOKEN_COOKIE_KEY, undefined);
+      res.cookie(SESSION_TOKEN_COOKIE_KEY, '');
     }
     res.status(200);
   });

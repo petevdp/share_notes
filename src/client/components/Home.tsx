@@ -5,36 +5,26 @@ import { FormControl } from 'baseui/form-control';
 import { Button } from 'baseui/button';
 import { Input } from 'baseui/input';
 import { rootState } from 'Client/store';
-import { UserInput } from 'Shared/inputs/userInputs';
 import { CreateRoomInput } from 'Shared/inputs/roomInputs';
-import { USER_ROOMS, userRoomsResponse, CREATE_ROOM, createRoomResponse } from 'Client/queries';
-import { startCreatingRoom } from 'Client/room/types';
-import { useQuery, gql, useMutation } from '@apollo/client';
+import { createRoom } from 'Client/room/types';
 
 export function Home() {
   const history = useHistory();
   const [roomName, setRoomName] = useState('');
   const [gistName, setGistName] = useState('');
+  const roomSlice = useSelector((s: rootState) => s.room);
+  const ownedRooms = useSelector((s: rootState) => s.session.user?.ownedRooms);
   const dispatch = useDispatch();
-  const [createRoom, { error: createRoomError, error: createRoomLoading, data: createRoomData }] = useMutation<
-    createRoomResponse
-  >(CREATE_ROOM);
 
   useEffect(() => {
-    if (createRoomData) {
-      dispatch(startCreatingRoom());
-      history.push(`/rooms/${createRoomData.createRoom.hashId}`);
+    if (roomSlice.isCurrentUserCreatingRoom) {
+      history.push(`/rooms/${roomSlice.room.hashId}`);
     }
-  }, [createRoomData]);
-
-  const userInput: UserInput = { id: 1 };
-  const { loading, error, data } = useQuery<userRoomsResponse>(USER_ROOMS, {
-    variables: { data: userInput },
-  });
+  }, []);
 
   const roomElements =
-    data &&
-    data.user.ownedRooms.map((r) => (
+    ownedRooms &&
+    ownedRooms.map((r) => (
       <div key={r.id}>
         <Link to={`/rooms/${r.hashId}`}>
           id: {r.id} name: {r.name} hash: {r.hashId}
@@ -52,7 +42,7 @@ export function Home() {
             gistName: gistName || undefined,
             ownerId: 1,
           };
-          createRoom({ variables: { data: roomInput } });
+          dispatch(createRoom(roomInput));
         }}
       >
         <FormControl label={() => 'Room Name'}>
@@ -63,9 +53,7 @@ export function Home() {
         </FormControl>
         <Button type="submit">Create</Button>
       </form>
-      {loading && 'loading'}
-      {error && 'error'}
-      {data && roomElements}
+      {ownedRooms && roomElements}
     </>
   );
 }

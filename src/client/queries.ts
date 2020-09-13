@@ -1,9 +1,10 @@
-import { gql } from '@apollo/client';
+import { gql } from 'graphql-request';
 
 export const GET_ROOM = gql`
   query GetRoom($data: RoomInput!) {
     room(data: $data) {
       id
+      hashId
       name
       gistName
       owner {
@@ -17,6 +18,7 @@ export const GET_ROOM = gql`
 export interface getRoomResponse {
   room: {
     id: string;
+    hashid: string;
     name: string;
     gistName: string;
     owner: {
@@ -47,22 +49,29 @@ export interface userRoomsResponse {
 export const CREATE_ROOM = gql`
   mutation CreateRoom($data: CreateRoomInput!) {
     createRoom(data: $data) {
+      id
       hashId
+      name
+      gistName
+      owner {
+        id
+        githubLogin
+      }
     }
   }
 `;
-
-export interface createRoomResponse {
-  createRoom: {
-    hashId: string;
-  };
-}
+export type createRoomResponse = getRoomResponse;
 
 export const GET_CURRENT_USER = gql`
-  query getUser {
+  query getCurrentUser {
     currentUser {
       id
       githubLogin
+      ownedRooms {
+        id
+        name
+        hashId
+      }
     }
   }
 `;
@@ -71,6 +80,11 @@ export interface getCurrentUserResult {
   currentUser: {
     githubLogin: string;
     id: string;
+    ownedRooms: {
+      id: string;
+      name: string;
+      hashId: string;
+    }[];
   };
 }
 

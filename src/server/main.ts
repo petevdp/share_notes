@@ -16,6 +16,7 @@ import { RoomResolver } from './resolvers/roomResolver';
 import { createDatabaseConnection } from './db';
 import { setupWSConnection, docs, WSSharedDoc } from 'y-websocket/bin/utils';
 import { OrmManager } from 'typeorm-typedi-extensions';
+import cookieParser from 'cookie-parser';
 import { TedisService } from './services/tedisService';
 import { getAuthChecker } from './authChecker';
 import { User } from './models/user';
@@ -28,6 +29,7 @@ async function runServer() {
   // build graphql schema, create http server
   const httpServer = await (async () => {
     const app = express();
+    app.use(cookieParser());
     const tedisService = Container.get(TedisService);
     // const userRepository = Container.get()
     const schema = await buildSchema({
@@ -39,9 +41,8 @@ async function runServer() {
 
     const apolloServer = new ApolloServer({
       schema,
-      context: async ({ req, res }) => {
-        const token = req.get('Authorization');
-        return { githubSessionToken: token };
+      context: async ({ req }) => {
+        return { githubSessionToken: req.cookies['session-token'] };
       },
     });
 
