@@ -1,5 +1,13 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { setIsCreatingRoom, roomSliceState, setFilenames, setCurrentFile, roomCreated, room } from './types';
+import {
+  setIsCreatingRoom,
+  roomSliceState,
+  setFilenames,
+  setCurrentFile,
+  roomCreated,
+  room,
+  roomInitialized,
+} from './types';
 
 export const roomSlice = createSlice({
   name: 'room',
@@ -27,7 +35,9 @@ export const roomSlice = createSlice({
       },
     }));
 
-    builder.addCase(roomCreated, (s, { payload: roomData }) => ({
+    builder.addCase(roomInitialized, (s) => ({ ...s, isCurrentUserCreatingRoom: false }));
+
+    builder.addCase(roomCreated, (s, { payload: { createRoom: roomData } }) => ({
       ...s,
       isCurrentUserCreatingRoom: true,
       room: {

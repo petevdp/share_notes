@@ -12,16 +12,19 @@ export function Home() {
   const history = useHistory();
   const [roomName, setRoomName] = useState('');
   const [gistName, setGistName] = useState('');
-  const roomSlice = useSelector((s: rootState) => s.room);
-  const ownedRooms = useSelector((s: rootState) => s.session.user?.ownedRooms);
+  const { ownedRooms, isCurrentUserCreatingRoom, roomHashId } = useSelector((s: rootState) => ({
+    ownedRooms: s.session.user?.ownedRooms,
+    isCurrentUserCreatingRoom: s.room.isCurrentUserCreatingRoom,
+    roomHashId: s.room.room?.hashId,
+  }));
   const dispatch = useDispatch();
 
   useEffect(() => {
-    if (roomSlice.isCurrentUserCreatingRoom && roomSlice.room?.hashId) {
+    if (isCurrentUserCreatingRoom && roomHashId) {
       console.log('room');
-      history.push(`/rooms/${roomSlice.room.hashId}`);
+      history.push(`/rooms/${roomHashId}`);
     }
-  }, [roomSlice.isCurrentUserCreatingRoom, roomSlice.room?.hashId]);
+  }, [isCurrentUserCreatingRoom, roomHashId]);
 
   const roomElements =
     ownedRooms &&

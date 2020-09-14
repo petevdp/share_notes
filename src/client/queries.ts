@@ -61,13 +61,15 @@ export const CREATE_ROOM = gql`
   }
 `;
 export type createRoomResponse = {
-  id: string;
-  hashId: string;
-  name: string;
-  gistName: string;
-  owner: {
+  createRoom: {
     id: string;
-    githubLogin: string;
+    hashId: string;
+    name: string;
+    gistName: string;
+    owner: {
+      id: string;
+      githubLogin: string;
+    };
   };
 };
 
