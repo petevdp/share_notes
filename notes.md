@@ -56,7 +56,6 @@ if gist already created:
 - styling pass - room
 
   - room styling mockup - DONE
-  - refactor room realtimeeditor functionality to hook
   - implement
 
 - generalize conditions we get gist to when there are no documents for the room in yjs
@@ -90,8 +89,9 @@ if gist already created:
   - prove provider swap can be done cleanly DONE
   - get good event listener for room additions/changes DONE
   - integrate multi-editors with loading gist data for new rooms DONE
-- try refactoring to use observable DONE, never again
+- try refactoring to use observable DONE
 - use github username in profile DONE
+- remove apollo client DONE
 
 ## tech debt
 

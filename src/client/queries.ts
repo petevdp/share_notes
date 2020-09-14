@@ -60,7 +60,16 @@ export const CREATE_ROOM = gql`
     }
   }
 `;
-export type createRoomResponse = getRoomResponse;
+export type createRoomResponse = {
+  id: string;
+  hashId: string;
+  name: string;
+  gistName: string;
+  owner: {
+    id: string;
+    githubLogin: string;
+  };
+};
 
 export const GET_CURRENT_USER = gql`
   query getCurrentUser {

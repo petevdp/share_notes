@@ -32,6 +32,7 @@ export const createRoomEpic: Epic = (action$) =>
     filter(createRoom.match),
     concatMap(async ({ payload: input }) => {
       const res = await gqlRequest<createRoomResponse>(GRAPHQL_URL, CREATE_ROOM, { data: input });
+      console.log('res: ', res);
       return roomCreated(res);
     }),
   );
@@ -47,6 +48,10 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>) 
         },
         rootState,
       ]) => {
+        const { token: sessionToken } = rootState.session;
+        if (!sessionToken) {
+          throw 'session token not set when initing room, need to handle this case still';
+        }
         const ydoc = new Y.Doc();
         const documents: Y.Map<Y.Text> = ydoc.getMap(`room/${roomHashId}/documents`);
 
@@ -76,7 +81,7 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>) 
         });
         const roomDataPromise = gqlRequest<getRoomResponse>(GRAPHQL_URL, GET_ROOM, { data: { hashId: roomHashId } });
 
-        const githubClient = getGithubGraphqlClient(rootState.session.token);
+        const githubClient = getGithubGraphqlClient(sessionToken);
         const gistDataPromise = roomDataPromise.then((r) => {
           return githubClient.request<getGistResponse>(GET_GIST, {
             name: r.room.gistName,
@@ -87,7 +92,12 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>) 
         const isCreatingRoom = false;
         if (isCreatingRoom) {
           Promise.all([gistDataPromise, syncPromise]).then(([gistData]) => {
-            const { files } = gistData.user.gist;
+            const { gist } = gistData.user;
+            if (!gist) {
+              throw 'handle no gist case please';
+            }
+
+            const { files } = gist;
             for (let file of files) {
               documents.set(file.name, new Y.Text(file.text));
             }
@@ -138,12 +148,13 @@ export const saveBackToGistEpic: Epic = (action$, state$: StateObservable<rootSt
     filter(saveBackToGist.match),
     withLatestFrom(state$, action$.pipe(filter(roomInitialized.match))),
     concatMap(async ([, rootState, { payload: roomManager }]) => {
-      const roomData = rootState.room.room;
+      const gist = rootState.room?.room?.gist;
       const sessionData = rootState.session;
-      if (!roomData.gist) {
+      const { token } = sessionData;
+      if (!gist) {
         throw 'no data from github retreived';
       }
-      if (!sessionData.token) {
+      if (!token) {
         throw 'no token set';
       }
 
@@ -158,7 +169,7 @@ export const saveBackToGistEpic: Epic = (action$, state$: StateObservable<rootSt
       }, {});
 
       await octokitRequest('PATCH /gists/{id}', {
-        id: roomData.gist.id,
+        id: gist.id,
         files: entriesForGithub,
         headers: {
           Authorization: `bearer ${sessionData.token}`,

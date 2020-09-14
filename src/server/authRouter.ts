@@ -44,7 +44,7 @@ export const getAuthRouter = (tedisService: TedisService, userRepository: Reposi
     const params: github0AuthIdentityParams = {
       code: oathCode,
       client_id: GITHUB_CLIENT_ID,
-      client_secret: process.env.GITHUB_CLIENT_SECRET,
+      client_secret: process.env.GITHUB_CLIENT_SECRET as string,
     };
 
     const githubRes = await axios.get<string>(GITHUB_0AUTH_ACCESS_TOKEN_URL, { params });

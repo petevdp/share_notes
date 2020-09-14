@@ -2,6 +2,7 @@
   "compilerOptions": {
     "esModuleInterop": true,
     "experimentalDecorators": true,
+    "strictNullChecks": true,
     "moduleResolution": "node",
     "sourceMap": true,
     "noImplicitAny": true,

@@ -21,17 +21,19 @@ export class ClientSideRoomService {
   async findRoom(input: RoomInput) {
     let { hashId, ...rest } = input;
     let roomPartial: Partial<Room> = rest;
-    if (input.hashId) {
+    if (input.id) {
+      roomPartial = { id: input.id };
+    } else if (input.hashId) {
       const [id] = (this.hashIdService.hashIds.decode(input.hashId) as unknown) as number[];
-      if (!roomPartial.id) {
+      if (id) {
         roomPartial = {
           ...roomPartial,
-          id: (id as undefined) as number,
+          id,
         };
       }
     }
     const room = await this.roomRepository.findOne(roomPartial);
-    return this.getClientSideRoom(room);
+    return room && this.getClientSideRoom(room);
   }
 
   getClientSideRooms(rooms: Room[]) {

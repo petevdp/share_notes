@@ -80,13 +80,15 @@ export function GlobalHeader() {
   const githubLogin = session.user?.githubLogin;
   const avatarUrl = session.githubUserDetails?.avatarUrl;
 
+  const { user, githubUserDetails } = session;
+
   const { loading: navPropsLoading, data: navProps } = React.useMemo(() => {
     let data: null | avatarNavProps;
     let loading = false;
     if (githubLogin && avatarUrl) {
       data = {
-        userImgUrl: session.githubUserDetails.avatarUrl,
-        username: session.user.githubLogin,
+        userImgUrl: avatarUrl,
+        username: githubLogin,
         userNav: USER_NAV,
       };
     } else {

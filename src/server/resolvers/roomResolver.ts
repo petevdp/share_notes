@@ -28,9 +28,9 @@ export class RoomResolver {
   }
 
   @FieldResolver(() => User)
-  async owner(@Root() room: ClientSideRoom): Promise<User> {
-    const owner = await this.roomRepository.findOne({ id: room.id }, { relations: ['owner'] }).then((r) => r.owner);
-    return owner;
+  async owner(@Root() room: ClientSideRoom): Promise<User | null> {
+    const owner = await this.roomRepository.findOne({ id: room.id }, { relations: ['owner'] }).then((r) => r?.owner);
+    return owner || null;
   }
 
   @Mutation(() => ClientSideRoom)

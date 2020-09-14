@@ -7,7 +7,7 @@ import { UserInput } from 'Shared/inputs/userInputs';
 import { Room, ClientSideRoom } from 'Server/models/room';
 import { HashIdService } from 'Server/services/hashIdService';
 import { TedisService, USER_ID_BY_SESSION_KEY } from 'Server/services/tedisService';
-import { Context } from 'Server/context';
+import { AuthorizedContext } from 'Server/context';
 
 @Service()
 @Resolver(() => User)
@@ -24,26 +24,26 @@ export class UserResolver {
 
   @Authorized()
   @Query(() => User)
-  async currentUser(@Ctx() context: Context): Promise<User> {
+  async currentUser(@Ctx() context: AuthorizedContext): Promise<User | null> {
     const userIdStr = await this.tedisService.tedis.hget(USER_ID_BY_SESSION_KEY, context.githubSessionToken);
     if (userIdStr === undefined) {
       throw "got through authorization but session wasn't set for currentUser query";
     }
-    return this.userRepository.findOne({ id: Number(userIdStr) });
+    return (await this.userRepository.findOne({ id: Number(userIdStr) })) || null;
   }
 
   @Query(() => User)
-  async user(@Arg('data') data: UserInput): Promise<User> {
-    return this.userRepository.findOne({ id: data.id });
+  async user(@Arg('data') data: UserInput): Promise<User | null> {
+    return (await this.userRepository.findOne({ id: data.id })) || null;
   }
 
   @FieldResolver(() => [ClientSideRoom])
-  async ownedRooms(@Root() user: User) {
+  async ownedRooms(@Root() user: User): Promise<ClientSideRoom[] | null> {
     const rooms = await this.userRepository
       .findOne({ id: user.id }, { relations: ['ownedRooms'] })
-      .then((u) => u.ownedRooms);
+      .then((u) => u?.ownedRooms);
 
-    return rooms.map((r) => this.getClientSideRoom(r));
+    return rooms?.map((r) => this.getClientSideRoom(r)) || null;
   }
 
   private getClientSideRoom(room: Room) {

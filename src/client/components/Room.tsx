@@ -1,44 +1,143 @@
 import { useParams } from 'react-router-dom';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState, MutableRefObject } from 'react';
 // import { CodemirrorBinding } from 'y-codemirror';
 import { useSelector, useDispatch } from 'react-redux';
 import { rootState } from 'Client/store';
-import { useStyletron } from 'styletron-react';
+import { useStyletron, styled } from 'styletron-react';
 import { Button } from 'baseui/button';
 import { Override } from 'baseui/overrides';
-import { Tabs, Tab } from 'baseui/tabs-motion';
+import { Tabs, Tab, FILL, TabsOverrides, StyledRoot } from 'baseui/tabs-motion';
 import { initRoom, destroyRoom, switchCurrentFile, addNewFile, saveBackToGist } from 'Client/room/types';
+import { Plus, TriangleDown, Delete } from 'baseui/icon';
+import { Popover, StatefulPopover } from 'baseui/popover';
+import { StatefulMenu, ItemT } from 'baseui/menu';
+
+const ControlPanel = styled('div', { display: 'flex', justifyContent: 'space-between' });
+const RightButtonGroup = styled('span', { display: 'flex', justifyContent: 'flex-end', alignItems: 'center' });
+
+const circle = (
+  <svg width="4" height="4" viewBox="0 0 4 4" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="2" cy="2" r="2" fill="#C4C4C4" />
+  </svg>
+);
 
 export function Room() {
   const [css] = useStyletron();
   const { roomHashId } = useParams();
+  const [isActionDropdownOpen, setIsActionDropdownOpen] = useState(false);
   const dispatch = useDispatch();
   const roomData = useSelector((s: rootState) => s.room.room);
   const editorContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    dispatch(initRoom(roomHashId, editorContainerRef));
-    return () => dispatch(destroyRoom());
-  }, []);
+    dispatch(initRoom(roomHashId, editorContainerRef as MutableRefObject<HTMLElement>));
+    return () => {
+      dispatch(destroyRoom());
+    };
+  }, [editorContainerRef.current]);
+
+  const tabs = roomData?.filenames.map((n) => (
+    <Tab
+      overrides={{
+        Tab: {
+          style: {
+            width: '110px',
+            display: 'flex',
+            padding: '5px',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            alignContent: 'center',
+          },
+        },
+      }}
+      key={n}
+      title={
+        <>
+          {circle}
+          {n}
+          <Delete
+            overrides={{
+              Svg: {
+                style: {
+                  ':hover': {
+                    backgroundColor: '#c4c4c4',
+                    color: '#000000',
+                  },
+                  backgroundColor: 'transparent',
+                  color: '#c4c4c4',
+                  alignSelf: 'start',
+                  justifySelf: 'flex-end',
+                  padding: '.2px',
+                  borderRadius: '50%',
+                },
+              },
+            }}
+          />
+        </>
+      }
+    />
+  ));
+
+  // obfuscate key for addNewFile with the room hash to avoid potential duplicate keys
+  const addNewFileKey = `${roomHashId}-add-new-file`;
+  const actionItems: ItemT[] = [
+    { label: 'save back to gist', onClick: () => alert('save'), key: 'saveBackToGist' },
+    { label: 'action2' },
+  ];
+
+  if (!roomData) {
+    return <span>loading...</span>;
+  }
 
   return (
     <span>
-      <div>
+      <ControlPanel>
         <Tabs
-          onChange={(e) =>
-            e.activeKey !== roomData.currentFilename && dispatch(switchCurrentFile(e.activeKey.toString()))
-          }
+          overrides={{
+            Root: {
+              style: {
+                display: 'inline-block',
+              },
+            },
+          }}
+          onChange={(e) => {
+            if (e.activeKey === addNewFileKey) {
+              dispatch(addNewFile());
+            } else if (e.activeKey !== roomData.currentFilename) {
+              dispatch(switchCurrentFile(e.activeKey.toString()));
+            }
+          }}
           activeKey={roomData?.currentFilename}
         >
-          {roomData?.filenames.map((n) => (
-            <Tab key={n} title={n} />
-          ))}
+          {tabs}
+          <Tab key={addNewFileKey} title={<Plus />} />
         </Tabs>
-        <Button kind={'secondary'} onClick={() => dispatch(addNewFile())}>
-          Add
-        </Button>
-        <Button onClick={() => saveBackToGist()}>Save back to Gist</Button>
-      </div>
+        <RightButtonGroup>
+          <StatefulPopover
+            placement={'bottomLeft'}
+            content={
+              <StatefulMenu
+                onItemSelect={(i) => {
+                  switch (i.item.key) {
+                    case 'saveBackToGist':
+                      dispatch(saveBackToGist());
+                  }
+                }}
+                items={actionItems}
+              />
+            }
+          >
+            <Button
+              overrides={{ Root: { style: { height: '40px' } } }}
+              kind={'secondary'}
+              shape={'pill'}
+              startEnhancer={() => <TriangleDown size={24} />}
+            >
+              Actions
+            </Button>
+          </StatefulPopover>
+        </RightButtonGroup>
+      </ControlPanel>
       <div className={css({ height: '500px' })} id="monaco-editor-container" ref={editorContainerRef} />;
     </span>
   );

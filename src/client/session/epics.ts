@@ -17,7 +17,7 @@ export const setSessionTokenEpic: Epic = (action$, state$) =>
     // on store init, if we haven't yet set the session token(might have persisted state), do so
     first(),
     filter((s) => !s.session.token && !!getCookie(SESSION_TOKEN_COOKIE_KEY)),
-    map(() => setSessionToken(getCookie(SESSION_TOKEN_COOKIE_KEY))),
+    map(() => setSessionToken(getCookie(SESSION_TOKEN_COOKIE_KEY) as string)),
   );
 
 /**

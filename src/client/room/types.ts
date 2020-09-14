@@ -4,26 +4,28 @@ import { RoomManager } from './epics';
 import { getGistResponse, createRoomResponse } from 'Client/queries';
 import { CreateRoomInput } from 'Shared/inputs/roomInputs';
 
-export type roomSliceState = {
-  isCurrentUserCreatingRoom: boolean;
-  room?: {
+export interface room {
+  id: string;
+  hashId: string;
+  name: string;
+  filenames: string[];
+  currentFilename?: string;
+  owner: {
     id: string;
-    hashId: string;
-    name: string;
-    filenames: string[];
-    currentFilename?: string;
-    owner: {
-      id: string;
-      githubLogin: string;
-    };
-    gist?: {
-      id: string;
-      files: {
-        name: string;
-        text: string;
-      };
+    githubLogin: string;
+  };
+  gist?: {
+    id: string;
+    files: {
+      name: string;
+      text: string;
     };
   };
+}
+
+export type roomSliceState = {
+  isCurrentUserCreatingRoom: boolean;
+  room?: room;
 };
 
 export const createRoom = createAction('createRoom', (input: CreateRoomInput) => ({ payload: input }));
@@ -42,7 +44,7 @@ export const roomInitialized = createAction('roomInitialized', (roomManager: Roo
 export const destroyRoom = createAction('destroyRoom');
 export const switchCurrentFile = createAction('switchActiveFile', (filename: string) => ({ payload: filename }));
 export const addNewFile = createAction('addNewFile', (filename?: string) => ({ payload: filename }));
-export const setCurrentFile = createAction('setActiveFile', (filename: string) => ({ payload: filename }));
+export const setCurrentFile = createAction('setCurrentFile', (filename: string) => ({ payload: filename }));
 export const setFilenames = createAction('setFilenames', (filenames: string[]) => ({ payload: filenames }));
 export const saveBackToGist = createAction('saveBackToGist');
 export const gistSaved = createAction('gistSaved');

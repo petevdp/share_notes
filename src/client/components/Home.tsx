@@ -17,10 +17,11 @@ export function Home() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    if (roomSlice.isCurrentUserCreatingRoom) {
+    if (roomSlice.isCurrentUserCreatingRoom && roomSlice.room?.hashId) {
+      console.log('room');
       history.push(`/rooms/${roomSlice.room.hashId}`);
     }
-  }, []);
+  }, [roomSlice.isCurrentUserCreatingRoom, roomSlice.room?.hashId]);
 
   const roomElements =
     ownedRooms &&
@@ -39,7 +40,7 @@ export function Home() {
           e.preventDefault();
           const roomInput: CreateRoomInput = {
             name: roomName,
-            gistName: gistName || undefined,
+            gistName: gistName,
             ownerId: 1,
           };
           dispatch(createRoom(roomInput));
