@@ -13,6 +13,7 @@ import {
   roomCreated,
   gistDetailKeys,
   gistDetails,
+  roomInitialized,
 } from './types';
 import { Action } from 'redux';
 import * as Y from 'yjs';
@@ -129,9 +130,8 @@ export const initRoomEpic: Epic = (
           });
         }
 
-        const actionStream: (Observable<Action> | Promise<Action>)[] = [setFilename$];
         roomManager$$.next(manager);
-        return merge(setFilename$);
+        return merge(setFilename$, of(roomInitialized()));
       },
     ),
   );

@@ -1,9 +1,7 @@
 import { createAction } from '@reduxjs/toolkit';
-import { Subject } from 'rxjs';
 import { RoomManager } from './epics';
-import { getGistResponse, createRoomResponse, getRoomResponse } from 'Client/queries';
+import { createRoomResponse, getRoomResponse } from 'Client/queries';
 import { CreateRoomInput } from 'Shared/inputs/roomInputs';
-import { keys } from 'ts-transformer-keys';
 import * as Y from 'yjs';
 
 export interface gistDetails {
@@ -56,9 +54,7 @@ export const initRoom = createAction(
     payload: { roomHashId, editorContainerRef, test },
   }),
 );
-export const roomInitialized = createAction('roomInitialized', (obj: { roomManager: RoomManager }) => ({
-  payload: obj,
-}));
+export const roomInitialized = createAction('roomInitialized');
 
 export const destroyRoom = createAction('destroyRoom');
 export const switchCurrentFile = createAction('switchActiveFile', (filename: string) => ({ payload: filename }));

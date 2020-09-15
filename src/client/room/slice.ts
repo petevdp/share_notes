@@ -47,5 +47,7 @@ export const roomSlice = createSlice({
         filenames: [],
       },
     }));
+
+    builder.addCase(roomInitialized, (s) => ({ ...s, isCurrentUserCreatingRoom: false }));
   },
 });

@@ -90,9 +90,22 @@ export function Room() {
     { label: 'action2' },
   ];
 
-  // if (!roomData) {
-  //   return <span>loading...</span>;
-  // }
+  const editorContainer = (
+    <div
+      className={css({ height: '500px', display: roomData ? 'block' : 'hidden' })}
+      id="monaco-editor-container"
+      ref={editorContainerRef}
+    />
+  );
+
+  if (!roomData) {
+    return (
+      <>
+        <span>loading...</span>
+        {editorContainer}
+      </>
+    );
+  }
 
   return (
     <span>
@@ -146,7 +159,7 @@ export function Room() {
           </StatefulPopover>
         </RightButtonGroup>
       </ControlPanel>
-      <div className={css({ height: '500px' })} id="monaco-editor-container" ref={editorContainerRef} />;
+      {editorContainer}
     </span>
   );
 }
