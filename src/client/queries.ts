@@ -120,6 +120,9 @@ export const GET_GIST = gql`
       name
       gist(name: $name) {
         id
+        name
+        description
+        url
         files {
           name
           text
@@ -128,16 +131,33 @@ export const GET_GIST = gql`
     }
   }
 `;
+
 export interface getGistResponse {
   user: {
     id: string;
     name: string;
     gist?: {
       id: string;
+      name: string;
+      description: string;
+      url: string;
       files: {
         name: string;
         text: string;
       }[];
+    };
+  };
+}
+
+export interface getGistRestResponse {
+  id: string;
+  name: string;
+  description: string;
+  url: string;
+  files: {
+    [key: string]: {
+      filename: string;
+      text: string;
     };
   };
 }

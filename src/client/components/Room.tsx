@@ -21,20 +21,25 @@ const circle = (
   </svg>
 );
 
+class Test {
+  testMethod() {}
+}
+
 export function Room() {
   const [css] = useStyletron();
   const { roomHashId } = useParams();
   const [isActionDropdownOpen, setIsActionDropdownOpen] = useState(false);
   const dispatch = useDispatch();
   const roomData = useSelector((s: rootState) => s.room.room);
-  const editorContainerRef = useRef<HTMLDivElement>(null);
+  const editorContainerRef = useRef<HTMLDivElement | null>(null);
+  const isLoading = !roomData;
 
   useEffect(() => {
-    dispatch(initRoom(roomHashId, editorContainerRef as MutableRefObject<HTMLElement>));
+    dispatch(initRoom(roomHashId, editorContainerRef as MutableRefObject<HTMLElement>, new Test()));
     return () => {
       dispatch(destroyRoom());
     };
-  }, [editorContainerRef.current]);
+  }, []);
 
   const tabs = roomData?.filenames.map((n) => (
     <Tab
@@ -43,7 +48,7 @@ export function Room() {
           style: {
             width: '110px',
             display: 'flex',
-            padding: '5px',
+            // padding: '5px',
             justifyContent: 'space-between',
             alignItems: 'center',
             alignContent: 'center',
@@ -85,9 +90,9 @@ export function Room() {
     { label: 'action2' },
   ];
 
-  if (!roomData) {
-    return <span>loading...</span>;
-  }
+  // if (!roomData) {
+  //   return <span>loading...</span>;
+  // }
 
   return (
     <span>
@@ -101,6 +106,9 @@ export function Room() {
             },
           }}
           onChange={(e) => {
+            if (!roomData) {
+              throw 'room data not set yet';
+            }
             if (e.activeKey === addNewFileKey) {
               dispatch(addNewFile());
             } else if (e.activeKey !== roomData.currentFilename) {

@@ -29,10 +29,12 @@ export function emitSliceWhenChanged<T, S>(selector: (rootState: T) => S) {
   };
 }
 
-export function getGithubGraphqlClient(token: string) {
-  return new GraphQLClient(GITHUB_GRAPHQL_API_URL, {
-    headers: {
-      Authorization: `bearer ${token}`,
-    },
-  });
+export function getGithubGraphqlClient(token?: string) {
+  const client = new GraphQLClient(GITHUB_GRAPHQL_API_URL);
+
+  if (token) {
+    client.setHeader('Authorization', `bearer ${token}`);
+  }
+
+  return client;
 }

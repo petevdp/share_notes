@@ -1,8 +1,25 @@
 import { createAction } from '@reduxjs/toolkit';
 import { Subject } from 'rxjs';
 import { RoomManager } from './epics';
-import { getGistResponse, createRoomResponse } from 'Client/queries';
+import { getGistResponse, createRoomResponse, getRoomResponse } from 'Client/queries';
 import { CreateRoomInput } from 'Shared/inputs/roomInputs';
+import { keys } from 'ts-transformer-keys';
+import * as Y from 'yjs';
+
+export interface gistDetails {
+  description: string;
+  // uniquely identifies gist
+  name: string;
+  url: string;
+}
+
+export type gistDetailKeys = 'description' | 'name' | 'url';
+export const gistDetailKeys: gistDetailKeys[] = ['description', 'name', 'url'];
+
+export interface roomRealTimeData {
+  documents: Y.Map<Y.Text>;
+  metadata: Y.Map<string>;
+}
 
 export interface room {
   id: string;
@@ -16,6 +33,7 @@ export interface room {
   };
   gist?: {
     id: string;
+    details: gistDetails;
     files: {
       name: string;
       text: string;
@@ -30,15 +48,16 @@ export type roomSliceState = {
 
 export const createRoom = createAction('createRoom', (input: CreateRoomInput) => ({ payload: input }));
 export const roomCreated = createAction('roomCreated', (data: createRoomResponse) => ({ payload: data }));
+export const setRoomData = createAction('setRoomData', (data: getRoomResponse) => ({ payload: data }));
 export const setIsCreatingRoom = createAction('setIsCreatingFroom');
 export const initRoom = createAction(
   'initRoom',
-  (roomHashId: string, editorContainerRef: React.MutableRefObject<HTMLElement>) => ({
-    payload: { roomHashId, editorContainerRef },
+  (roomHashId: string, editorContainerRef: React.MutableRefObject<HTMLElement>, test: any) => ({
+    payload: { roomHashId, editorContainerRef, test },
   }),
 );
-export const roomInitialized = createAction('roomInitialized', (roomManager: RoomManager) => ({
-  payload: roomManager,
+export const roomInitialized = createAction('roomInitialized', (obj: { roomManager: RoomManager }) => ({
+  payload: obj,
 }));
 
 export const destroyRoom = createAction('destroyRoom');

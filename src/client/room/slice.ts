@@ -7,6 +7,7 @@ import {
   roomCreated,
   room,
   roomInitialized,
+  initRoom,
 } from './types';
 
 export const roomSlice = createSlice({
@@ -34,8 +35,6 @@ export const roomSlice = createSlice({
         currentFilename: filename,
       },
     }));
-
-    builder.addCase(roomInitialized, (s) => ({ ...s, isCurrentUserCreatingRoom: false }));
 
     builder.addCase(roomCreated, (s, { payload: { createRoom: roomData } }) => ({
       ...s,

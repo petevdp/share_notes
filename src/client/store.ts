@@ -10,9 +10,16 @@ import {
   saveBackToGistEpic,
   destroyRoomEpic,
   createRoomEpic,
+  RoomManager,
 } from './room/epics';
+import { RoomService } from './services/roomService';
+import { Subject } from 'rxjs';
 
-const epicMiddleware = createEpicMiddleware();
+export interface epicDependencies {
+  roomManager$$: Subject<RoomManager>;
+}
+
+const epicMiddleware = createEpicMiddleware({ dependencies: { roomManager$$: new Subject<RoomManager>() } });
 
 const rootReducer = combineReducers({
   session: sessionSlice.reducer,
