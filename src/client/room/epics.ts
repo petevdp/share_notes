@@ -14,6 +14,8 @@ import {
   gistDetailKeys,
   gistDetails,
   roomInitialized,
+  setRoomData,
+  setRoomGistDetails,
 } from './types';
 import { Action } from 'redux';
 import * as Y from 'yjs';
@@ -93,7 +95,6 @@ export const initRoomEpic: Epic = (
         });
         const roomDataPromise = gqlRequest<getRoomResponse>(GRAPHQL_URL, GET_ROOM, { data: { hashId: roomHashId } });
 
-        const githubClient = getGithubGraphqlClient();
         const gistDataPromise = roomDataPromise.then((r) => {
           return octokitRequest('GET /gists/{gist_id}', {
             gist_id: r.room.gistName,
@@ -131,7 +132,12 @@ export const initRoomEpic: Epic = (
         }
 
         roomManager$$.next(manager);
-        return merge(setFilename$, of(roomInitialized()));
+        return merge(
+          setFilename$,
+          of(roomInitialized()),
+          roomDataPromise.then(setRoomData),
+          gistDataPromise.then(setRoomGistDetails),
+        );
       },
     ),
   );

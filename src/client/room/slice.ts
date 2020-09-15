@@ -8,6 +8,7 @@ import {
   room,
   roomInitialized,
   initRoom,
+  setRoomGistDetails,
 } from './types';
 
 export const roomSlice = createSlice({
@@ -27,6 +28,11 @@ export const roomSlice = createSlice({
         },
       }),
     );
+
+    builder.addCase(setRoomGistDetails, (s, { payload: details }) => ({
+      ...s,
+      gist: details,
+    }));
 
     builder.addCase(setCurrentFile, (s, { payload: filename }) => ({
       ...s,

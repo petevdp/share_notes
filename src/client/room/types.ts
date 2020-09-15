@@ -1,6 +1,6 @@
 import { createAction } from '@reduxjs/toolkit';
 import { RoomManager } from './epics';
-import { createRoomResponse, getRoomResponse } from 'Client/queries';
+import { createRoomResponse, getRoomResponse, getGistRestResponse } from 'Client/queries';
 import { CreateRoomInput } from 'Shared/inputs/roomInputs';
 import * as Y from 'yjs';
 
@@ -32,10 +32,7 @@ export interface room {
   gist?: {
     id: string;
     details: gistDetails;
-    files: {
-      name: string;
-      text: string;
-    };
+    files: getGistRestResponse;
   };
 }
 
@@ -47,6 +44,9 @@ export type roomSliceState = {
 export const createRoom = createAction('createRoom', (input: CreateRoomInput) => ({ payload: input }));
 export const roomCreated = createAction('roomCreated', (data: createRoomResponse) => ({ payload: data }));
 export const setRoomData = createAction('setRoomData', (data: getRoomResponse) => ({ payload: data }));
+export const setRoomGistDetails = createAction('setRoomGistDetails', (data: getGistRestResponse) => ({
+  payload: data,
+}));
 export const setIsCreatingRoom = createAction('setIsCreatingFroom');
 export const initRoom = createAction(
   'initRoom',
