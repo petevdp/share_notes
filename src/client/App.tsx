@@ -11,7 +11,7 @@ export function App(): ReactElement {
 
   return (
     <Router>
-      <div className="container">
+      <div>
         <GlobalHeader />
         <div className={css({ marginTop: '72px' })}>
           <Switch>

@@ -270,7 +270,13 @@ export class RoomManager {
     };
 
     this.provider = new WebsocketProvider(YJS_WEBSOCKET_URL_WS, YJS_ROOM, this.ydoc);
-    this.editor = monacoEditor.create(editorContainerElement, { readOnly: true, minimap: { enabled: false } });
+    this.editor = monacoEditor.create(editorContainerElement, {
+      readOnly: true,
+      minimap: { enabled: false },
+      lineNumbers: 'off',
+      automaticLayout: true,
+      // scrollbar: { vertical: 'hidden' },
+    });
   }
 
   switchCurrentFile(tabId: string | number) {
@@ -292,14 +298,19 @@ export class RoomManager {
     const ids = getKeysForMap(this.yData.fileDetailsState);
     const fileDetails = new Y.Map();
     const text = new Y.Text();
-    const tabId = ids.length.toString();
+    const highestId = getKeysForMap(this.yData.fileDetailsState).reduce(
+      (max, id) => (Number(id) > max ? Number(id) : max),
+      0,
+    );
+
+    const tabId = (Number(highestId) + 1).toString();
     fileDetails.set('tabId', tabId);
     fileDetails.set('deleted', false);
     if (detailsInput) {
       text.insert(0, detailsInput.text);
       this.yData.fileContents.set(tabId, new Y.Text());
     } else {
-      fileDetails.set('filename', `new-file-${getKeysForMap(this.yData.fileDetailsState).length}`);
+      fileDetails.set('filename', `new-file-${tabId}`);
     }
     this.yData.fileDetailsState.set(tabId, fileDetails);
     this.yData.fileContents.set(tabId, text);

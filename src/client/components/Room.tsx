@@ -20,7 +20,7 @@ import { Plus, TriangleDown, Delete } from 'baseui/icon';
 import { Popover, StatefulPopover } from 'baseui/popover';
 import { StatefulMenu, ItemT } from 'baseui/menu';
 
-const ControlPanel = styled('div', { display: 'flex', justifyContent: 'space-between' });
+const ControlPanel = styled('div', { display: 'flex', justifyContent: 'space-between', padding: '.5em' });
 const RightButtonGroup = styled('span', { display: 'flex', justifyContent: 'flex-end', alignItems: 'center' });
 
 const circle = (
@@ -59,7 +59,8 @@ export function Room() {
         overrides={{
           Tab: {
             style: {
-              width: '110px',
+              width: 'min-content',
+              whiteSpace: 'nowrap',
               display: 'flex',
               // padding: '5px',
               paddingTop: '5px',
@@ -113,20 +114,13 @@ export function Room() {
     { label: 'action2' },
   ];
 
-  const editorContainer = (
-    <div
-      className={css({ height: '500px', display: currentRoom ? 'block' : 'hidden' })}
-      id="monaco-editor-container"
-      ref={editorContainerRef}
-    />
-  );
-
   const tabsElement = (
     <Tabs
       overrides={{
         Root: {
           style: {
             display: 'inline-block',
+            width: 'max-content',
           },
         },
       }}
@@ -148,7 +142,13 @@ export function Room() {
   );
 
   return (
-    <span>
+    <span
+      className={css({
+        display: 'grid',
+        gridTemplateRows: '4em',
+        height: '100%',
+      })}
+    >
       <ControlPanel>
         {currentRoom?.fileDetailsStates ? tabsElement : 'loading...'}
         <RightButtonGroup>
@@ -167,8 +167,12 @@ export function Room() {
             }
           >
             <Button
-              overrides={{ Root: { style: { height: '40px' } } }}
+              overrides={{
+                Root: { style: { height: '30px', paddingLeft: '2px' } },
+                StartEnhancer: { style: { marginRight: '0' } },
+              }}
               kind={'secondary'}
+              size={'mini'}
               shape={'pill'}
               startEnhancer={() => <TriangleDown size={24} />}
             >
@@ -177,7 +181,15 @@ export function Room() {
           </StatefulPopover>
         </RightButtonGroup>
       </ControlPanel>
-      {editorContainer}
+      <div
+        className={css({
+          height: 'calc(100vh - (4em + 72px + 33px))',
+          width: '100vw',
+          display: currentRoom ? 'block' : 'hidden',
+        })}
+        id="monaco-editor-container"
+        ref={editorContainerRef}
+      />
     </span>
   );
 }

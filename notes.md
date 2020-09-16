@@ -29,6 +29,15 @@ provide gist
 if given gist, load gist contents into editors
 (make request to github, and load contents into ydoc on the server side)
 
+# Styling Notes
+
+## nav bar
+
+- we need to redesign the existing base web navbar to have the following properties
+- 30% smaller
+- less aggressive hamburger mode breakpoint
+- (some percentage of viewheight on desktop)
+
 ## save back to gist
 
 if gist already created:
@@ -50,13 +59,14 @@ if gist already created:
   - gloablheader mockup DONE
   - use github avatar DONE
   - add logout button DONE
+  - shrink
   - add create room button
   - display current room name
 
 - logout button functionality DONE
 - styling pass - room
 
-  - refine tabs to be closer to mockup
+  - refine tabs to be closer to mockup DONE
   - add context menu to tabs
   - better color for close tab highlight
 
@@ -69,6 +79,7 @@ if gist already created:
 - diff viewer
   - re-add monaco DONE
   - check diff mode
+- handle tab overflow
 
 ## done
 
