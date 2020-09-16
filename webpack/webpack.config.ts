@@ -16,10 +16,10 @@ const config: Configuration = {
   devtool: 'inline-source-map',
   entry: {
     app: CLIENT_ROOT,
-    'json.worker': path.join(MONACO_ROOT, 'language/json/json.worker.js'),
-    'css.worker': path.join(MONACO_ROOT, '/language/css/css.worker.js'),
-    'html.worker': path.join(MONACO_ROOT, '/language/html/html.worker.js'),
-    'ts.worker': path.join(MONACO_ROOT, '/language/typescript/ts.worker.js'),
+    // 'json.worker': path.join(MONACO_ROOT, 'language/json/json.worker.js'),
+    // 'css.worker': path.join(MONACO_ROOT, '/language/css/css.worker.js'),
+    // 'html.worker': path.join(MONACO_ROOT, '/language/html/html.worker.js'),
+    // 'ts.worker': path.join(MONACO_ROOT, '/language/typescript/ts.worker.js'),
     'editor.worker': path.join(MONACO_ROOT, '/editor/editor.worker.js'),
   },
   output: {

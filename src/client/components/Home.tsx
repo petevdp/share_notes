@@ -6,7 +6,7 @@ import { Button } from 'baseui/button';
 import { Input } from 'baseui/input';
 import { rootState } from 'Client/store';
 import { CreateRoomInput } from 'Shared/inputs/roomInputs';
-import { createRoom } from 'Client/room/types';
+import { createRoom, switchToRoom } from 'Client/room/types';
 
 export function Home() {
   const history = useHistory();
@@ -15,13 +15,14 @@ export function Home() {
   const { ownedRooms, isCurrentUserCreatingRoom, roomHashId } = useSelector((s: rootState) => ({
     ownedRooms: s.session.user?.ownedRooms,
     isCurrentUserCreatingRoom: s.room.isCurrentUserCreatingRoom,
-    roomHashId: s.room.room?.hashId,
+    roomHashId: s.room.currentRoom?.roomDetails?.hashId,
   }));
   const dispatch = useDispatch();
 
   useEffect(() => {
     if (isCurrentUserCreatingRoom && roomHashId) {
       console.log('room');
+      dispatch(switchToRoom(roomHashId));
       history.push(`/rooms/${roomHashId}`);
     }
   }, [isCurrentUserCreatingRoom, roomHashId]);

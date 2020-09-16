@@ -7,7 +7,15 @@ import { useStyletron, styled } from 'styletron-react';
 import { Button } from 'baseui/button';
 import { Override } from 'baseui/overrides';
 import { Tabs, Tab, FILL, TabsOverrides, StyledRoot } from 'baseui/tabs-motion';
-import { initRoom, destroyRoom, switchCurrentFile, addNewFile, saveBackToGist } from 'Client/room/types';
+import {
+  initRoom,
+  destroyRoom,
+  switchCurrentFile,
+  addNewFile,
+  saveBackToGist,
+  removeFile,
+  switchToRoom,
+} from 'Client/room/types';
 import { Plus, TriangleDown, Delete } from 'baseui/icon';
 import { Popover, StatefulPopover } from 'baseui/popover';
 import { StatefulMenu, ItemT } from 'baseui/menu';
@@ -27,61 +35,76 @@ class Test {
 
 export function Room() {
   const [css] = useStyletron();
-  const { roomHashId } = useParams();
+  const { roomHashId } = useParams<{ roomHashId: string }>();
   const [isActionDropdownOpen, setIsActionDropdownOpen] = useState(false);
   const dispatch = useDispatch();
-  const roomData = useSelector((s: rootState) => s.room.room);
+  const currentRoom = useSelector((s: rootState) => s.room.currentRoom);
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
-  const isLoading = !roomData;
+  const isLoading = !currentRoom;
 
   useEffect(() => {
-    dispatch(initRoom(roomHashId, editorContainerRef as MutableRefObject<HTMLElement>, new Test()));
-    return () => {
-      dispatch(destroyRoom());
-    };
-  }, []);
+    if (roomHashId) {
+      dispatch(initRoom(roomHashId, editorContainerRef as MutableRefObject<HTMLElement>, new Test()));
+      return () => {
+        dispatch(destroyRoom());
+      };
+    }
+  }, [roomHashId]);
 
-  const tabs = roomData?.filenames.map((n) => (
-    <Tab
-      overrides={{
-        Tab: {
-          style: {
-            width: '110px',
-            display: 'flex',
-            // padding: '5px',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            alignContent: 'center',
+  let tabArr: JSX.Element[];
+
+  if (currentRoom?.fileDetailsStates) {
+    tabArr = Object.values(currentRoom.fileDetailsStates).map((state) => (
+      <Tab
+        overrides={{
+          Tab: {
+            style: {
+              width: '110px',
+              display: 'flex',
+              // padding: '5px',
+              paddingTop: '5px',
+              paddingBottom: '5px',
+              paddingLeft: '3px',
+              paddingRight: '3px',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              alignContent: 'center',
+            },
           },
-        },
-      }}
-      key={n}
-      title={
-        <>
-          {circle}
-          {n}
-          <Delete
-            overrides={{
-              Svg: {
-                style: {
-                  ':hover': {
-                    backgroundColor: '#c4c4c4',
-                    color: '#000000',
-                  },
-                  backgroundColor: 'transparent',
-                  color: '#c4c4c4',
-                  alignSelf: 'start',
-                  justifySelf: 'flex-end',
-                  padding: '.2px',
-                  borderRadius: '50%',
+        }}
+        key={state.tabId}
+        title={
+          <>
+            <span key="circle">{circle}</span>
+            <span key="filename">{state.filename}</span>
+            <span
+              key={'delete button'}
+              onClick={(e) => dispatch(removeFile(state.tabId)) && e.stopPropagation()}
+              className={css({
+                ':hover': {
+                  backgroundColor: '#c4c4c4',
+                  color: '#000000',
                 },
-              },
-            }}
-          />
-        </>
-      }
-    />
-  ));
+                backgroundColor: 'transparent',
+                color: '#c4c4c4',
+                display: 'flex',
+                alignContent: 'center',
+                justifyContent: 'center',
+                alignSelf: 'start',
+                justifySelf: 'flex-end',
+                padding: '.2px',
+                borderRadius: '50%',
+              })}
+            >
+              <Delete />
+            </span>
+          </>
+        }
+      />
+    ));
+  } else {
+    tabArr = [];
+  }
 
   // obfuscate key for addNewFile with the room hash to avoid potential duplicate keys
   const addNewFileKey = `${roomHashId}-add-new-file`;
@@ -92,47 +115,42 @@ export function Room() {
 
   const editorContainer = (
     <div
-      className={css({ height: '500px', display: roomData ? 'block' : 'hidden' })}
+      className={css({ height: '500px', display: currentRoom ? 'block' : 'hidden' })}
       id="monaco-editor-container"
       ref={editorContainerRef}
     />
   );
 
-  if (!roomData) {
-    return (
-      <>
-        <span>loading...</span>
-        {editorContainer}
-      </>
-    );
-  }
+  const tabsElement = (
+    <Tabs
+      overrides={{
+        Root: {
+          style: {
+            display: 'inline-block',
+          },
+        },
+      }}
+      onChange={(e) => {
+        if (!currentRoom) {
+          throw 'room data not set yet';
+        }
+        if (e.activeKey === addNewFileKey) {
+          dispatch(addNewFile());
+        } else if (e.activeKey !== currentRoom.currentTabId) {
+          dispatch(switchCurrentFile(e.activeKey.toString()));
+        }
+      }}
+      activeKey={currentRoom?.currentTabId}
+    >
+      {tabArr}
+      <Tab key={addNewFileKey} title={<Plus />} />
+    </Tabs>
+  );
 
   return (
     <span>
       <ControlPanel>
-        <Tabs
-          overrides={{
-            Root: {
-              style: {
-                display: 'inline-block',
-              },
-            },
-          }}
-          onChange={(e) => {
-            if (!roomData) {
-              throw 'room data not set yet';
-            }
-            if (e.activeKey === addNewFileKey) {
-              dispatch(addNewFile());
-            } else if (e.activeKey !== roomData.currentFilename) {
-              dispatch(switchCurrentFile(e.activeKey.toString()));
-            }
-          }}
-          activeKey={roomData?.currentFilename}
-        >
-          {tabs}
-          <Tab key={addNewFileKey} title={<Plus />} />
-        </Tabs>
+        {currentRoom?.fileDetailsStates ? tabsElement : 'loading...'}
         <RightButtonGroup>
           <StatefulPopover
             placement={'bottomLeft'}

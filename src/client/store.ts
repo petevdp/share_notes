@@ -11,6 +11,7 @@ import {
   destroyRoomEpic,
   createRoomEpic,
   RoomManager,
+  removeFileEpic,
 } from './room/epics';
 import { RoomService } from './services/roomService';
 import { Subject } from 'rxjs';
@@ -41,6 +42,7 @@ const epics = [
   initRoomEpic,
   switchCurrentFileEpic,
   addNewFileEpic,
+  removeFileEpic,
   saveBackToGistEpic,
   destroyRoomEpic,
 ];

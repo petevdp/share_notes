@@ -12,6 +12,7 @@ const { createDatabaseConnection } = require('Server/db');
 const { Tedis } = require('tedis');
 const repl = require('repl');
 const { responsePathAsArray } = require('graphql');
+const Y = require('yjs');
 
 (async () => {
   global.tedis = new Tedis({
@@ -19,6 +20,7 @@ const { responsePathAsArray } = require('graphql');
     port: 6379,
   });
   global.User = User;
+  global.Y = Y;
   global.Room = Room;
   global.db = await createDatabaseConnection();
   global.roomR = db.getRepository(Room);

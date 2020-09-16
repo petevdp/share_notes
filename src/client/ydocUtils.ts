@@ -35,3 +35,11 @@ export function getEntriesForMap<T>(map: Y.Map<T>) {
   }
   return entries;
 }
+
+interface awarenessChangeIndexes {
+  added: number[];
+  updated: number[];
+  removed: number[];
+}
+
+export type awarenessListener = (chnageIndexes: awarenessChangeIndexes, transactionOrigin: any) => void;

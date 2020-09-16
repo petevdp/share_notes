@@ -2,7 +2,8 @@ import fastDeepEqual from 'fast-deep-equal';
 import { distinctUntilChanged, map } from 'rxjs/operators';
 import { StateObservable } from 'redux-observable';
 import { GraphQLClient } from 'graphql-request';
-import { GITHUB_GRAPHQL_API_URL } from '../../dist/src/shared/environment';
+import { request as octokitRequest } from '@octokit/request';
+import { GITHUB_GRAPHQL_API_URL, SESSION_TOKEN_COOKIE_KEY } from 'Shared/environment';
 
 export function getCookie(cookieKey: string) {
   let cookieName = `${cookieKey}=`;
@@ -29,12 +30,23 @@ export function emitSliceWhenChanged<T, S>(selector: (rootState: T) => S) {
   };
 }
 
-export function getGithubGraphqlClient(token?: string) {
+export function getGithubGraphqlClient() {
   const client = new GraphQLClient(GITHUB_GRAPHQL_API_URL);
-
+  const token = getCookie(SESSION_TOKEN_COOKIE_KEY);
   if (token) {
     client.setHeader('Authorization', `bearer ${token}`);
   }
 
   return client;
+}
+
+export function octokitRequestWithAuth() {
+  const token = getCookie(SESSION_TOKEN_COOKIE_KEY);
+  if (token) {
+    return octokitRequest.defaults({
+      headers: { Authorization: `bearer ${token}` },
+    });
+  } else {
+    return octokitRequest.defaults({});
+  }
 }

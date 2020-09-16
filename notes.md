@@ -51,19 +51,21 @@ if gist already created:
   - use github avatar DONE
   - add logout button DONE
   - add create room button
+  - display current room name
 
 - logout button functionality DONE
 - styling pass - room
 
-  - room styling mockup - DONE
-  - implement
+  - refine tabs to be closer to mockup
+  - add context menu to tabs
+  - better color for close tab highlight
 
-- generalize conditions we get gist to when there are no documents for the room in yjs
-- get list of gists
+- generalize conditions we get gist to when there are no documents for the room in yjs ???
+- get list of gists for user at home
 - rename files
 - new room button
 - fork room
-
+- allow removing files - true
 - diff viewer
   - re-add monaco DONE
   - check diff mode
@@ -98,6 +100,7 @@ if gist already created:
 - form/input validation
 - reduce bundle size
 - move @type packages to devDeps
+- tab switching is slow
 
 ## discovery
 

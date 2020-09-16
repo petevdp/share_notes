@@ -15,17 +15,19 @@ export const GET_ROOM = gql`
   }
 `;
 
-export interface getRoomResponse {
-  room: {
+export interface roomDetails {
+  id: string;
+  hashId: string;
+  name: string;
+  gistName: string;
+  owner: {
     id: string;
-    hashid: string;
-    name: string;
-    gistName: string;
-    owner: {
-      id: string;
-      githubLogin: string;
-    };
+    githubLogin: string;
   };
+}
+
+export interface getRoomResponse {
+  room: roomDetails;
 }
 
 export const USER_ROOMS = gql`
@@ -149,7 +151,7 @@ export interface getGistResponse {
   };
 }
 
-export interface getGistRestResponse {
+export interface gistDetails {
   id: string;
   name: string;
   description: string;

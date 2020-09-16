@@ -1,8 +1,7 @@
 import { Epic, StateObservable, ActionsObservable } from 'redux-observable';
-import { filter, concatMap, map, withLatestFrom, ignoreElements, tap } from 'rxjs/operators';
+import { filter, concatMap, map, withLatestFrom, ignoreElements, first, skipUntil } from 'rxjs/operators';
 import {
   initRoom,
-  setFilenames,
   switchCurrentFile,
   addNewFile,
   saveBackToGist,
@@ -12,10 +11,14 @@ import {
   createRoom,
   roomCreated,
   gistDetailKeys,
-  gistDetails,
   roomInitialized,
   setRoomData,
   setRoomGistDetails,
+  removeFile,
+  allFileDetailsStates,
+  setGistFileDetails,
+  fileDetailsState,
+  switchToRoom,
 } from './types';
 import { Action } from 'redux';
 import * as Y from 'yjs';
@@ -23,9 +26,8 @@ import { WebsocketProvider } from 'y-websocket';
 import { MonacoBinding } from 'y-monaco';
 import { editor as monacoEditor } from 'monaco-editor';
 import { YJS_WEBSOCKET_URL_WS, YJS_ROOM, GRAPHQL_URL, API_URL, GITHUB_GRAPHQL_API_URL } from 'Shared/environment';
-import { getKeysForMap, getEntriesForMap } from 'Client/ydocUtils';
-import { Observable } from 'rxjs';
-import { Subject, of, merge, pipe } from 'rxjs';
+import { getKeysForMap, getEntriesForMap, awarenessListener } from 'Client/ydocUtils';
+import { Subject, of, concat, Observable, merge, from } from 'rxjs';
 import { request as gqlRequest, GraphQLClient } from 'graphql-request';
 import { request as octokitRequest } from '@octokit/request';
 import {
@@ -35,10 +37,10 @@ import {
   CREATE_ROOM,
   createRoomResponse,
   GET_GIST,
-  getGistRestResponse,
+  gistDetails,
 } from 'Client/queries';
 import { rootState, epicDependencies } from 'Client/store';
-import { getGithubGraphqlClient } from 'Client/utils';
+import { getGithubGraphqlClient, octokitRequestWithAuth as getOctokitRequestWIthAuth } from 'Client/utils';
 
 export const createRoomEpic: Epic = (action$) =>
   action$.pipe(
@@ -63,7 +65,6 @@ export const initRoomEpic: Epic = (
         {
           payload: { roomHashId, editorContainerRef },
         },
-        rootState,
       ]) => {
         // if (!sessionToken) {
         //   throw 'session token not set when initing room, need to handle this case still';
@@ -72,17 +73,6 @@ export const initRoomEpic: Epic = (
           throw 'editor container element not loaded';
         }
         const manager = new RoomManager(editorContainerRef.current, roomHashId);
-
-        const setFilename$ = new Observable<Action>((s) => {
-          const filenameListener = () => {
-            s.next(setFilenames(getKeysForMap(manager.yData.documents)));
-          };
-          manager.yData.documents.observe(filenameListener);
-          manager.roomDestroyed$$.subscribe(() => {
-            manager.yData.documents.unobserve(filenameListener);
-            s.complete();
-          });
-        });
 
         const syncPromise = new Promise((resolve, reject) => {
           const listener = () => {
@@ -93,12 +83,36 @@ export const initRoomEpic: Epic = (
             reject('room destroyed before sync');
           });
         });
-        const roomDataPromise = gqlRequest<getRoomResponse>(GRAPHQL_URL, GET_ROOM, { data: { hashId: roomHashId } });
+
+        const fileDetailsState$ = new Observable<allFileDetailsStates>((s) => {
+          const fileDetailsListener = () => {
+            console.log('emitting file details');
+            s.next(manager.yData.fileDetailsState.toJSON() as allFileDetailsStates);
+          };
+
+          // initial state on sync
+          syncPromise.then(() => s.next(manager.yData.fileDetailsState.toJSON() as allFileDetailsStates));
+
+          manager.yData.fileDetailsState.observe(fileDetailsListener);
+          manager.roomDestroyed$$.subscribe(() => {
+            manager.yData.fileDetailsState.unobserve(fileDetailsListener);
+            s.complete();
+          });
+        });
+
+        const fileDetailsStateUpdateAction$ = fileDetailsState$.pipe(
+          // wait till the room data state is set before trying to emit action
+          map((fileDetails) => setGistFileDetails(fileDetails)),
+        );
+
+        const roomDataPromise = gqlRequest<getRoomResponse>(GRAPHQL_URL, GET_ROOM, {
+          data: { hashId: roomHashId },
+        }).then((res) => res.room);
 
         const gistDataPromise = roomDataPromise.then((r) => {
-          return octokitRequest('GET /gists/{gist_id}', {
-            gist_id: r.room.gistName,
-          }).then((r) => r.data as getGistRestResponse);
+          return getOctokitRequestWIthAuth()('GET /gists/{gist_id}', {
+            gist_id: r.gistName,
+          }).then((r) => r.data as gistDetails);
         });
 
         const isCreatingRoom = false;
@@ -108,35 +122,44 @@ export const initRoomEpic: Epic = (
             if (!gist) {
               throw 'handle no gist case please';
             }
-
             const { files } = gist;
-            for (let filename in files) {
-              const file = files[filename];
-              manager.yData.documents.set(file.filename, new Y.Text(file.text));
-            }
+            console.log('set filestate for ', Object.keys(files));
+            Object.values(files).map((file, index) => {
+              manager.addNewFile({ filename: file.filename, text: file.text });
+            });
             if (Object.keys(files).length > 0) {
-              manager.switchCurrentFile(files[0].filename);
+              manager.switchCurrentFile(0); // switch to first file
             } else {
               manager.addNewFile();
             }
           });
         } else {
           syncPromise.then(() => {
-            const keys = getKeysForMap(manager.yData.documents);
+            console.log('sync promise resolved');
+            const keys = getKeysForMap(manager.yData.fileDetailsState);
+            console.log(keys);
             if (keys.length > 0) {
-              manager.switchCurrentFile(keys[0] as string);
+              manager.switchCurrentFile(0);
             } else {
               manager.addNewFile();
             }
           });
         }
 
+        const awarenessListener: awarenessListener = (s, d) => {
+          console.log('changed indexes: ', s);
+          console.log('origin: ', d);
+        };
+
+        manager.provider.awareness.on('change', awarenessListener);
+
+        manager.provider.connect();
         roomManager$$.next(manager);
-        return merge(
-          setFilename$,
+        return concat(
+          of(switchToRoom(roomHashId)),
+          merge(roomDataPromise.then(setRoomData), gistDataPromise.then(setRoomGistDetails)),
           of(roomInitialized()),
-          roomDataPromise.then(setRoomData),
-          gistDataPromise.then(setRoomGistDetails),
+          fileDetailsStateUpdateAction$,
         );
       },
     ),
@@ -157,9 +180,20 @@ export const addNewFileEpic: Epic = (action$, state$, { roomManager$$ }: epicDep
     filter(addNewFile.match),
     withLatestFrom(roomManager$$),
     map(([, roomManager]) => {
-      const filename = roomManager.addNewFile();
-      return setCurrentFile(filename);
+      const fileState = roomManager.addNewFile();
+      return setCurrentFile(fileState.tabId);
     }),
+  );
+
+export const removeFileEpic: Epic = (action$, state$, { roomManager$$ }: epicDependencies) =>
+  action$.pipe(
+    filter(removeFile.match),
+    withLatestFrom(roomManager$$),
+    map(([{ payload: tabId }, roomManager]) => {
+      console.log('removed file I guess');
+      roomManager.removeFile(tabId);
+    }),
+    ignoreElements(),
   );
 
 export const saveBackToGistEpic: Epic = (
@@ -171,7 +205,7 @@ export const saveBackToGistEpic: Epic = (
     filter(saveBackToGist.match),
     withLatestFrom(state$, roomManager$$),
     concatMap(async ([, rootState, roomManager]) => {
-      const gist = rootState.room?.room?.gist;
+      const gist = rootState.room?.currentRoom?.gistDetails;
       const sessionData = rootState.session;
       const { token } = sessionData;
       if (!gist) {
@@ -181,7 +215,7 @@ export const saveBackToGistEpic: Epic = (
         throw 'no token set';
       }
 
-      const entriesForGithub = getEntriesForMap(roomManager.yData.documents).reduce((obj, [filename, ytext]) => {
+      const entriesForGithub = getEntriesForMap(roomManager.yData.fileDetailsState).reduce((obj, [filename, ytext]) => {
         return {
           ...obj,
           filename: {
@@ -217,7 +251,9 @@ export class RoomManager {
   private binding?: any;
   roomDestroyed$$: Subject<boolean>;
   yData: {
-    documents: Y.Map<Y.Text>;
+    // storing file text and details separately as a performance optimization
+    fileDetailsState: Y.Map<Y.Map<any>>;
+    fileContents: Y.Map<Y.Text>;
     // for now just contains an object with details, there's probably a better way to do this though
     details: Y.Map<gistDetails>;
   };
@@ -228,7 +264,8 @@ export class RoomManager {
     this.roomDestroyed$$ = new Subject<boolean>();
     this.ydoc = new Y.Doc();
     this.yData = {
-      documents: this.ydoc.getMap(`room/${roomHashId}/documents`),
+      fileDetailsState: this.ydoc.getMap(`room/${roomHashId}/fileDetails`),
+      fileContents: this.ydoc.getMap(`room/${roomHashId}/fileContents`),
       details: this.ydoc.getMap(`room/${roomHashId}/details`),
     };
 
@@ -236,23 +273,45 @@ export class RoomManager {
     this.editor = monacoEditor.create(editorContainerElement, { readOnly: true, minimap: { enabled: false } });
   }
 
-  switchCurrentFile(filename: string) {
-    const keys = getKeysForMap(this.yData.documents);
-    if (!keys.includes(filename)) {
-      this.yData.documents.set(filename, new Y.Text());
+  switchCurrentFile(tabId: string | number) {
+    const fileState = this.yData.fileDetailsState.get(tabId.toString());
+    const text = this.yData.fileContents.get(tabId.toString());
+    if (!fileState) {
+      throw `tab with id ${tabId} doesn't exist`;
     }
-    const type = this.yData.documents.get(filename) as Y.Text;
     this.binding?.destroy();
-    this.binding = new MonacoBinding(type, this.editor.getModel(), new Set([this.editor]), this.provider.awareness);
+    this.binding = new MonacoBinding(text, this.editor.getModel(), new Set([this.editor]), this.provider.awareness);
     if (this.editor.getOption(monacoEditor.EditorOption.readOnly)) {
       this.editor.updateOptions({ readOnly: false });
     }
+
+    return fileState.toJSON() as fileDetailsState;
   }
 
-  addNewFile() {
-    const newFilename = `new-file${getKeysForMap(this.yData.documents).length}`;
-    this.switchCurrentFile(newFilename);
-    return newFilename;
+  addNewFile(detailsInput?: { filename?: string; text: string }) {
+    const ids = getKeysForMap(this.yData.fileDetailsState);
+    const fileDetails = new Y.Map();
+    const text = new Y.Text();
+    const tabId = ids.length.toString();
+    fileDetails.set('tabId', tabId);
+    fileDetails.set('deleted', false);
+    if (detailsInput) {
+      text.insert(0, detailsInput.text);
+      this.yData.fileContents.set(tabId, new Y.Text());
+    } else {
+      fileDetails.set('filename', `new-file-${getKeysForMap(this.yData.fileDetailsState).length}`);
+    }
+    this.yData.fileDetailsState.set(tabId, fileDetails);
+    this.yData.fileContents.set(tabId, text);
+    console.log('added new file: new file details: ');
+    console.log(fileDetails.toJSON());
+    return fileDetails.toJSON() as fileDetailsState;
+  }
+
+  removeFile(tabId: string) {
+    this.yData.fileDetailsState.delete(tabId);
+    this.yData.fileContents.delete(tabId);
+    console.log('removed file');
   }
 
   destroy() {
