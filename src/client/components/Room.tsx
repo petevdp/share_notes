@@ -1,12 +1,12 @@
 import { useParams } from 'react-router-dom';
 import React, { useEffect, useRef, useState, MutableRefObject } from 'react';
-// import { CodemirrorBinding } from 'y-codemirror';
 import { useSelector, useDispatch } from 'react-redux';
 import { rootState } from 'Client/store';
 import { useStyletron, styled } from 'styletron-react';
 import { Button } from 'baseui/button';
+import { Modal, ModalHeader, ModalBody, ModalFooter } from 'baseui/modal';
 import { Override } from 'baseui/overrides';
-import { Tabs, Tab, FILL, TabsOverrides, StyledRoot } from 'baseui/tabs-motion';
+import { Tabs, Tab } from 'baseui/tabs-motion';
 import {
   initRoom,
   destroyRoom,
@@ -14,11 +14,13 @@ import {
   addNewFile,
   saveBackToGist,
   removeFile,
-  switchToRoom,
+  renameFile,
 } from 'Client/room/types';
 import { Plus, TriangleDown, Delete } from 'baseui/icon';
 import { Popover, StatefulPopover } from 'baseui/popover';
 import { StatefulMenu, ItemT } from 'baseui/menu';
+import { Input } from 'baseui/input';
+import { RenameFileModal } from './RenameFileModal';
 
 const ControlPanel = styled('div', { display: 'flex', justifyContent: 'space-between', padding: '.5em' });
 const RightButtonGroup = styled('span', { display: 'flex', justifyContent: 'flex-end', alignItems: 'center' });
@@ -40,7 +42,7 @@ export function Room() {
   const dispatch = useDispatch();
   const currentRoom = useSelector((s: rootState) => s.room.currentRoom);
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
-  const isLoading = !currentRoom;
+  const [isRenameFileModalOpen, setisRenameFileModalOpen] = useState(false);
 
   useEffect(() => {
     if (roomHashId) {
@@ -52,66 +54,81 @@ export function Room() {
   }, [roomHashId]);
 
   let tabArr: JSX.Element[];
+  let tabMenuItems: ItemT[];
 
   if (currentRoom?.fileDetailsStates) {
-    tabArr = Object.values(currentRoom.fileDetailsStates).map((state) => (
-      <Tab
-        overrides={{
-          Tab: {
-            style: {
-              width: 'min-content',
-              whiteSpace: 'nowrap',
-              display: 'flex',
-              // padding: '5px',
-              paddingTop: '5px',
-              paddingBottom: '5px',
-              paddingLeft: '3px',
-              paddingRight: '3px',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              alignContent: 'center',
-            },
-          },
-        }}
-        key={state.tabId}
-        title={
-          <>
-            <span key="circle">{circle}</span>
-            <span key="filename">{state.filename}</span>
-            <span
-              key={'delete button'}
-              onClick={(e) => dispatch(removeFile(state.tabId)) && e.stopPropagation()}
-              className={css({
-                ':hover': {
-                  backgroundColor: '#c4c4c4',
-                  color: '#000000',
-                },
-                backgroundColor: 'transparent',
-                color: '#c4c4c4',
+    tabArr = Object.values(currentRoom.fileDetailsStates).map((state) => {
+      const triggerPopover = () => {};
+      return (
+        <Tab
+          overrides={{
+            Tab: {
+              props: {
+                onContextMenu: () => alert('context menu'),
+              },
+              style: {
+                width: 'min-content',
+                whiteSpace: 'nowrap',
                 display: 'flex',
+                // padding: '5px',
+                paddingTop: '5px',
+                paddingBottom: '5px',
+                paddingLeft: '3px',
+                paddingRight: '3px',
+                justifyContent: 'space-between',
+                alignItems: 'center',
                 alignContent: 'center',
-                justifyContent: 'center',
-                alignSelf: 'start',
-                justifySelf: 'flex-end',
-                padding: '.2px',
-                borderRadius: '50%',
-              })}
-            >
-              <Delete />
-            </span>
-          </>
-        }
-      />
-    ));
+              },
+            },
+          }}
+          key={state.tabId}
+          title={
+            <>
+              <span key="filename">{state.filename}</span>
+              <span
+                key={'delete button'}
+                onClick={(e) => dispatch(removeFile(state.tabId)) && e.stopPropagation()}
+                className={css({
+                  ':hover': {
+                    backgroundColor: '#c4c4c4',
+                    color: '#000000',
+                  },
+                  backgroundColor: 'transparent',
+                  color: '#c4c4c4',
+                  display: 'flex',
+                  alignContent: 'center',
+                  justifyContent: 'center',
+                  alignSelf: 'start',
+                  justifySelf: 'flex-end',
+                  padding: '.2px',
+                  borderRadius: '50%',
+                })}
+              >
+                <Delete />
+              </span>
+            </>
+          }
+        />
+      );
+    });
+
+    tabMenuItems = Object.values(currentRoom.fileDetailsStates).map((f) => ({
+      label: f.filename,
+      key: f.tabId,
+    }));
   } else {
     tabArr = [];
+    tabMenuItems = [];
   }
 
   // obfuscate key for addNewFile with the room hash to avoid potential duplicate keys
   const addNewFileKey = `${roomHashId}-add-new-file`;
   const actionItems: ItemT[] = [
-    { label: 'save back to gist', onClick: () => alert('save'), key: 'saveBackToGist' },
-    { label: 'action2' },
+    { label: 'save back to gist', key: 'saveBackToGist' },
+    {
+      label: 'Rename File',
+      key: 'renameFile',
+    },
   ];
 
   const tabsElement = (
@@ -150,7 +167,26 @@ export function Room() {
       })}
     >
       <ControlPanel>
-        {currentRoom?.fileDetailsStates ? tabsElement : 'loading...'}
+        <span>
+          <StatefulPopover
+            placement={'bottomRight'}
+            content={
+              <StatefulMenu
+                items={tabMenuItems}
+                onItemSelect={(i) => {
+                  console.log('selcted item: ', i);
+
+                  dispatch(switchCurrentFile(i.item.key));
+                }}
+              />
+            }
+          >
+            <Button kind="minimal">
+              <TriangleDown />
+            </Button>
+          </StatefulPopover>
+          {currentRoom?.fileDetailsStates ? tabsElement : 'loading...'}
+        </span>
         <RightButtonGroup>
           <StatefulPopover
             placement={'bottomLeft'}
@@ -160,6 +196,8 @@ export function Room() {
                   switch (i.item.key) {
                     case 'saveBackToGist':
                       dispatch(saveBackToGist());
+                    case 'renameFile':
+                      setisRenameFileModalOpen(true);
                   }
                 }}
                 items={actionItems}
@@ -189,6 +227,11 @@ export function Room() {
         })}
         id="monaco-editor-container"
         ref={editorContainerRef}
+      />
+      <RenameFileModal
+        tabId={currentRoom?.currentTabId}
+        isOpen={isRenameFileModalOpen}
+        closeModal={() => setisRenameFileModalOpen(false)}
       />
     </span>
   );

@@ -19,6 +19,7 @@ import {
   setGistFileDetails,
   fileDetailsState,
   switchToRoom,
+  renameFile,
 } from './types';
 import { Action } from 'redux';
 import * as Y from 'yjs';
@@ -75,13 +76,18 @@ export const initRoomEpic: Epic = (
         const manager = new RoomManager(editorContainerRef.current, roomHashId);
 
         const syncPromise = new Promise((resolve, reject) => {
-          const listener = () => {
-            resolve(true);
-          };
-          manager.provider.on('sync', listener);
-          manager.roomDestroyed$$.subscribe(() => {
+          const roomDestroyedSubscription = manager.roomDestroyed$$.subscribe(() => {
             reject('room destroyed before sync');
           });
+          const listener = () => {
+            resolve(true);
+            roomDestroyedSubscription.unsubscribe();
+          };
+          manager.provider.on('sync', listener);
+        });
+
+        syncPromise.then(() => {
+          console.log('state on sync: ', manager.yData.fileDetailsState.toJSON());
         });
 
         const fileDetailsState$ = new Observable<allFileDetailsStates>((s) => {
@@ -93,9 +99,9 @@ export const initRoomEpic: Epic = (
           // initial state on sync
           syncPromise.then(() => s.next(manager.yData.fileDetailsState.toJSON() as allFileDetailsStates));
 
-          manager.yData.fileDetailsState.observe(fileDetailsListener);
+          manager.yData.fileDetailsState.observeDeep(fileDetailsListener);
           manager.roomDestroyed$$.subscribe(() => {
-            manager.yData.fileDetailsState.unobserve(fileDetailsListener);
+            manager.yData.fileDetailsState.unobserveDeep(fileDetailsListener);
             s.complete();
           });
         });
@@ -127,8 +133,9 @@ export const initRoomEpic: Epic = (
             Object.values(files).map((file, index) => {
               manager.addNewFile({ filename: file.filename, text: file.text });
             });
-            if (Object.keys(files).length > 0) {
-              manager.switchCurrentFile(0); // switch to first file
+            const ids = Object.keys(files);
+            if (ids.length > 0) {
+              manager.switchCurrentFile(ids[0]); // switch to first file
             } else {
               manager.addNewFile();
             }
@@ -139,9 +146,10 @@ export const initRoomEpic: Epic = (
             const keys = getKeysForMap(manager.yData.fileDetailsState);
             console.log(keys);
             if (keys.length > 0) {
-              manager.switchCurrentFile(0);
+              manager.switchCurrentFile(keys[0]);
             } else {
-              manager.addNewFile();
+              const file = manager.addNewFile();
+              manager.switchCurrentFile(file.tabId);
             }
           });
         }
@@ -153,13 +161,18 @@ export const initRoomEpic: Epic = (
 
         manager.provider.awareness.on('change', awarenessListener);
 
+        const setCurrentFile$ = manager.currentFile$$.pipe(map((tabId) => setCurrentFile(tabId)));
+
         manager.provider.connect();
         roomManager$$.next(manager);
         return concat(
           of(switchToRoom(roomHashId)),
-          merge(roomDataPromise.then(setRoomData), gistDataPromise.then(setRoomGistDetails)),
-          of(roomInitialized()),
-          fileDetailsStateUpdateAction$,
+          merge(
+            roomDataPromise.then(setRoomData),
+            gistDataPromise.then(setRoomGistDetails),
+            fileDetailsStateUpdateAction$,
+            setCurrentFile$,
+          ),
         );
       },
     ),
@@ -171,8 +184,8 @@ export const switchCurrentFileEpic: Epic = (action$, state$, { roomManager$$ }: 
     withLatestFrom(roomManager$$),
     map(([{ payload: filename }, roomManager]) => {
       roomManager.switchCurrentFile(filename);
-      return setCurrentFile(filename);
     }),
+    ignoreElements(),
   );
 
 export const addNewFileEpic: Epic = (action$, state$, { roomManager$$ }: epicDependencies) =>
@@ -181,8 +194,32 @@ export const addNewFileEpic: Epic = (action$, state$, { roomManager$$ }: epicDep
     withLatestFrom(roomManager$$),
     map(([, roomManager]) => {
       const fileState = roomManager.addNewFile();
-      return setCurrentFile(fileState.tabId);
+      roomManager.switchCurrentFile(fileState.tabId);
     }),
+    ignoreElements(),
+  );
+
+export const renameFileEpic: Epic = (action$, state$, { roomManager$$ }: epicDependencies) =>
+  action$.pipe(
+    filter(renameFile.match),
+    withLatestFrom(roomManager$$),
+    map(
+      ([
+        {
+          payload: { tabId, newFilename },
+        },
+        roomManager,
+      ]) => {
+        const detailsMap = roomManager.yData.fileDetailsState.get(tabId.toString());
+        if (!detailsMap) {
+          throw 'bad key';
+        }
+
+        detailsMap.set('filename', newFilename);
+        console.log('state', roomManager.yData.fileDetailsState.toJSON());
+      },
+    ),
+    ignoreElements(),
   );
 
 export const removeFileEpic: Epic = (action$, state$, { roomManager$$ }: epicDependencies) =>
@@ -249,6 +286,7 @@ export const destroyRoomEpic: Epic = (action$, state$, { roomManager$$ }: epicDe
 
 export class RoomManager {
   private binding?: any;
+
   roomDestroyed$$: Subject<boolean>;
   yData: {
     // storing file text and details separately as a performance optimization
@@ -260,6 +298,8 @@ export class RoomManager {
   ydoc: Y.Doc;
   provider: WebsocketProvider;
   editor: monacoEditor.IStandaloneCodeEditor;
+  currentFile$$: Subject<string>;
+
   constructor(editorContainerElement: HTMLElement, roomHashId: string) {
     this.roomDestroyed$$ = new Subject<boolean>();
     this.ydoc = new Y.Doc();
@@ -268,6 +308,8 @@ export class RoomManager {
       fileContents: this.ydoc.getMap(`room/${roomHashId}/fileContents`),
       details: this.ydoc.getMap(`room/${roomHashId}/details`),
     };
+
+    this.currentFile$$ = new Subject();
 
     this.provider = new WebsocketProvider(YJS_WEBSOCKET_URL_WS, YJS_ROOM, this.ydoc);
     this.editor = monacoEditor.create(editorContainerElement, {
@@ -290,6 +332,8 @@ export class RoomManager {
     if (this.editor.getOption(monacoEditor.EditorOption.readOnly)) {
       this.editor.updateOptions({ readOnly: false });
     }
+
+    this.currentFile$$.next(tabId.toString());
 
     return fileState.toJSON() as fileDetailsState;
   }
@@ -330,6 +374,7 @@ export class RoomManager {
     this.provider.destroy();
     this.editor.dispose();
     this.ydoc.destroy();
+    this.currentFile$$.complete();
     this.roomDestroyed$$.next(true);
     this.roomDestroyed$$.complete();
   }

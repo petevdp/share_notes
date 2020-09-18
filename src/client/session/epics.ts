@@ -30,9 +30,11 @@ export const fetchCurrentUserDataOnSetSessionTokenEpic: Epic = (action$) =>
     first(),
     concatMap(({ payload: token }) => {
       // get user data from server
-      const getCurrentUserData = gqlRequest<getCurrentUserResult>(GRAPHQL_URL, GET_CURRENT_USER).then((r) =>
+      const getCurrentUserDataPromise = gqlRequest<getCurrentUserResult>(GRAPHQL_URL, GET_CURRENT_USER).then((r) =>
         setCurrentUserData(r.currentUser),
       );
+
+      getCurrentUserDataPromise.then((d) => console.log('wtf: ', d));
 
       const githubClient = getGithubGraphqlClient();
       // get user data from github
@@ -41,7 +43,7 @@ export const fetchCurrentUserDataOnSetSessionTokenEpic: Epic = (action$) =>
         .then((r) => setSessionGithubDetails(r.viewer));
 
       // update the store as we get responses
-      return merge(getCurrentUserData, getGithubUserDetails);
+      return merge(getCurrentUserDataPromise, getGithubUserDetails);
     }),
   );
 

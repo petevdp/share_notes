@@ -72,7 +72,7 @@ if gist already created:
 
 - generalize conditions we get gist to when there are no documents for the room in yjs ???
 - get list of gists for user at home
-- rename files
+- rename files DONE
 - new room button
 - fork room
 - allow removing files - true
@@ -125,3 +125,4 @@ if gist already created:
 - how to unset browser session token
 - will the current implementation work with private gists?
 - can I provide an interface for commit messages?
+- multiple editors? how will that work with y-monaco?

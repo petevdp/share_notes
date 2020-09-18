@@ -73,6 +73,9 @@ export const destroyRoom = createAction('destroyRoom');
 export const switchCurrentFile = createAction('switchCurrentFile', (filename: string) => ({ payload: filename }));
 export const addNewFile = createAction('addNewFile', (filename?: string) => ({ payload: filename }));
 export const setCurrentFile = createAction('setCurrentFile', (id: string | number) => ({ payload: id }));
+export const renameFile = createAction('renameFile', (tabId: string | number, newFilename: string) => ({
+  payload: { tabId, newFilename },
+}));
 export const setGistFileDetails = createAction('setFileDetailState', (allFileDetailsState: allFileDetailsStates) => ({
   payload: allFileDetailsState,
 }));
