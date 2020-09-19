@@ -21,15 +21,6 @@ export function getCookie(cookieKey: string) {
   }
 }
 
-export function emitSliceWhenChanged<T, S>(selector: (rootState: T) => S) {
-  return (state$: StateObservable<T>) => {
-    return state$.pipe(
-      distinctUntilChanged<T>((prev, curr) => fastDeepEqual(selector(prev), selector(curr))),
-      map(selector),
-    );
-  };
-}
-
 export function getGithubGraphqlClient() {
   const client = new GraphQLClient(GITHUB_GRAPHQL_API_URL);
   const token = getCookie(SESSION_TOKEN_COOKIE_KEY);
@@ -49,8 +40,4 @@ export function octokitRequestWithAuth() {
   } else {
     return octokitRequest.defaults({});
   }
-}
-
-export function validateFilename(filename: string) {
-  return /[a-zA-Z0-9_\.\-\ ]/.test(filename);
 }

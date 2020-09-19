@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from 'baseui/modal';
 import { Input } from 'baseui/input';
 import { FormControl } from 'baseui/form-control';
@@ -16,20 +16,52 @@ export function RenameFileModal({
   closeModal: Function;
 }) {
   const dispatch = useDispatch();
-  const fileDetails = useSelector((rootState: rootState) => {
+  const { fileDetails, otherFilenames } = useSelector((rootState: rootState) => {
     const currentRoom = rootState.room.currentRoom;
     if (!currentRoom?.fileDetailsStates || !currentRoom.currentTabId) {
-      return;
+      return { fileDetails: undefined, otherFilenames: undefined };
     }
-    return currentRoom.fileDetailsStates[currentRoom.currentTabId];
+    const otherFilenames = Object.values(currentRoom.fileDetailsStates)
+      .filter((d) => d.tabId !== currentRoom.currentTabId)
+      .map((d) => d.filename);
+
+    return { fileDetails: currentRoom.fileDetailsStates[currentRoom.currentTabId], otherFilenames };
   });
   const [newFilename, setNewFilename] = useState('');
+  const [userChangedFilename, setUserChangedFilename] = useState(false);
+  const error = useMemo(() => {
+    if (!userChangedFilename) {
+      return null;
+    }
+    if (newFilename.length === 0) {
+      return "Filenames can't be empty.";
+    }
+    if (!/^[a-zA-Z0-9_./-/ ]+$/.test(newFilename)) {
+      return 'Please provide a valid filename(numbers, letters, dashes(-), underscrods(_) periods(.) and spaces';
+    }
+    if (otherFilenames && otherFilenames.includes(newFilename)) {
+      return 'Filenames must be unique.';
+    }
+    return null;
+  }, [userChangedFilename, otherFilenames, newFilename]);
+  const displayedError = userChangedFilename && error;
 
   useEffect(() => {
     if (fileDetails && !isOpen) {
       setNewFilename(fileDetails.filename);
     }
-  }, [fileDetails, isOpen]);
+  }, [fileDetails, isOpen, setNewFilename]);
+  useEffect(() => {
+    if (!isOpen) {
+      setUserChangedFilename(false);
+    }
+  }, [isOpen, setUserChangedFilename]);
+
+  const onChange = (e: React.FormEvent<HTMLInputElement>) => {
+    const changedFilename = e.currentTarget.value;
+    setUserChangedFilename(true);
+    setNewFilename(changedFilename);
+  };
 
   return (
     <Modal isOpen={isOpen} onClose={() => closeModal()}>
@@ -38,17 +70,20 @@ export function RenameFileModal({
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (tabId) {
+            if (tabId && !error) {
               dispatch(renameFile(tabId, newFilename));
+              setUserChangedFilename(true);
               setNewFilename('');
               closeModal();
             }
           }}
         >
-          <FormControl label="New Filename">
-            <Input value={newFilename} onChange={(e) => setNewFilename(e.currentTarget.value)} />
+          <FormControl error={displayedError} label="New Filename">
+            <Input error={!!displayedError} inputMode="inputmode" clearable value={newFilename} onChange={onChange} />
           </FormControl>
-          <Button type="submit">Rename</Button>
+          <Button type="submit" disabled={!!displayedError}>
+            Rename
+          </Button>
         </form>
       </ModalBody>
     </Modal>
