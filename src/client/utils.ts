@@ -50,3 +50,7 @@ export function octokitRequestWithAuth() {
     return octokitRequest.defaults({});
   }
 }
+
+export function validateFilename(filename: string) {
+  return /[a-zA-Z0-9_\.\-\ ]/.test(filename);
+}

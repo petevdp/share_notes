@@ -1,5 +1,5 @@
 import { Epic, StateObservable, ActionsObservable } from 'redux-observable';
-import { filter, concatMap, map, withLatestFrom, ignoreElements, first, skipUntil } from 'rxjs/operators';
+import { filter, concatMap, map, withLatestFrom, ignoreElements, first, skipUntil, publish } from 'rxjs/operators';
 import {
   initRoom,
   switchCurrentFile,
@@ -28,7 +28,17 @@ import { MonacoBinding } from 'y-monaco';
 import { editor as monacoEditor } from 'monaco-editor';
 import { YJS_WEBSOCKET_URL_WS, YJS_ROOM, GRAPHQL_URL, API_URL, GITHUB_GRAPHQL_API_URL } from 'Shared/environment';
 import { getKeysForMap, getEntriesForMap, awarenessListener } from 'Client/ydocUtils';
-import { Subject, of, concat, Observable, merge, from } from 'rxjs';
+import {
+  Subject,
+  of,
+  concat,
+  Observable,
+  merge,
+  from,
+  ConnectableObservable,
+  Subscription,
+  BehaviorSubject,
+} from 'rxjs';
 import { request as gqlRequest, GraphQLClient } from 'graphql-request';
 import { request as octokitRequest } from '@octokit/request';
 import {
@@ -75,40 +85,13 @@ export const initRoomEpic: Epic = (
         }
         const manager = new RoomManager(editorContainerRef.current, roomHashId);
 
-        const syncPromise = new Promise((resolve, reject) => {
-          const roomDestroyedSubscription = manager.roomDestroyed$$.subscribe(() => {
-            reject('room destroyed before sync');
-          });
-          const listener = () => {
-            resolve(true);
-            roomDestroyedSubscription.unsubscribe();
-          };
-          manager.provider.on('sync', listener);
-        });
-
-        syncPromise.then(() => {
+        manager.providerSynced.then(() => {
           console.log('state on sync: ', manager.yData.fileDetailsState.toJSON());
         });
 
-        const fileDetailsState$ = new Observable<allFileDetailsStates>((s) => {
-          const fileDetailsListener = () => {
-            console.log('emitting file details');
-            s.next(manager.yData.fileDetailsState.toJSON() as allFileDetailsStates);
-          };
-
-          // initial state on sync
-          syncPromise.then(() => s.next(manager.yData.fileDetailsState.toJSON() as allFileDetailsStates));
-
-          manager.yData.fileDetailsState.observeDeep(fileDetailsListener);
-          manager.roomDestroyed$$.subscribe(() => {
-            manager.yData.fileDetailsState.unobserveDeep(fileDetailsListener);
-            s.complete();
-          });
-        });
-
-        const fileDetailsStateUpdateAction$ = fileDetailsState$.pipe(
-          // wait till the room data state is set before trying to emit action
-          map((fileDetails) => setGistFileDetails(fileDetails)),
+        const fileDetailsStateUpdateAction$ = manager.fileDetails$.pipe(
+          withLatestFrom(manager.currentFile$$),
+          map(([fileDetails]) => setGistFileDetails(fileDetails)),
         );
 
         const roomDataPromise = gqlRequest<getRoomResponse>(GRAPHQL_URL, GET_ROOM, {
@@ -123,7 +106,7 @@ export const initRoomEpic: Epic = (
 
         const isCreatingRoom = false;
         if (isCreatingRoom) {
-          Promise.all([gistDataPromise, syncPromise]).then(([gistData]) => {
+          Promise.all([gistDataPromise, manager.providerSynced]).then(([gistData]) => {
             const gist = gistData;
             if (!gist) {
               throw 'handle no gist case please';
@@ -141,7 +124,7 @@ export const initRoomEpic: Epic = (
             }
           });
         } else {
-          syncPromise.then(() => {
+          manager.providerSynced.then(() => {
             console.log('sync promise resolved');
             const keys = getKeysForMap(manager.yData.fileDetailsState);
             console.log(keys);
@@ -161,7 +144,10 @@ export const initRoomEpic: Epic = (
 
         manager.provider.awareness.on('change', awarenessListener);
 
-        const setCurrentFile$ = manager.currentFile$$.pipe(map((tabId) => setCurrentFile(tabId)));
+        const setCurrentFile$ = manager.currentFile$$.pipe(
+          filter((v) => !!v),
+          map((tabId) => setCurrentFile(tabId as string)),
+        );
 
         manager.provider.connect();
         roomManager$$.next(manager);
@@ -170,8 +156,8 @@ export const initRoomEpic: Epic = (
           merge(
             roomDataPromise.then(setRoomData),
             gistDataPromise.then(setRoomGistDetails),
-            fileDetailsStateUpdateAction$,
             setCurrentFile$,
+            fileDetailsStateUpdateAction$,
           ),
         );
       },
@@ -287,7 +273,6 @@ export const destroyRoomEpic: Epic = (action$, state$, { roomManager$$ }: epicDe
 export class RoomManager {
   private binding?: any;
 
-  roomDestroyed$$: Subject<boolean>;
   yData: {
     // storing file text and details separately as a performance optimization
     fileDetailsState: Y.Map<Y.Map<any>>;
@@ -298,7 +283,12 @@ export class RoomManager {
   ydoc: Y.Doc;
   provider: WebsocketProvider;
   editor: monacoEditor.IStandaloneCodeEditor;
-  currentFile$$: Subject<string>;
+
+  currentFile$$: BehaviorSubject<string | null>;
+  roomDestroyed$$: Subject<boolean>;
+  providerSynced: Promise<true>;
+  fileDetails$: Observable<allFileDetailsStates>;
+  fileDetailsSubscription: Subscription;
 
   constructor(editorContainerElement: HTMLElement, roomHashId: string) {
     this.roomDestroyed$$ = new Subject<boolean>();
@@ -309,7 +299,7 @@ export class RoomManager {
       details: this.ydoc.getMap(`room/${roomHashId}/details`),
     };
 
-    this.currentFile$$ = new Subject();
+    this.currentFile$$ = new BehaviorSubject(null);
 
     this.provider = new WebsocketProvider(YJS_WEBSOCKET_URL_WS, YJS_ROOM, this.ydoc);
     this.editor = monacoEditor.create(editorContainerElement, {
@@ -319,6 +309,34 @@ export class RoomManager {
       automaticLayout: true,
       // scrollbar: { vertical: 'hidden' },
     });
+
+    this.providerSynced = new Promise((resolve, reject) => {
+      const roomDestroyedSubscription = this.roomDestroyed$$.subscribe(() => {
+        reject('room destroyed before sync');
+      });
+      const listener = () => {
+        resolve(true);
+        roomDestroyedSubscription.unsubscribe();
+      };
+      this.provider.on('sync', listener);
+    });
+
+    this.fileDetails$ = new Observable<allFileDetailsStates>((s) => {
+      const fileDetailsListener = () => {
+        console.log('emitting file details');
+        s.next(this.yData.fileDetailsState.toJSON() as allFileDetailsStates);
+      };
+
+      // initial state on sync
+      this.providerSynced.then(() => s.next(this.yData.fileDetailsState.toJSON() as allFileDetailsStates));
+
+      this.yData.fileDetailsState.observeDeep(fileDetailsListener);
+      this.roomDestroyed$$.subscribe(() => {
+        this.yData.fileDetailsState.unobserveDeep(fileDetailsListener);
+        s.complete();
+      });
+    }).pipe(publish());
+    this.fileDetailsSubscription = (this.fileDetails$ as ConnectableObservable<allFileDetailsStates>).connect();
   }
 
   switchCurrentFile(tabId: string | number) {
@@ -364,6 +382,14 @@ export class RoomManager {
   }
 
   removeFile(tabId: string) {
+    const ids = getKeysForMap(this.yData.fileDetailsState);
+    if (ids.length === 1) {
+      throw 'handle no files left case better';
+    }
+    if (this.currentFile$$.value === tabId) {
+      const otherIds = ids.filter((v) => v !== tabId);
+      this.switchCurrentFile(otherIds[0]);
+    }
     this.yData.fileDetailsState.delete(tabId);
     this.yData.fileContents.delete(tabId);
     console.log('removed file');
@@ -377,5 +403,6 @@ export class RoomManager {
     this.currentFile$$.complete();
     this.roomDestroyed$$.next(true);
     this.roomDestroyed$$.complete();
+    this.fileDetailsSubscription.unsubscribe();
   }
 }
