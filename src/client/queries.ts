@@ -159,7 +159,7 @@ export interface gistDetails {
   files: {
     [key: string]: {
       filename: string;
-      text: string;
+      content: string;
     };
   };
 }

@@ -50,7 +50,6 @@ export type roomSliceState = {
   };
 };
 
-export const createRoom = createAction('createRoom', (input: CreateRoomInput) => ({ payload: input }));
 export const roomCreated = createAction('roomCreated', (data: createRoomResponse) => ({ payload: data }));
 export const switchToRoom = createAction('switchToRoom', (hashId: string) => ({
   payload: hashId,

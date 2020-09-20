@@ -8,9 +8,7 @@ import {
   gistSaved,
   destroyRoom,
   setCurrentFile,
-  createRoom,
   roomCreated,
-  gistDetailKeys,
   roomInitialized,
   setRoomData,
   setRoomGistDetails,
@@ -26,37 +24,20 @@ import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 import { MonacoBinding } from 'y-monaco';
 import { editor as monacoEditor } from 'monaco-editor';
-import { YJS_WEBSOCKET_URL_WS, YJS_ROOM, GRAPHQL_URL, API_URL, GITHUB_GRAPHQL_API_URL } from 'Shared/environment';
+import { YJS_WEBSOCKET_URL_WS, YJS_ROOM, GRAPHQL_URL } from 'Shared/environment';
 import { getKeysForMap, getEntriesForMap, awarenessListener } from 'Client/ydocUtils';
-import {
-  Subject,
-  of,
-  concat,
-  Observable,
-  merge,
-  from,
-  ConnectableObservable,
-  Subscription,
-  BehaviorSubject,
-} from 'rxjs';
-import { request as gqlRequest, GraphQLClient } from 'graphql-request';
+import { Subject, of, concat, Observable, merge, ConnectableObservable, Subscription, BehaviorSubject } from 'rxjs';
+import { request as gqlRequest } from 'graphql-request';
 import { request as octokitRequest } from '@octokit/request';
-import {
-  getRoomResponse,
-  GET_ROOM,
-  getGistResponse,
-  CREATE_ROOM,
-  createRoomResponse,
-  GET_GIST,
-  gistDetails,
-} from 'Client/queries';
+import { getRoomResponse, GET_ROOM, CREATE_ROOM, createRoomResponse, gistDetails } from 'Client/queries';
 import { rootState, epicDependencies } from 'Client/store';
-import { getGithubGraphqlClient, octokitRequestWithAuth as getOctokitRequestWIthAuth } from 'Client/utils';
+import { octokitRequestWithAuth as getOctokitRequestWIthAuth } from 'Client/utils';
+import { roomCreationActions } from 'Client/roomCreation/types';
 
 export const createRoomEpic: Epic = (action$) =>
   action$.pipe(
-    filter(createRoom.match),
-    concatMap(async ({ payload: input }) => {
+    filter(roomCreationActions.createRoom.match),
+    concatMap(async ({ payload: { input } }) => {
       const res = await gqlRequest<createRoomResponse>(GRAPHQL_URL, CREATE_ROOM, { data: input });
       console.log('res: ', res);
       return roomCreated(res);
@@ -76,10 +57,10 @@ export const initRoomEpic: Epic = (
         {
           payload: { roomHashId, editorContainerRef },
         },
+        {
+          room: { isCurrentUserCreatingRoom },
+        },
       ]) => {
-        // if (!sessionToken) {
-        //   throw 'session token not set when initing room, need to handle this case still';
-        // }
         if (!editorContainerRef.current) {
           throw 'editor container element not loaded';
         }
@@ -104,21 +85,21 @@ export const initRoomEpic: Epic = (
           }).then((r) => r.data as gistDetails);
         });
 
-        const isCreatingRoom = false;
-        if (isCreatingRoom) {
+        if (isCurrentUserCreatingRoom) {
           Promise.all([gistDataPromise, manager.providerSynced]).then(([gistData]) => {
             const gist = gistData;
             if (!gist) {
               throw 'handle no gist case please';
             }
             const { files } = gist;
+            console.log('gist: ', gist);
             console.log('set filestate for ', Object.keys(files));
             Object.values(files).map((file, index) => {
-              manager.addNewFile({ filename: file.filename, text: file.text });
+              manager.addNewFile({ filename: file.filename, content: file.content });
             });
             const ids = Object.keys(files);
             if (ids.length > 0) {
-              manager.switchCurrentFile(ids[0]); // switch to first file
+              manager.switchCurrentFile('1'); // switch to first file
             } else {
               manager.addNewFile();
             }
@@ -151,8 +132,9 @@ export const initRoomEpic: Epic = (
 
         manager.provider.connect();
         roomManager$$.next(manager);
+
         return concat(
-          of(switchToRoom(roomHashId)),
+          of(roomInitialized()),
           merge(
             roomDataPromise.then(setRoomData),
             gistDataPromise.then(setRoomGistDetails),
@@ -356,8 +338,7 @@ export class RoomManager {
     return fileState.toJSON() as fileDetailsState;
   }
 
-  addNewFile(detailsInput?: { filename?: string; text: string }) {
-    const ids = getKeysForMap(this.yData.fileDetailsState);
+  addNewFile(detailsInput?: { filename?: string; content: string }) {
     const fileDetails = new Y.Map();
     const text = new Y.Text();
     const highestId = getKeysForMap(this.yData.fileDetailsState).reduce(
@@ -368,9 +349,11 @@ export class RoomManager {
     const tabId = (Number(highestId) + 1).toString();
     fileDetails.set('tabId', tabId);
     fileDetails.set('deleted', false);
+    console.log('details: ', detailsInput);
     if (detailsInput) {
-      text.insert(0, detailsInput.text);
+      text.insert(0, detailsInput.content);
       this.yData.fileContents.set(tabId, new Y.Text());
+      fileDetails.set('filename', detailsInput.filename);
     } else {
       fileDetails.set('filename', `new-file-${tabId}`);
     }

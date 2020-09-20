@@ -7,6 +7,7 @@ import {
   logOut,
   clearSessionData,
 } from './types';
+import { rootState } from 'Client/store';
 
 const initialState: sessionSliceState = {};
 
@@ -21,3 +22,7 @@ export const sessionSlice = createSlice({
       .addCase(setSessionGithubDetails, (state, action) => ({ ...state, githubUserDetails: action.payload }))
       .addCase(clearSessionData, () => ({})),
 });
+
+export function isLoggedInSelector(s: rootState) {
+  return !!s.session.user;
+}

@@ -35,7 +35,7 @@ export class RoomResolver {
 
   @Mutation(() => ClientSideRoom)
   async createRoom(@Arg('data') userData: CreateRoomInput) {
-    const owner = await this.userRepository.findOne({ id: userData.ownerId });
+    const owner = await this.userRepository.findOne({ id: Number(userData.ownerId) });
 
     let room = this.roomRepository.create({
       ...userData,

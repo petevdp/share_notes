@@ -1,16 +1,14 @@
 import { createSlice } from '@reduxjs/toolkit';
 import {
-  setIsCreatingRoom,
   roomSliceState,
   setCurrentFile,
   roomCreated,
   room,
   roomInitialized,
-  initRoom,
   setRoomGistDetails,
   setGistFileDetails as setFileDetailsStates,
-  switchToRoom,
   leaveRoom,
+  initRoom,
 } from './types';
 
 export const roomSlice = createSlice({
@@ -18,15 +16,6 @@ export const roomSlice = createSlice({
   initialState: { isCurrentUserCreatingRoom: false } as roomSliceState,
   reducers: {},
   extraReducers: (builder) => {
-    builder.addCase(setIsCreatingRoom, (s) => ({ ...s, isCurrentUserCreatingRoom: true }));
-
-    builder.addCase(switchToRoom, (s, { payload: hashId }) => ({
-      ...s,
-      currentRoom: {
-        hashId,
-      },
-    }));
-
     builder.addCase(leaveRoom, (s) => ({
       isCurrentUserCreatingRoom: false,
     }));
@@ -44,6 +33,15 @@ export const roomSlice = createSlice({
         },
       };
     });
+
+    builder.addCase(initRoom, (state, { payload: { roomHashId } }) => ({
+      ...state,
+      currentRoom: {
+        hashId: roomHashId,
+      },
+    }));
+
+    builder.addCase(roomInitialized, (s) => ({ ...s, isCurrentUserCreatingRoom: false }));
 
     builder.addCase(setFileDetailsStates, (s, { payload: newFileDetails }) => {
       if (!s?.currentRoom) {
@@ -82,7 +80,5 @@ export const roomSlice = createSlice({
         roomDetails: roomData,
       },
     }));
-
-    builder.addCase(roomInitialized, (s) => ({ ...s, isCurrentUserCreatingRoom: false }));
   },
 });

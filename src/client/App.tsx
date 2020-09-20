@@ -1,30 +1,35 @@
 import React, { ReactElement } from 'react';
+import { BaseProvider, LightTheme, DarkTheme } from 'baseui';
+import { Client as Styletron } from 'styletron-engine-atomic';
+import { Provider as StyletronProvider } from 'styletron-react';
+import { settingsSelector } from './settings/slice';
+import { Theme } from 'baseui/theme';
+import { useSelector } from 'react-redux';
+import { Root } from './components/Root';
 
-import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
-import { GlobalHeader } from './components/GlobalHeader';
-import { Home } from './components/Home';
-import { Room } from './components/Room';
-import { useStyletron } from 'styletron-react';
+const engine = new Styletron();
 
 export function App(): ReactElement {
-  const [css] = useStyletron();
+  const settings = useSelector(settingsSelector);
+
+  let theme: Theme;
+  switch (settings.theme) {
+    case 'light':
+      theme = LightTheme;
+      break;
+    case 'dark':
+      theme = DarkTheme;
+      break;
+    default:
+      theme = LightTheme;
+      break;
+  }
 
   return (
-    <Router>
-      <div>
-        <GlobalHeader />
-        <div className={css({ marginTop: '72px' })}>
-          <Switch>
-            <Route exact path="/">
-              <Home />
-            </Route>
-            <Route exact path="/rooms"></Route>
-            <Route path="/rooms/:roomHashId">
-              <Room />
-            </Route>
-          </Switch>
-        </div>
-      </div>
-    </Router>
+    <StyletronProvider value={engine}>
+      <BaseProvider theme={theme}>
+        <Root />
+      </BaseProvider>
+    </StyletronProvider>
   );
 }

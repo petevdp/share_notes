@@ -1,29 +1,23 @@
-import * as React from 'react';
+import React, { useState } from 'react';
 import { useStyletron } from 'baseui';
 import { StyledLink } from 'baseui/link';
 import { rootState } from 'Client/store';
 import { Layer } from 'baseui/layer';
-import { Delete, Overflow as UserIcon, Upload as Icon } from 'baseui/icon';
+import { Delete, Plus } from 'baseui/icon';
 import { Unstable_AppNavBar as AppNavBar, UserNavItemT, MainNavItemT, AppNavBarPropsT } from 'baseui/app-nav-bar';
 import { MenuAdapter, MenuAdapterPropsT } from 'baseui/list';
 import {} from 'baseui/header-navigation';
-import { Button as span } from 'baseui/button';
+import { Button as span, Button } from 'baseui/button';
 import { useSelector, useDispatch } from 'react-redux';
 import { GITHUB_0AUTH_URL, GITHUB_CLIENT_ID, AUTH_REDIRECT_URL } from 'Shared/environment';
 import { sessionSliceState, logOut } from 'Client/session/types';
+import { settingsSelector } from 'Client/settings/slice';
+import { settingsActions } from 'Client/settings/types';
+import { roomCreationActions } from 'Client/roomCreation/types';
 
 function renderItem(item: any) {
   return item.label;
 }
-const MAIN_NAV: MainNavItemT[] = [];
-const USER_NAV: UserNavItemT[] = [
-  {
-    icon: UserIcon,
-    item: { label: 'Log Out', onClick: () => alert('wow') },
-    mapItemToNode: renderItem,
-    mapItemToString: renderItem,
-  },
-];
 function isActive(arr: Array<any>, item: any, activeItem: any): boolean {
   let active = false;
   for (let i = 0; i < arr.length; i++) {
@@ -47,11 +41,34 @@ interface avatarNavProps {
 
 export function GlobalHeader() {
   const [css] = useStyletron();
-  const session = useSelector<rootState, sessionSliceState>((state: rootState) => state.session);
+  const session = useSelector((state: rootState) => state.session);
+  const settings = useSelector(settingsSelector);
   const isLoggedIn = !!session.user;
   const dispatch = useDispatch();
-  const [isNavBarVisible, setIsNavBarVisible] = React.useState(false);
-  const [activeNavItem, setActiveNavItem] = React.useState(undefined as undefined | UserNavItemT);
+  const [isNavBarVisible, setIsNavBarVisible] = useState(false);
+  const [activeNavItem, setActiveNavItem] = useState(undefined as undefined | UserNavItemT);
+
+  let themeToggle: string;
+  switch (settings.theme) {
+    case 'light':
+      themeToggle = 'Dark';
+      break;
+    case 'dark':
+      themeToggle = 'Light';
+      break;
+  }
+  const USER_NAV: UserNavItemT[] = [
+    {
+      item: { label: 'Log Out', key: 'logOut' },
+      mapItemToNode: renderItem,
+      mapItemToString: renderItem,
+    },
+    {
+      item: { label: `Switch to ${themeToggle} theme`, key: 'toggleTheme' },
+      mapItemToNode: renderItem,
+      mapItemToString: renderItem,
+    },
+  ];
 
   const githubLogin = session.user?.githubLogin;
   const avatarUrl = session.githubUserDetails?.avatarUrl;
@@ -111,16 +128,25 @@ export function GlobalHeader() {
   );
   const renderLoginButton = () => <span onClick={() => loginWithGithub()}>Log In</span>;
 
-  let mainNav = MAIN_NAV;
+  let mainNav: MainNavItemT[] = [];
   if (!isLoggedIn) {
     mainNav = [
       ...mainNav,
       {
-        icon: Icon,
         // 'Log In' is used as key to identify the item, please fix
         item: { label: 'Log In' },
         mapItemToNode: renderLoginButton,
-        mapItemToString: (item) => item.label,
+        mapItemToString: (item: any) => item.label,
+      },
+    ];
+  } else {
+    mainNav = [
+      ...mainNav,
+      {
+        icon: Plus,
+        item: { label: 'Create New Room', key: 'createNewRoom' },
+        mapItemToString: renderItem,
+        mapItemToNode: renderItem,
       },
     ];
   }
@@ -135,8 +161,16 @@ export function GlobalHeader() {
             return item === activeNavItem || isActive(mainNav, item, activeNavItem);
           }}
           onNavItemSelect={({ item }) => {
-            if (item.item.label === 'Log Out') {
-              dispatch(logOut());
+            switch (item.item.key) {
+              case 'logOut':
+                dispatch(logOut());
+                break;
+              case 'toggleTheme':
+                dispatch(settingsActions.toggleTheme());
+                break;
+              case 'createNewRoom':
+                dispatch(roomCreationActions.open());
+                break;
             }
             console.log('nav item selected: ', item);
             // if (item === activeNavItem) return;
