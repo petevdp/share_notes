@@ -21,7 +21,5 @@ export const settingsSlice = createSlice({
 });
 
 export function settingsSelector(rootState: rootState) {
-  return {
-    ...rootState.settings,
-  };
+  return rootState.settings;
 }

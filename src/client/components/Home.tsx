@@ -30,7 +30,7 @@ export function Home() {
   return (
     <>
       <Card title="Owned Rooms">
-        <ul>{ownedRooms && roomElements?.slice(0, 5)}</ul>
+        <ul>{ownedRooms && roomElements?.reverse()}</ul>
       </Card>
     </>
   );

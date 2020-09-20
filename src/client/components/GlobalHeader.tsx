@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useStyletron } from 'baseui';
 import { StyledLink } from 'baseui/link';
 import { rootState } from 'Client/store';
@@ -48,15 +48,6 @@ export function GlobalHeader() {
   const [isNavBarVisible, setIsNavBarVisible] = useState(false);
   const [activeNavItem, setActiveNavItem] = useState(undefined as undefined | UserNavItemT);
 
-  let themeToggle: string;
-  switch (settings.theme) {
-    case 'light':
-      themeToggle = 'Dark';
-      break;
-    case 'dark':
-      themeToggle = 'Light';
-      break;
-  }
   const USER_NAV: UserNavItemT[] = [
     {
       item: { label: 'Log Out', key: 'logOut' },
@@ -64,7 +55,7 @@ export function GlobalHeader() {
       mapItemToString: renderItem,
     },
     {
-      item: { label: `Switch to ${themeToggle} theme`, key: 'toggleTheme' },
+      item: { label: `Toggle Night Mode`, key: 'toggleTheme' },
       mapItemToNode: renderItem,
       mapItemToString: renderItem,
     },

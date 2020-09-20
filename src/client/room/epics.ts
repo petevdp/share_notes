@@ -33,6 +33,7 @@ import { getRoomResponse, GET_ROOM, CREATE_ROOM, createRoomResponse, gistDetails
 import { rootState, epicDependencies } from 'Client/store';
 import { octokitRequestWithAuth as getOctokitRequestWIthAuth } from 'Client/utils';
 import { roomCreationActions } from 'Client/roomCreation/types';
+import { theme, settingsActions } from 'Client/settings/types';
 
 export const createRoomEpic: Epic = (action$) =>
   action$.pipe(
@@ -64,7 +65,13 @@ export const initRoomEpic: Epic = (
         if (!editorContainerRef.current) {
           throw 'editor container element not loaded';
         }
-        const manager = new RoomManager(editorContainerRef.current, roomHashId);
+        const theme$ = action$.pipe(
+          filter(settingsActions.toggleTheme.match),
+          withLatestFrom(state$),
+          map(([, state]) => state.settings.theme),
+        );
+
+        const manager = new RoomManager(editorContainerRef.current, roomHashId, theme$);
 
         manager.providerSynced.then(() => {
           console.log('state on sync: ', manager.yData.fileDetailsState.toJSON());
@@ -272,7 +279,7 @@ export class RoomManager {
   fileDetails$: Observable<allFileDetailsStates>;
   fileDetailsSubscription: Subscription;
 
-  constructor(editorContainerElement: HTMLElement, roomHashId: string) {
+  constructor(editorContainerElement: HTMLElement, roomHashId: string, theme$: Observable<theme>) {
     this.roomDestroyed$$ = new Subject<boolean>();
     this.ydoc = new Y.Doc();
     this.yData = {
@@ -289,7 +296,27 @@ export class RoomManager {
       minimap: { enabled: false },
       lineNumbers: 'off',
       automaticLayout: true,
+      theme: 'vs-dark',
       // scrollbar: { vertical: 'hidden' },
+    });
+
+    const themeMap = {
+      light: 'vs',
+      dark: 'vs-dark',
+    };
+
+    theme$.pipe(first()).subscribe((theme) => {
+      this.editor = monacoEditor.create(editorContainerElement, {
+        readOnly: true,
+        minimap: { enabled: false },
+        lineNumbers: 'off',
+        automaticLayout: true,
+        theme: themeMap[theme],
+      });
+    });
+
+    theme$.subscribe((theme) => {
+      monacoEditor.setTheme(themeMap[theme]);
     });
 
     this.providerSynced = new Promise((resolve, reject) => {
