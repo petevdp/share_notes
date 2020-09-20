@@ -42,7 +42,6 @@ interface avatarNavProps {
 export function GlobalHeader() {
   const [css] = useStyletron();
   const session = useSelector((state: rootState) => state.session);
-  const settings = useSelector(settingsSelector);
   const isLoggedIn = !!session.user;
   const dispatch = useDispatch();
   const [isNavBarVisible, setIsNavBarVisible] = useState(false);
@@ -64,9 +63,7 @@ export function GlobalHeader() {
   const githubLogin = session.user?.githubLogin;
   const avatarUrl = session.githubUserDetails?.avatarUrl;
 
-  const { user, githubUserDetails } = session;
-
-  const { loading: navPropsLoading, data: navProps } = React.useMemo(() => {
+  const { data: navProps } = React.useMemo(() => {
     let data: null | avatarNavProps;
     let loading = false;
     if (githubLogin && avatarUrl) {
@@ -143,9 +140,10 @@ export function GlobalHeader() {
   }
 
   return (
-    <Layer>
+    <Layer index={2}>
       <div className={containerStyles}>
         <AppNavBar
+          username={githubLogin}
           appDisplayName={appDisplayName}
           mainNav={mainNav}
           isNavItemActive={({ item }) => {

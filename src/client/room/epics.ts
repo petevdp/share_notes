@@ -60,6 +60,7 @@ export const initRoomEpic: Epic = (
         },
         {
           room: { isCurrentUserCreatingRoom },
+          settings: { theme },
         },
       ]) => {
         if (!editorContainerRef.current) {
@@ -71,7 +72,7 @@ export const initRoomEpic: Epic = (
           map(([, state]) => state.settings.theme),
         );
 
-        const manager = new RoomManager(editorContainerRef.current, roomHashId, theme$);
+        const manager = new RoomManager(editorContainerRef.current, roomHashId, theme, theme$);
 
         manager.providerSynced.then(() => {
           console.log('state on sync: ', manager.yData.fileDetailsState.toJSON());
@@ -279,7 +280,12 @@ export class RoomManager {
   fileDetails$: Observable<allFileDetailsStates>;
   fileDetailsSubscription: Subscription;
 
-  constructor(editorContainerElement: HTMLElement, roomHashId: string, theme$: Observable<theme>) {
+  constructor(
+    editorContainerElement: HTMLElement,
+    roomHashId: string,
+    startingTheme: theme,
+    theme$: Observable<theme>,
+  ) {
     this.roomDestroyed$$ = new Subject<boolean>();
     this.ydoc = new Y.Doc();
     this.yData = {
@@ -291,28 +297,18 @@ export class RoomManager {
     this.currentFile$$ = new BehaviorSubject(null);
 
     this.provider = new WebsocketProvider(YJS_WEBSOCKET_URL_WS, YJS_ROOM, this.ydoc);
-    this.editor = monacoEditor.create(editorContainerElement, {
-      readOnly: true,
-      minimap: { enabled: false },
-      lineNumbers: 'off',
-      automaticLayout: true,
-      theme: 'vs-dark',
-      // scrollbar: { vertical: 'hidden' },
-    });
 
     const themeMap = {
       light: 'vs',
       dark: 'vs-dark',
     };
 
-    theme$.pipe(first()).subscribe((theme) => {
-      this.editor = monacoEditor.create(editorContainerElement, {
-        readOnly: true,
-        minimap: { enabled: false },
-        lineNumbers: 'off',
-        automaticLayout: true,
-        theme: themeMap[theme],
-      });
+    this.editor = monacoEditor.create(editorContainerElement, {
+      readOnly: true,
+      minimap: { enabled: false },
+      lineNumbers: 'off',
+      automaticLayout: true,
+      theme: themeMap[startingTheme],
     });
 
     theme$.subscribe((theme) => {
@@ -347,6 +343,8 @@ export class RoomManager {
     }).pipe(publish());
     this.fileDetailsSubscription = (this.fileDetails$ as ConnectableObservable<allFileDetailsStates>).connect();
   }
+
+  async init() {}
 
   switchCurrentFile(tabId: string | number) {
     const fileState = this.yData.fileDetailsState.get(tabId.toString());

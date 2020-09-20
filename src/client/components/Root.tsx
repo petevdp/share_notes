@@ -8,15 +8,22 @@ import { Room } from './Room';
 import { CreateRoomModal } from './CreateRoomModal';
 import { useSelector } from 'react-redux';
 import { isLoggedInSelector } from 'Client/session/slice';
+import { Layer } from 'baseui/layer';
 
 export function Root(): ReactElement {
   const [css, theme] = useStyletron();
   const isLoggedIn = useSelector(isLoggedInSelector);
   return (
     <Router>
-      <div>
-        <GlobalHeader />
-        <Block backgroundColor="backgroundPrimary" color="contentPrimary" display="flex" justifyContent="center">
+      <GlobalHeader />
+      <Layer index={1}>
+        <Block
+          backgroundColor="backgroundPrimary"
+          color="contentPrimary"
+          display="flex"
+          justifyContent="center"
+          minHeight="100vh"
+        >
           <div
             className={css({
               marginTop: '72px',
@@ -37,7 +44,7 @@ export function Root(): ReactElement {
           </div>
           {isLoggedIn && <CreateRoomModal />}
         </Block>
-      </div>
+      </Layer>
     </Router>
   );
 }
