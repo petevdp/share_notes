@@ -35,6 +35,13 @@ export function CreateRoomModal(): ReactElement {
       unstable_ModalBackdropScroll={true}
       isOpen={roomCreation.isOpen}
       onClose={() => dispatch(roomCreationActions.close(currentUser.githubLogin))}
+      overrides={{
+        Root: {
+          style: {
+            zIndex: 5,
+          },
+        },
+      }}
     >
       <ModalHeader>New Room</ModalHeader>
       <ModalBody>

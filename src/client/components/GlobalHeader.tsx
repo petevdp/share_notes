@@ -148,7 +148,6 @@ export function GlobalHeader() {
   }
 
   return (
-    // <Layer index={2}>
     <div className={containerStyles}>
       <AppNavBar
         username={githubLogin}
@@ -176,6 +175,5 @@ export function GlobalHeader() {
         {...(navProps || {})}
       />
     </div>
-    // </Layer>
   );
 }

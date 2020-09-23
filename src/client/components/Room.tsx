@@ -190,6 +190,13 @@ export function Room() {
         <RightButtonGroup>
           <StatefulPopover
             placement={'bottomLeft'}
+            overrides={{
+              Body: {
+                style: {
+                  zIndex: 5,
+                },
+              },
+            }}
             content={
               <StatefulMenu
                 onItemSelect={(i) => {
@@ -223,12 +230,9 @@ export function Room() {
         className={css({
           height: 'calc(100vh - (4em + 72px))',
           width: '100vw',
-          [`@media screen and (max-width: ${theme.breakpoints.large - 1}px)`]: {
-            minWidth: '',
-          },
           display: currentRoom ? 'block' : 'hidden',
         })}
-        id="monaco-editor-container"
+        id="editor-container"
         ref={editorContainerRef}
       />
       <RenameFileModal

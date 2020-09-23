@@ -54,6 +54,7 @@ if gist already created:
 - choose between monaco and codemirror DONE, codemirror
 - decent styling for presence indicators
 - handle non-gist cases
+- move modal buttons to right
 - presence
 - styling pass - global header
 
@@ -73,6 +74,7 @@ if gist already created:
   - add context menu to tabs
   - better color for close tab highlight
 
+- style scrollbar
 - move add file button out of tab group
 - get list of gists for user at home
 - rename files DONE

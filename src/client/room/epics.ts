@@ -1,5 +1,7 @@
 import { Epic, StateObservable, ActionsObservable } from 'redux-observable';
 import { filter, concatMap, map, withLatestFrom, ignoreElements, first, skipUntil, publish } from 'rxjs/operators';
+import 'codemirror/lib/codemirror.css';
+import 'codemirror/theme/night.css';
 import {
   initRoom,
   switchCurrentFile,
@@ -22,8 +24,8 @@ import {
 import { Action } from 'redux';
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
-import { MonacoBinding } from 'y-monaco';
-import { editor as monacoEditor } from 'monaco-editor';
+import CodeMirror from 'codemirror';
+import { CodeMirrorBinding } from 'y-codemirror';
 import { YJS_WEBSOCKET_URL_WS, YJS_ROOM, GRAPHQL_URL } from 'Shared/environment';
 import { getKeysForMap, getEntriesForMap, awarenessListener } from 'Client/ydocUtils';
 import { Subject, of, concat, Observable, merge, ConnectableObservable, Subscription, BehaviorSubject } from 'rxjs';
@@ -272,7 +274,7 @@ export class RoomManager {
   };
   ydoc: Y.Doc;
   provider: WebsocketProvider;
-  editor: monacoEditor.IStandaloneCodeEditor;
+  editor: CodeMirror.Editor;
 
   currentFile$$: BehaviorSubject<string | null>;
   roomDestroyed$$: Subject<boolean>;
@@ -299,20 +301,37 @@ export class RoomManager {
     this.provider = new WebsocketProvider(YJS_WEBSOCKET_URL_WS, YJS_ROOM, this.ydoc);
 
     const themeMap = {
-      light: 'vs',
-      dark: 'vs-dark',
+      light: '3024-day',
+      dark: 'pastel-on-dark',
+      // dark: 'material-darker',
     };
 
-    this.editor = monacoEditor.create(editorContainerElement, {
+    // this.editor = monacoEditor.create(editorContainerElement, {
+    //   readOnly: true,
+    //   minimap: { enabled: false },
+    //   lineNumbers: 'off',
+    //   automaticLayout: true,
+    //   theme: themeMap[startingTheme],
+    // });
+    // });
+
+    /*
+      3024-night
+      material-darker
+      theme: 'ambiance',
+    */
+    console.log(CodeMirror.modes);
+    console.log(CodeMirror.mimeModes);
+    this.editor = CodeMirror(editorContainerElement, {
       readOnly: true,
-      minimap: { enabled: false },
-      lineNumbers: 'off',
-      automaticLayout: true,
+      mode: 'xml',
+      viewportMargin: Infinity,
+      lineWrapping: true,
       theme: themeMap[startingTheme],
     });
 
     theme$.subscribe((theme) => {
-      monacoEditor.setTheme(themeMap[theme]);
+      this.editor.setOption('theme', themeMap[theme]);
     });
 
     this.providerSynced = new Promise((resolve, reject) => {
@@ -349,15 +368,12 @@ export class RoomManager {
   switchCurrentFile(tabId: string | number) {
     const fileState = this.yData.fileDetailsState.get(tabId.toString());
     const text = this.yData.fileContents.get(tabId.toString());
-    if (!fileState) {
+    if (!fileState || !text) {
       throw `tab with id ${tabId} doesn't exist`;
     }
     this.binding?.destroy();
-    this.binding = new MonacoBinding(text, this.editor.getModel(), new Set([this.editor]), this.provider.awareness);
-    if (this.editor.getOption(monacoEditor.EditorOption.readOnly)) {
-      this.editor.updateOptions({ readOnly: false });
-    }
-
+    this.binding = new CodeMirrorBinding(text, this.editor, this.provider.awareness);
+    this.editor.setOption('readOnly', false);
     this.currentFile$$.next(tabId.toString());
 
     return fileState.toJSON() as fileDetailsState;
@@ -406,7 +422,6 @@ export class RoomManager {
   destroy() {
     this.binding?.destroy();
     this.provider.destroy();
-    this.editor.dispose();
     this.ydoc.destroy();
     this.currentFile$$.complete();
     this.roomDestroyed$$.next(true);

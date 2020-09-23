@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { renameFile } from 'Client/room/types';
 import { Button } from 'baseui/button';
 import { rootState } from 'Client/store';
+import { Root } from 'type-graphql';
 export function RenameFileModal({
   tabId,
   isOpen,
@@ -64,7 +65,18 @@ export function RenameFileModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={() => closeModal()} unstable_ModalBackdropScroll={true}>
+    <Modal
+      isOpen={isOpen}
+      onClose={() => closeModal()}
+      unstable_ModalBackdropScroll={true}
+      overrides={{
+        Root: {
+          style: {
+            zIndex: 5,
+          },
+        },
+      }}
+    >
       <ModalHeader>Rename {fileDetails?.filename || 'File'}</ModalHeader>
       <ModalBody>
         <form

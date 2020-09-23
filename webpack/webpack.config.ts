@@ -20,7 +20,7 @@ const config: Configuration = {
     // 'css.worker': path.join(MONACO_ROOT, '/language/css/css.worker.js'),
     // 'html.worker': path.join(MONACO_ROOT, '/language/html/html.worker.js'),
     // 'ts.worker': path.join(MONACO_ROOT, '/language/typescript/ts.worker.js'),
-    'editor.worker': path.join(MONACO_ROOT, '/editor/editor.worker.js'),
+    // 'editor.worker': path.join(MONACO_ROOT, '/editor/editor.worker.js'),
   },
   output: {
     globalObject: 'self',
