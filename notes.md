@@ -54,14 +54,17 @@ if gist already created:
 - choose between monaco and codemirror DONE, codemirror
 - decent styling for presence indicators
 - handle non-gist cases
+- presence
 - styling pass - global header
 
   - gloablheader mockup DONE
   - use github avatar DONE
   - add logout button DONE
   - shrink
-  - add create room button
-  - display current room name
+  - add create room button DONE
+  - display current room name DONE
+
+- try adding context menu to tabs
 
 - logout button functionality DONE
 - styling pass - room
@@ -70,7 +73,7 @@ if gist already created:
   - add context menu to tabs
   - better color for close tab highlight
 
-- generalize conditions we get gist to when there are no documents for the room in yjs ???
+- move add file button out of tab group
 - get list of gists for user at home
 - rename files DONE
 - new room button

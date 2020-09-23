@@ -2,7 +2,7 @@ import { useParams } from 'react-router-dom';
 import React, { useEffect, useRef, useState, MutableRefObject } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { rootState } from 'Client/store';
-import { useStyletron, styled } from 'styletron-react';
+import { useStyletron, styled } from 'baseui';
 import { Button } from 'baseui/button';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from 'baseui/modal';
 import { Override } from 'baseui/overrides';
@@ -36,7 +36,7 @@ class Test {
 }
 
 export function Room() {
-  const [css] = useStyletron();
+  const [css, theme] = useStyletron();
   const { roomHashId } = useParams<{ roomHashId: string }>();
   const [isActionDropdownOpen, setIsActionDropdownOpen] = useState(false);
   const dispatch = useDispatch();
@@ -159,11 +159,11 @@ export function Room() {
   );
 
   return (
-    <span
+    <div
       className={css({
         display: 'grid',
-        gridTemplateRows: '4em',
-        height: '100%',
+        gridTemplateRows: '4em calc(100% - 4em)',
+        overflow: 'hidden',
       })}
     >
       <ControlPanel>
@@ -221,8 +221,11 @@ export function Room() {
       </ControlPanel>
       <div
         className={css({
-          height: 'calc(100vh - (4em + 72px + 33px))',
+          height: 'calc(100vh - (4em + 72px))',
           width: '100vw',
+          [`@media screen and (max-width: ${theme.breakpoints.large - 1}px)`]: {
+            minWidth: '',
+          },
           display: currentRoom ? 'block' : 'hidden',
         })}
         id="monaco-editor-container"
@@ -233,7 +236,7 @@ export function Room() {
         isOpen={isRenameFileModalOpen}
         closeModal={() => setisRenameFileModalOpen(false)}
       />
-    </span>
+    </div>
   );
 }
 

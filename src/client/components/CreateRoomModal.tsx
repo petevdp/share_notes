@@ -31,7 +31,11 @@ export function CreateRoomModal(): ReactElement {
   }, [isCurrentUserCreatingRoom, roomHashId]);
 
   return (
-    <Modal isOpen={roomCreation.isOpen} onClose={() => dispatch(roomCreationActions.close(currentUser.githubLogin))}>
+    <Modal
+      unstable_ModalBackdropScroll={true}
+      isOpen={roomCreation.isOpen}
+      onClose={() => dispatch(roomCreationActions.close(currentUser.githubLogin))}
+    >
       <ModalHeader>New Room</ModalHeader>
       <ModalBody>
         <form

@@ -64,7 +64,7 @@ export function RenameFileModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={() => closeModal()}>
+    <Modal isOpen={isOpen} onClose={() => closeModal()} unstable_ModalBackdropScroll={true}>
       <ModalHeader>Rename {fileDetails?.filename || 'File'}</ModalHeader>
       <ModalBody>
         <form

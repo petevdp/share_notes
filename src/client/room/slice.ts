@@ -9,6 +9,7 @@ import {
   setGistFileDetails as setFileDetailsStates,
   leaveRoom,
   initRoom,
+  setRoomData,
 } from './types';
 
 export const roomSlice = createSlice({
@@ -30,6 +31,19 @@ export const roomSlice = createSlice({
         currentRoom: {
           ...s.currentRoom,
           gistDetails: details,
+        },
+      };
+    });
+
+    builder.addCase(setRoomData, (s, { payload: details }) => {
+      if (!s.currentRoom) {
+        throw 'current room not set when setting room data';
+      }
+      return {
+        ...s,
+        currentRoom: {
+          ...s.currentRoom,
+          roomDetails: details,
         },
       };
     });

@@ -31,7 +31,7 @@ import { request as gqlRequest } from 'graphql-request';
 import { request as octokitRequest } from '@octokit/request';
 import { getRoomResponse, GET_ROOM, CREATE_ROOM, createRoomResponse, gistDetails } from 'Client/queries';
 import { rootState, epicDependencies } from 'Client/store';
-import { octokitRequestWithAuth as getOctokitRequestWIthAuth } from 'Client/utils';
+import { octokitRequestWithAuth as getOctokitRequestWIthAuth } from 'Client/utils/utils';
 import { roomCreationActions } from 'Client/roomCreation/types';
 import { theme, settingsActions } from 'Client/settings/types';
 

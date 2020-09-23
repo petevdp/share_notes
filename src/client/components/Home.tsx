@@ -6,7 +6,16 @@ import { Button } from 'baseui/button';
 import { Input } from 'baseui/input';
 import { rootState } from 'Client/store';
 import { Card } from 'baseui/card';
-import { ListItem, ListItemLabel } from 'baseui/list';
+import { ListItem, ListItemLabel, MenuAdapter } from 'baseui/list';
+import { Menu, StatefulMenu } from 'baseui/menu';
+import { ChevronRight } from 'baseui/icon';
+import { withStyle } from 'baseui';
+import { StyledNavItem, StyledNavLink } from 'baseui/side-navigation';
+
+const RoomListItem = withStyle(StyledNavItem, ({ $theme }) => ({
+  paddingTop: $theme.sizing.scale200,
+  paddingBottom: $theme.sizing.scale200,
+}));
 
 export function Home() {
   const { ownedRooms, isCurrentUserCreatingRoom, roomHashId } = useSelector((s: rootState) => ({
@@ -15,22 +24,22 @@ export function Home() {
     roomHashId: s.room.currentRoom?.roomDetails?.hashId,
   }));
 
+  // if (!ownedRooms) {
+  //   throw 'not logged in';
+  // }
+
   const roomElements =
     ownedRooms &&
-    ownedRooms.map((r) => (
-      <div key={r.id}>
-        <Link to={`/rooms/${r.hashId}`}>
-          <ListItem>
-            <ListItemLabel>{r.name}</ListItemLabel>
-          </ListItem>
-        </Link>
-      </div>
+    ownedRooms.slice(0, 10).map((r) => (
+      <RoomListItem key={r.id}>
+        <Link to={`/rooms/${r.hashId}`}>{r.name}</Link>
+      </RoomListItem>
     ));
 
   return (
     <>
       <Card title="Owned Rooms">
-        <ul>{ownedRooms && roomElements?.reverse()}</ul>
+        <ul>{roomElements}</ul>
       </Card>
     </>
   );

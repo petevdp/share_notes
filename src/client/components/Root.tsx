@@ -15,33 +15,29 @@ export function Root(): ReactElement {
   const isLoggedIn = useSelector(isLoggedInSelector);
   return (
     <Router>
-      <GlobalHeader />
       <Layer index={1}>
         <Block
           backgroundColor="backgroundPrimary"
           color="contentPrimary"
           display="flex"
-          justifyContent="center"
+          justifyContent="start"
+          alignContent="center"
+          alignItems="center"
+          flexDirection="column"
+          width="100vw"
           minHeight="100vh"
         >
-          <div
-            className={css({
-              marginTop: '72px',
-              backgroundColor: theme.colors.backgroundPrimary,
-              color: theme.colors.contentPrimary,
-            })}
-          >
-            <Switch>
-              <Route exact path="/">
-                <Home />
-              </Route>
-              <Route exact path="/rooms"></Route>
-              <Route exact path="/rooms/create"></Route>
-              <Route path="/rooms/:roomHashId">
-                <Room />
-              </Route>
-            </Switch>
-          </div>
+          <GlobalHeader />
+          <Switch>
+            <Route exact path="/">
+              <Home />
+            </Route>
+            <Route exact path="/rooms"></Route>
+            <Route exact path="/rooms/create"></Route>
+            <Route path="/rooms/:roomHashId">
+              <Room />
+            </Route>
+          </Switch>
           {isLoggedIn && <CreateRoomModal />}
         </Block>
       </Layer>

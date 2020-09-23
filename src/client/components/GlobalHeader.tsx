@@ -1,19 +1,22 @@
 import React, { useState, useMemo } from 'react';
-import { useStyletron } from 'baseui';
+import { useStyletron, styled, withStyle } from 'baseui';
 import { StyledLink } from 'baseui/link';
 import { rootState } from 'Client/store';
 import { Layer } from 'baseui/layer';
-import { Delete, Plus } from 'baseui/icon';
+import { Delete, Plus, ArrowRight } from 'baseui/icon';
 import { Unstable_AppNavBar as AppNavBar, UserNavItemT, MainNavItemT, AppNavBarPropsT } from 'baseui/app-nav-bar';
+import { StyledNavItem } from 'baseui/side-navigation';
 import { MenuAdapter, MenuAdapterPropsT } from 'baseui/list';
 import {} from 'baseui/header-navigation';
 import { Button as span, Button } from 'baseui/button';
+import { Heading } from 'baseui/heading';
 import { useSelector, useDispatch } from 'react-redux';
 import { GITHUB_0AUTH_URL, GITHUB_CLIENT_ID, AUTH_REDIRECT_URL } from 'Shared/environment';
-import { sessionSliceState, logOut } from 'Client/session/types';
+import { sessionSliceState, logOut, fetchCurrentUserData } from 'Client/session/types';
 import { settingsSelector } from 'Client/settings/slice';
 import { settingsActions } from 'Client/settings/types';
 import { roomCreationActions } from 'Client/roomCreation/types';
+import { Link } from 'react-router-dom';
 
 function renderItem(item: any) {
   return item.label;
@@ -40,8 +43,10 @@ interface avatarNavProps {
 }
 
 export function GlobalHeader() {
-  const [css] = useStyletron();
+  const [css, theme] = useStyletron();
   const session = useSelector((state: rootState) => state.session);
+  const currentRoomDetails = useSelector((state: rootState) => state.room.currentRoom?.roomDetails);
+  // const =
   const isLoggedIn = !!session.user;
   const dispatch = useDispatch();
   const [isNavBarVisible, setIsNavBarVisible] = useState(false);
@@ -97,22 +102,25 @@ export function GlobalHeader() {
   const containerStyles = css({
     boxSizing: 'border-box',
     width: '100vw',
-    position: 'fixed',
-    top: '0',
-    left: '0',
+    height: '72px',
+    // position: 'sticky',
+    // top: '0',
+    // left: '0',
   });
   const appDisplayName = (
-    <StyledLink
-      $style={{
-        textDecoration: 'none',
-        color: 'inherit',
-        ':hover': { color: 'inherit' },
-        ':visited': { color: 'inherit' },
-      }}
-      href={'#'}
-    >
-      Share Notes
-    </StyledLink>
+    <>
+      <Link
+        to={'/'}
+        className={css({
+          textDecoration: 'none',
+          color: 'inherit',
+          ':hover': { color: 'inherit' },
+          ':visited': { color: 'inherit' },
+        })}
+      >
+        Share Notes
+      </Link>
+    </>
   );
   const renderLoginButton = () => <span onClick={() => loginWithGithub()}>Log In</span>;
 
@@ -140,36 +148,34 @@ export function GlobalHeader() {
   }
 
   return (
-    <Layer index={2}>
-      <div className={containerStyles}>
-        <AppNavBar
-          username={githubLogin}
-          appDisplayName={appDisplayName}
-          mainNav={mainNav}
-          isNavItemActive={({ item }) => {
-            return item === activeNavItem || isActive(mainNav, item, activeNavItem);
-          }}
-          onNavItemSelect={({ item }) => {
-            switch (item.item.key) {
-              case 'logOut':
-                dispatch(logOut());
-                break;
-              case 'toggleTheme':
-                dispatch(settingsActions.toggleTheme());
-                break;
-              case 'createNewRoom':
-                dispatch(roomCreationActions.open());
-                break;
-            }
-            console.log('nav item selected: ', item);
-            // if (item === activeNavItem) return;
-            // setActiveNavItem(item);
-          }}
-          {...(navProps || {})}
-        >
-          Does This Work
-        </AppNavBar>
-      </div>
-    </Layer>
+    // <Layer index={2}>
+    <div className={containerStyles}>
+      <AppNavBar
+        username={githubLogin}
+        appDisplayName={appDisplayName}
+        mainNav={mainNav}
+        isNavItemActive={({ item }) => {
+          return item === activeNavItem || isActive(mainNav, item, activeNavItem);
+        }}
+        onNavItemSelect={({ item }) => {
+          switch (item.item.key) {
+            case 'logOut':
+              dispatch(logOut());
+              break;
+            case 'toggleTheme':
+              dispatch(settingsActions.toggleTheme());
+              break;
+            case 'createNewRoom':
+              dispatch(roomCreationActions.open());
+              break;
+          }
+          console.log('nav item selected: ', item);
+          // if (item === activeNavItem) return;
+          // setActiveNavItem(item);
+        }}
+        {...(navProps || {})}
+      />
+    </div>
+    // </Layer>
   );
 }

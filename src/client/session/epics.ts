@@ -9,7 +9,7 @@ import {
   getCurrentUserResult,
 } from 'Client/queries';
 import { request as gqlRequest, GraphQLClient } from 'graphql-request';
-import { getCookie, getGithubGraphqlClient } from 'Client/utils';
+import { getCookie, getGithubGraphqlClient } from 'Client/utils/utils';
 import { GITHUB_GRAPHQL_API_URL, GRAPHQL_URL, SESSION_TOKEN_COOKIE_KEY } from 'Shared/environment';
 
 export const setSessionTokenEpic: Epic = (action$, state$) =>
