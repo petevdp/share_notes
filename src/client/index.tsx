@@ -74,6 +74,7 @@ import 'codemirror/mode/xml/xml.js';
 declare global {
   interface Window {
     MonacoEnvironment: any;
+    ResizeObserver: any;
   }
 }
 

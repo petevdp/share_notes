@@ -1,10 +1,19 @@
 import { Epic, StateObservable, ActionsObservable } from 'redux-observable';
-import { filter, concatMap, map, withLatestFrom, ignoreElements, first, skipUntil, publish } from 'rxjs/operators';
+import {
+  filter,
+  concatMap,
+  map,
+  withLatestFrom,
+  ignoreElements,
+  first,
+  skipUntil,
+  publish,
+  startWith,
+} from 'rxjs/operators';
 import 'codemirror/lib/codemirror.css';
 import 'codemirror/theme/night.css';
 import {
   initRoom,
-  switchCurrentFile,
   addNewFile,
   saveBackToGist,
   gistSaved,
@@ -20,12 +29,15 @@ import {
   fileDetailsState,
   switchToRoom,
   renameFile,
+  provisionTab,
+  unprovisionTab,
+  switchCurrentFile,
 } from './types';
 import { Action } from 'redux';
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 import CodeMirror from 'codemirror';
-import { CodeMirrorBinding } from 'y-codemirror';
+import { CodeMirrorBinding, CodemirrorBinding } from 'y-codemirror';
 import { YJS_WEBSOCKET_URL_WS, YJS_ROOM, GRAPHQL_URL } from 'Shared/environment';
 import { getKeysForMap, getEntriesForMap, awarenessListener } from 'Client/ydocUtils';
 import { Subject, of, concat, Observable, merge, ConnectableObservable, Subscription, BehaviorSubject } from 'rxjs';
@@ -58,31 +70,28 @@ export const initRoomEpic: Epic = (
     concatMap(
       ([
         {
-          payload: { roomHashId, editorContainerRef },
+          payload: { roomHashId, startingTab },
         },
         {
           room: { isCurrentUserCreatingRoom },
-          settings: { theme },
+          settings: { theme: startingTheme },
         },
       ]) => {
-        if (!editorContainerRef.current) {
-          throw 'editor container element not loaded';
-        }
         const theme$ = action$.pipe(
           filter(settingsActions.toggleTheme.match),
           withLatestFrom(state$),
           map(([, state]) => state.settings.theme),
+          startWith(startingTheme),
         );
 
-        const manager = new RoomManager(editorContainerRef.current, roomHashId, theme, theme$);
+        const manager = new RoomManager(roomHashId, theme$);
 
         manager.providerSynced.then(() => {
           console.log('state on sync: ', manager.yData.fileDetailsState.toJSON());
         });
 
         const fileDetailsStateUpdateAction$ = manager.fileDetails$.pipe(
-          withLatestFrom(manager.currentFile$$),
-          map(([fileDetails]) => setGistFileDetails(fileDetails)),
+          map((fileDetails) => setGistFileDetails(fileDetails)),
         );
 
         const roomDataPromise = gqlRequest<getRoomResponse>(GRAPHQL_URL, GET_ROOM, {
@@ -109,7 +118,7 @@ export const initRoomEpic: Epic = (
             });
             const ids = Object.keys(files);
             if (ids.length > 0) {
-              manager.switchCurrentFile('1'); // switch to first file
+              // manager.switchCurrentFile('1'); // switch to first file
             } else {
               manager.addNewFile();
             }
@@ -119,12 +128,6 @@ export const initRoomEpic: Epic = (
             console.log('sync promise resolved');
             const keys = getKeysForMap(manager.yData.fileDetailsState);
             console.log(keys);
-            if (keys.length > 0) {
-              manager.switchCurrentFile(keys[0]);
-            } else {
-              const file = manager.addNewFile();
-              manager.switchCurrentFile(file.tabId);
-            }
           });
         }
 
@@ -135,35 +138,25 @@ export const initRoomEpic: Epic = (
 
         manager.provider.awareness.on('change', awarenessListener);
 
-        const setCurrentFile$ = manager.currentFile$$.pipe(
-          filter((v) => !!v),
-          map((tabId) => setCurrentFile(tabId as string)),
-        );
-
         manager.provider.connect();
         roomManager$$.next(manager);
+
+        const firstCurrentFile$ = manager.fileDetails$.pipe(
+          first(),
+          map((state) => switchCurrentFile(Object.keys(state)[0])),
+        );
 
         return concat(
           of(roomInitialized()),
           merge(
             roomDataPromise.then(setRoomData),
             gistDataPromise.then(setRoomGistDetails),
-            setCurrentFile$,
             fileDetailsStateUpdateAction$,
+            firstCurrentFile$,
           ),
         );
       },
     ),
-  );
-
-export const switchCurrentFileEpic: Epic = (action$, state$, { roomManager$$ }: epicDependencies) =>
-  action$.pipe(
-    filter(switchCurrentFile.match),
-    withLatestFrom(roomManager$$),
-    map(([{ payload: filename }, roomManager]) => {
-      roomManager.switchCurrentFile(filename);
-    }),
-    ignoreElements(),
   );
 
 export const addNewFileEpic: Epic = (action$, state$, { roomManager$$ }: epicDependencies) =>
@@ -172,8 +165,41 @@ export const addNewFileEpic: Epic = (action$, state$, { roomManager$$ }: epicDep
     withLatestFrom(roomManager$$),
     map(([, roomManager]) => {
       const fileState = roomManager.addNewFile();
-      roomManager.switchCurrentFile(fileState.tabId);
+      return switchCurrentFile(fileState.tabId);
     }),
+  );
+
+export const provisionTabEpic: Epic = (action$, state$, { roomManager$$ }: epicDependencies) =>
+  action$.pipe(
+    filter(provisionTab.match),
+    withLatestFrom(roomManager$$),
+    map(
+      ([
+        {
+          payload: { tabId, containerElement },
+        },
+        roomManager,
+      ]) => {
+        roomManager.provisionTab(tabId, containerElement);
+      },
+    ),
+    ignoreElements(),
+  );
+
+export const unprovisionTabEpic: Epic = (action$, state$, { roomManager$$ }: epicDependencies) =>
+  action$.pipe(
+    filter(unprovisionTab.match),
+    withLatestFrom(roomManager$$),
+    map(
+      ([
+        {
+          payload: { tabId },
+        },
+        roomManager,
+      ]) => {
+        roomManager.unprovisionTab(tabId);
+      },
+    ),
     ignoreElements(),
   );
 
@@ -263,8 +289,6 @@ export const destroyRoomEpic: Epic = (action$, state$, { roomManager$$ }: epicDe
   );
 
 export class RoomManager {
-  private binding?: any;
-
   yData: {
     // storing file text and details separately as a performance optimization
     fileDetailsState: Y.Map<Y.Map<any>>;
@@ -274,20 +298,16 @@ export class RoomManager {
   };
   ydoc: Y.Doc;
   provider: WebsocketProvider;
-  editor: CodeMirror.Editor;
+  bindings: Map<string, CodemirrorBinding>;
 
   currentFile$$: BehaviorSubject<string | null>;
   roomDestroyed$$: Subject<boolean>;
+  provisionedTab$$: Subject<{ tabId: string; editorContainer: HTMLElement }>;
   providerSynced: Promise<true>;
   fileDetails$: Observable<allFileDetailsStates>;
   fileDetailsSubscription: Subscription;
 
-  constructor(
-    editorContainerElement: HTMLElement,
-    roomHashId: string,
-    startingTheme: theme,
-    theme$: Observable<theme>,
-  ) {
+  constructor(roomHashId: string, private theme$: Observable<theme>) {
     this.roomDestroyed$$ = new Subject<boolean>();
     this.ydoc = new Y.Doc();
     this.yData = {
@@ -297,14 +317,10 @@ export class RoomManager {
     };
 
     this.currentFile$$ = new BehaviorSubject(null);
+    this.provisionedTab$$ = new Subject();
+    this.bindings = new Map();
 
     this.provider = new WebsocketProvider(YJS_WEBSOCKET_URL_WS, YJS_ROOM, this.ydoc);
-
-    const themeMap = {
-      light: '3024-day',
-      dark: 'pastel-on-dark',
-      // dark: 'material-darker',
-    };
 
     // this.editor = monacoEditor.create(editorContainerElement, {
     //   readOnly: true,
@@ -322,16 +338,33 @@ export class RoomManager {
     */
     console.log(CodeMirror.modes);
     console.log(CodeMirror.mimeModes);
-    this.editor = CodeMirror(editorContainerElement, {
-      readOnly: true,
-      mode: 'xml',
-      viewportMargin: Infinity,
-      lineWrapping: true,
-      theme: themeMap[startingTheme],
+
+    const themeMap = {
+      light: '3024-day',
+      dark: 'pastel-on-dark',
+      // dark: 'material-darker',
+    };
+
+    this.provisionedTab$$.pipe(withLatestFrom(this.theme$)).subscribe(([{ tabId, editorContainer }, currentTheme]) => {
+      const editor = CodeMirror(editorContainer, {
+        mode: 'xml',
+        viewportMargin: Infinity,
+        lineWrapping: true,
+        theme: themeMap[currentTheme],
+      });
+      const content = this.yData.fileContents.get(tabId);
+      if (!content) {
+        throw 'tried to provision nonexistant editor';
+      }
+      console.log('provisioning tab!');
+      const binding = new CodeMirrorBinding(content, editor, this.provider.awareness);
+      this.bindings.set(tabId, binding);
     });
 
     theme$.subscribe((theme) => {
-      this.editor.setOption('theme', themeMap[theme]);
+      for (let binding of this.bindings.values()) {
+        binding.cm.setOption('theme', themeMap[theme]);
+      }
     });
 
     this.providerSynced = new Promise((resolve, reject) => {
@@ -347,7 +380,6 @@ export class RoomManager {
 
     this.fileDetails$ = new Observable<allFileDetailsStates>((s) => {
       const fileDetailsListener = () => {
-        console.log('emitting file details');
         s.next(this.yData.fileDetailsState.toJSON() as allFileDetailsStates);
       };
 
@@ -363,20 +395,14 @@ export class RoomManager {
     this.fileDetailsSubscription = (this.fileDetails$ as ConnectableObservable<allFileDetailsStates>).connect();
   }
 
-  async init() {}
+  provisionTab(tabId: string, editorContainer: HTMLElement) {
+    this.provisionedTab$$.next({ tabId, editorContainer });
+  }
 
-  switchCurrentFile(tabId: string | number) {
-    const fileState = this.yData.fileDetailsState.get(tabId.toString());
-    const text = this.yData.fileContents.get(tabId.toString());
-    if (!fileState || !text) {
-      throw `tab with id ${tabId} doesn't exist`;
-    }
-    this.binding?.destroy();
-    this.binding = new CodeMirrorBinding(text, this.editor, this.provider.awareness);
-    this.editor.setOption('readOnly', false);
-    this.currentFile$$.next(tabId.toString());
-
-    return fileState.toJSON() as fileDetailsState;
+  unprovisionTab(tabId: string) {
+    const binding = this.bindings.get(tabId);
+    binding?.destroy();
+    this.bindings.delete(tabId);
   }
 
   addNewFile(detailsInput?: { filename?: string; content: string }) {
@@ -412,20 +438,29 @@ export class RoomManager {
     }
     if (this.currentFile$$.value === tabId) {
       const otherIds = ids.filter((v) => v !== tabId);
-      this.switchCurrentFile(otherIds[0]);
+      // this.switchCurrentFile(otherIds[0]);
     }
+    const binding = this.bindings.get(tabId);
+    if (binding) {
+      binding.destroy();
+    }
+    this.bindings.delete(tabId);
     this.yData.fileDetailsState.delete(tabId);
     this.yData.fileContents.delete(tabId);
     console.log('removed file');
   }
 
   destroy() {
-    this.binding?.destroy();
+    // this.binding?.destroy();
     this.provider.destroy();
     this.ydoc.destroy();
     this.currentFile$$.complete();
     this.roomDestroyed$$.next(true);
     this.roomDestroyed$$.complete();
     this.fileDetailsSubscription.unsubscribe();
+
+    for (let binding of this.bindings.values()) {
+      binding.destroy();
+    }
   }
 }

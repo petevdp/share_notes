@@ -43,6 +43,7 @@ export type roomSliceState = {
   isCurrentUserCreatingRoom: boolean;
   currentRoom?: {
     hashId: string;
+    loadedTabs: string[];
     roomDetails?: roomDetails;
     gistDetails?: gistDetails;
     currentTabId?: string;
@@ -54,22 +55,26 @@ export const roomCreated = createAction('roomCreated', (data: createRoomResponse
 export const switchToRoom = createAction('switchToRoom', (hashId: string) => ({
   payload: hashId,
 }));
+export const provisionTab = createAction('provisionTab', (tabId: string, containerElement: HTMLElement) => ({
+  payload: { tabId, containerElement },
+}));
+export const unprovisionTab = createAction('unprovisionTab', (tabId: string) => ({
+  payload: { tabId },
+}));
+
 export const leaveRoom = createAction('leaveRoom');
 export const setRoomData = createAction('setRoomData', (data: roomDetails) => ({ payload: data }));
 export const setRoomGistDetails = createAction('setRoomGistDetails', (data: gistDetails) => ({
   payload: data,
 }));
 export const setIsCreatingRoom = createAction('setIsCreatingFroom');
-export const initRoom = createAction(
-  'initRoom',
-  (roomHashId: string, editorContainerRef: React.MutableRefObject<HTMLElement>, test: any) => ({
-    payload: { roomHashId, editorContainerRef, test },
-  }),
-);
+export const initRoom = createAction('initRoom', (roomHashId: string, startingTab?: string) => ({
+  payload: { roomHashId, startingTab },
+}));
 export const roomInitialized = createAction('roomInitialized');
 
 export const destroyRoom = createAction('destroyRoom');
-export const switchCurrentFile = createAction('switchCurrentFile', (filename: string) => ({ payload: filename }));
+export const switchCurrentFile = createAction('switchCurrentFile', (tabId: string) => ({ payload: tabId }));
 export const addNewFile = createAction('addNewFile', (filename?: string) => ({ payload: filename }));
 export const setCurrentFile = createAction('setCurrentFile', (id: string | number) => ({ payload: id }));
 export const renameFile = createAction('renameFile', (tabId: string | number, newFilename: string) => ({

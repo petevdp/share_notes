@@ -5,7 +5,6 @@ import { logOutEpic, fetchCurrentUserDataOnSetSessionTokenEpic, setSessionTokenE
 import { roomSlice } from './room/slice';
 import {
   initRoomEpic,
-  switchCurrentFileEpic,
   addNewFileEpic,
   saveBackToGistEpic,
   destroyRoomEpic,
@@ -13,6 +12,8 @@ import {
   RoomManager,
   removeFileEpic,
   renameFileEpic,
+  provisionTabEpic,
+  unprovisionTabEpic,
 } from './room/epics';
 
 import { FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER, persistReducer, persistStore } from 'redux-persist';
@@ -21,7 +22,7 @@ import { Subject } from 'rxjs';
 import { settingsSlice } from './settings/slice';
 import { roomCreationSlice } from './roomCreation/slice';
 import { initializeRoomCreationEpic } from './roomCreation/epics';
-import { initRoom } from './room/types';
+import { initRoom, provisionTab } from './room/types';
 
 export interface epicDependencies {
   roomManager$$: Subject<RoomManager>;
@@ -49,7 +50,7 @@ export const store = configureStore({
   middleware: getDefaultMiddleware({
     thunk: false,
     serializableCheck: {
-      ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER, initRoom.type],
+      ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER, initRoom.type, provisionTab.type],
     },
   }).concat([epicMiddleware]),
 });
@@ -63,7 +64,9 @@ const epics = [
   logOutEpic,
   createRoomEpic,
   initRoomEpic,
-  switchCurrentFileEpic,
+  // switchCurrentFileEpic,
+  provisionTabEpic,
+  unprovisionTabEpic,
   addNewFileEpic,
   renameFileEpic,
   removeFileEpic,

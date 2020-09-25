@@ -10,6 +10,7 @@ import {
   leaveRoom,
   initRoom,
   setRoomData,
+  switchCurrentFile,
 } from './types';
 
 export const roomSlice = createSlice({
@@ -52,6 +53,7 @@ export const roomSlice = createSlice({
       ...state,
       currentRoom: {
         hashId: roomHashId,
+        loadedTabs: [],
       },
     }));
 
@@ -63,23 +65,50 @@ export const roomSlice = createSlice({
       } else if (!s.currentRoom?.hashId) {
         throw 'hashId not set';
       }
+      const newTabIds = Object.keys(newFileDetails);
+
+      let currentTabId: string;
+      if (newTabIds.length === 0) {
+        // leave undefined
+      }
+      if (!s.currentRoom.fileDetailsStates || !s.currentRoom.currentTabId) {
+        currentTabId = newTabIds[0];
+      } else if (newTabIds.includes(s.currentRoom.currentTabId)) {
+        currentTabId = s.currentRoom.currentTabId;
+      } else {
+        const prevTabId = s.currentRoom.currentTabId || newTabIds[0];
+        const prevTabIds = Object.keys(s.currentRoom.fileDetailsStates);
+        const prevTabIndex = prevTabIds.indexOf(prevTabId);
+        if (prevTabIndex === 0) {
+          currentTabId = newTabIds[0];
+        } else {
+          currentTabId = newTabIds.slice(0, prevTabIndex).reverse()[0];
+        }
+      }
+
       return {
         ...s,
         currentRoom: {
           ...s.currentRoom,
+          currentTabId,
           fileDetailsStates: newFileDetails,
         },
       };
     });
 
-    builder.addCase(setCurrentFile, (s, { payload: tabId }) => {
+    builder.addCase(switchCurrentFile, (s, { payload: tabId }) => {
       if (!s.currentRoom) {
         throw 'current room not set';
+      }
+      let loadedTabs = s.currentRoom.loadedTabs;
+      if (!loadedTabs.includes(tabId)) {
+        loadedTabs = [...loadedTabs, tabId];
       }
       return {
         ...s,
         currentRoom: {
           ...s.currentRoom,
+          loadedTabs,
           currentTabId: tabId.toString(),
         },
       };
@@ -90,6 +119,7 @@ export const roomSlice = createSlice({
       isCurrentUserCreatingRoom: true,
       currentRoom: {
         ...s.currentRoom,
+        loadedTabs: [],
         hashId: roomData.hashId,
         roomDetails: roomData,
       },

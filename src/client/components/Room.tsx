@@ -3,24 +3,14 @@ import React, { useEffect, useRef, useState, MutableRefObject } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { rootState } from 'Client/store';
 import { useStyletron, styled } from 'baseui';
+import { Skeleton } from 'baseui/skeleton';
+import { Tabs, Tab, StatefulTabs } from 'baseui/tabs-motion';
+import { initRoom, destroyRoom, switchCurrentFile, addNewFile, removeFile } from 'Client/room/types';
+import { Plus, Delete } from 'baseui/icon';
+import { TabContent } from './TabContent';
+import { StyleObject } from 'styletron-react';
+import { ItemT } from 'baseui/menu';
 import { Button } from 'baseui/button';
-import { Modal, ModalHeader, ModalBody, ModalFooter } from 'baseui/modal';
-import { Override } from 'baseui/overrides';
-import { Tabs, Tab } from 'baseui/tabs-motion';
-import {
-  initRoom,
-  destroyRoom,
-  switchCurrentFile,
-  addNewFile,
-  saveBackToGist,
-  removeFile,
-  renameFile,
-} from 'Client/room/types';
-import { Plus, TriangleDown, Delete } from 'baseui/icon';
-import { Popover, StatefulPopover } from 'baseui/popover';
-import { StatefulMenu, ItemT } from 'baseui/menu';
-import { Input } from 'baseui/input';
-import { RenameFileModal } from './RenameFileModal';
 
 const ControlPanel = styled('div', { display: 'flex', justifyContent: 'space-between', padding: '.5em' });
 const RightButtonGroup = styled('span', { display: 'flex', justifyContent: 'flex-end', alignItems: 'center' });
@@ -31,6 +21,8 @@ const circle = (
   </svg>
 );
 
+const tabsRootStyle: StyleObject = {};
+
 class Test {
   testMethod() {}
 }
@@ -38,15 +30,12 @@ class Test {
 export function Room() {
   const [css, theme] = useStyletron();
   const { roomHashId } = useParams<{ roomHashId: string }>();
-  const [isActionDropdownOpen, setIsActionDropdownOpen] = useState(false);
   const dispatch = useDispatch();
   const currentRoom = useSelector((s: rootState) => s.room.currentRoom);
-  const editorContainerRef = useRef<HTMLDivElement | null>(null);
-  const [isRenameFileModalOpen, setisRenameFileModalOpen] = useState(false);
 
   useEffect(() => {
     if (roomHashId) {
-      dispatch(initRoom(roomHashId, editorContainerRef as MutableRefObject<HTMLElement>, new Test()));
+      dispatch(initRoom(roomHashId));
       return () => {
         dispatch(destroyRoom());
       };
@@ -62,6 +51,11 @@ export function Room() {
       return (
         <Tab
           overrides={{
+            TabPanel: {
+              style: {
+                display: 'none',
+              },
+            },
             Tab: {
               props: {
                 onContextMenu: () => alert('context menu'),
@@ -132,163 +126,65 @@ export function Room() {
   ];
 
   const tabsElement = (
-    <Tabs
-      overrides={{
-        Root: {
-          style: {
-            display: 'inline-block',
-            width: 'max-content',
+    <>
+      <Tabs
+        activeKey={currentRoom?.currentTabId}
+        overrides={{
+          Root: {
+            style: tabsRootStyle,
           },
-        },
-      }}
-      onChange={(e) => {
-        if (!currentRoom) {
-          throw 'room data not set yet';
-        }
-        if (e.activeKey === addNewFileKey) {
-          dispatch(addNewFile());
-        } else if (e.activeKey !== currentRoom.currentTabId) {
-          dispatch(switchCurrentFile(e.activeKey.toString()));
-        }
-      }}
-      activeKey={currentRoom?.currentTabId}
-    >
-      {tabArr}
-      <Tab key={addNewFileKey} title={<Plus />} />
+        }}
+        onChange={(e) => {
+          if (!currentRoom) {
+            throw 'room data not set yet';
+          }
+          if (e.activeKey !== currentRoom.currentTabId) {
+            dispatch(switchCurrentFile(e.activeKey.toString()));
+          }
+        }}
+      >
+        {tabArr}
+      </Tabs>
+    </>
+  );
+
+  const tabs = currentRoom?.fileDetailsStates ? (
+    tabsElement
+  ) : (
+    <Tabs overrides={{ Root: { style: tabsRootStyle } }}>
+      <Tab title="...">
+        <Skeleton />
+      </Tab>
     </Tabs>
   );
 
   return (
     <div
       className={css({
-        display: 'grid',
-        gridTemplateRows: '4em calc(100% - 4em)',
-        overflow: 'hidden',
+        width: '100%',
+        height: '100%',
+        // display: 'grid',
+        // gridTemplateColumns: '1.95fr .05fr',
+        // gridTemplateRows: '100%',
       })}
     >
-      <ControlPanel>
-        <span>
-          <StatefulPopover
-            placement={'bottomRight'}
-            content={
-              <StatefulMenu
-                items={tabMenuItems}
-                onItemSelect={(i) => {
-                  console.log('selcted item: ', i);
-
-                  dispatch(switchCurrentFile(i.item.key));
-                }}
-              />
-            }
-          >
-            <Button kind="minimal">
-              <TriangleDown />
-            </Button>
-          </StatefulPopover>
-          {currentRoom?.fileDetailsStates ? tabsElement : 'loading...'}
-        </span>
-        <RightButtonGroup>
-          <StatefulPopover
-            placement={'bottomLeft'}
-            overrides={{
-              Body: {
-                style: {
-                  zIndex: 5,
-                },
-              },
-            }}
-            content={
-              <StatefulMenu
-                onItemSelect={(i) => {
-                  switch (i.item.key) {
-                    case 'saveBackToGist':
-                      dispatch(saveBackToGist());
-                    case 'renameFile':
-                      setisRenameFileModalOpen(true);
-                  }
-                }}
-                items={actionItems}
-              />
-            }
-          >
-            <Button
-              overrides={{
-                Root: { style: { height: '30px', paddingLeft: '2px' } },
-                StartEnhancer: { style: { marginRight: '0' } },
-              }}
-              kind={'secondary'}
-              size={'mini'}
-              shape={'pill'}
-              startEnhancer={() => <TriangleDown size={24} />}
-            >
-              Actions
-            </Button>
-          </StatefulPopover>
-        </RightButtonGroup>
-      </ControlPanel>
       <div
         className={css({
-          height: 'calc(100vh - (4em + 72px))',
-          width: '100vw',
-          display: currentRoom ? 'block' : 'hidden',
+          display: 'flex',
         })}
-        id="editor-container"
-        ref={editorContainerRef}
-      />
-      <RenameFileModal
-        tabId={currentRoom?.currentTabId}
-        isOpen={isRenameFileModalOpen}
-        closeModal={() => setisRenameFileModalOpen(false)}
-      />
+      >
+        <span
+          className={css({
+            display: 'flex',
+          })}
+        >
+          {tabs}
+          <Button key={addNewFileKey} onClick={() => dispatch(addNewFile())} kind="minimal">
+            <Plus />
+          </Button>
+        </span>
+      </div>
+      <TabContent />
     </div>
   );
-}
-
-export function getOverrideProps<T>(override: Override<T>) {
-  if (override && typeof override === 'object') {
-    if (typeof override.props === 'object') {
-      return {
-        ...override.props,
-        $style: override.style,
-      };
-    } else {
-      return {
-        $style: override.style,
-      };
-    }
-  }
-  return {};
-}
-
-export function getOverride(override: Override<any>): any {
-  // if (isValidElementType(override)) {
-  //   return override;
-  // }
-
-  if (override && typeof override === 'object') {
-    return override.component;
-  }
-
-  // null/undefined
-  return override;
-}
-
-export function getOverrides(
-  override: any,
-  defaultComponent: React.ComponentType<any>,
-): [React.ComponentType<any>, {}] {
-  const Component = getOverride(override) || defaultComponent;
-
-  if (override && typeof override === 'object' && typeof override.props === 'function') {
-    const DynamicOverride = React.forwardRef((props, ref) => {
-      const mappedProps = override.props(props);
-      const nextProps = getOverrideProps({ ...override, props: mappedProps });
-      return <Component ref={ref} {...nextProps} />;
-    });
-    DynamicOverride.displayName = Component.displayName;
-    return [DynamicOverride, {}];
-  }
-
-  const props = getOverrideProps(override);
-  return [Component, props];
 }
