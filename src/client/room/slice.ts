@@ -1,4 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
+import { rootState } from 'Client/store';
 import {
   roomSliceState,
   setCurrentFile,
@@ -6,11 +7,13 @@ import {
   room,
   roomInitialized,
   setRoomGistDetails,
-  setGistFileDetails as setFileDetailsStates,
+  setFileDetailsState as setFileDetailsStates,
   leaveRoom,
   initRoom,
   setRoomData,
   switchCurrentFile,
+  fileRenamingActions,
+  renameFile,
 } from './types';
 
 export const roomSlice = createSlice({
@@ -86,10 +89,16 @@ export const roomSlice = createSlice({
         }
       }
 
+      let loadedTabs = s.currentRoom.loadedTabs;
+      if (!loadedTabs.includes(currentTabId)) {
+        loadedTabs = [...loadedTabs, currentTabId];
+      }
+
       return {
         ...s,
         currentRoom: {
           ...s.currentRoom,
+          loadedTabs,
           currentTabId,
           fileDetailsStates: newFileDetails,
         },
@@ -124,5 +133,74 @@ export const roomSlice = createSlice({
         roomDetails: roomData,
       },
     }));
+
+    builder.addCase(fileRenamingActions.startRenameCurrentFile, (state) => {
+      if (!state.currentRoom) {
+        throw 'current room not set';
+      }
+
+      const { fileDetailsStates, currentTabId } = state.currentRoom;
+      if (!currentTabId || !fileDetailsStates) {
+        throw 'current tab or file details not initialized';
+      }
+
+      return {
+        ...state,
+        currentRoom: {
+          ...state.currentRoom,
+          currentRename: {
+            tabIdToRename: currentTabId,
+            newFilename: fileDetailsStates[currentTabId].filename,
+            userChangedNewFilename: false,
+          },
+        },
+      };
+    });
+
+    builder.addCase(fileRenamingActions.setNewFileName, (state, { payload: newFilename }) => {
+      if (!state.currentRoom) {
+        throw 'current room not set';
+      }
+
+      if (!state.currentRoom.currentRename) {
+        throw 'not currently renaming';
+      }
+
+      return {
+        ...state,
+        currentRoom: {
+          ...state.currentRoom,
+          currentRename: {
+            ...state.currentRoom.currentRename,
+            newFilename,
+            userChangedNewFilename: true,
+          },
+        },
+      };
+    });
+
+    builder.addCase(fileRenamingActions.close, closeFileRename);
+    builder.addCase(renameFile, closeFileRename);
+
+    function closeFileRename(state: roomSliceState) {
+      if (!state.currentRoom) {
+        throw 'current room not set';
+      }
+
+      return {
+        ...state,
+        currentRoom: {
+          ...state.currentRoom,
+          currentRename: undefined,
+        },
+      };
+    }
   },
 });
+
+export function currentFileRenameWithErrorsSelector(rootState: rootState) {
+  let currentRename = rootState.room.currentRoom?.currentRename;
+  if (!currentRename) {
+    return;
+  }
+}

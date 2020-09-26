@@ -5,12 +5,23 @@ import { rootState } from 'Client/store';
 import { useStyletron, styled } from 'baseui';
 import { Skeleton } from 'baseui/skeleton';
 import { Tabs, Tab, StatefulTabs } from 'baseui/tabs-motion';
-import { initRoom, destroyRoom, switchCurrentFile, addNewFile, removeFile } from 'Client/room/types';
-import { Plus, Delete } from 'baseui/icon';
+import {
+  initRoom,
+  destroyRoom,
+  switchCurrentFile,
+  addNewFile,
+  removeFile,
+  saveBackToGist,
+  renameFile,
+  fileRenamingActions,
+} from 'Client/room/types';
+import { Plus, Delete, Menu } from 'baseui/icon';
 import { TabContent } from './TabContent';
 import { StyleObject } from 'styletron-react';
-import { ItemT } from 'baseui/menu';
+import { StatefulPopover } from 'baseui/popover';
+import { ItemT, StatefulMenu } from 'baseui/menu';
 import { Button } from 'baseui/button';
+import { RenameFileModal } from './RenameFileModal';
 
 const ControlPanel = styled('div', { display: 'flex', justifyContent: 'space-between', padding: '.5em' });
 const RightButtonGroup = styled('span', { display: 'flex', justifyContent: 'flex-end', alignItems: 'center' });
@@ -125,6 +136,19 @@ export function Room() {
     },
   ];
 
+  const onActionItemSelect = ({ item: { key } }: { item: { label: string; key: string } }) => {
+    switch (key) {
+      case 'saveBackToGist':
+        dispatch(saveBackToGist());
+        break;
+      case 'renameFile':
+        if (currentRoom?.currentTabId) {
+          dispatch(fileRenamingActions.startRenameCurrentFile());
+        }
+    }
+    console.log('item: ', key);
+  };
+
   const tabsElement = (
     <>
       <Tabs
@@ -171,6 +195,9 @@ export function Room() {
       <div
         className={css({
           display: 'flex',
+          justifyContent: 'space-between',
+          paddingLeft: '2em',
+          paddingRight: '2em',
         })}
       >
         <span
@@ -183,8 +210,19 @@ export function Room() {
             <Plus />
           </Button>
         </span>
+        <span>
+          <StatefulPopover
+            placement={'bottom'}
+            content={() => <StatefulMenu onItemSelect={onActionItemSelect} items={actionItems}></StatefulMenu>}
+          >
+            <Button kind="secondary" shape="pill">
+              Actions
+            </Button>
+          </StatefulPopover>
+        </span>
       </div>
       <TabContent />
+      <RenameFileModal />
     </div>
   );
 }

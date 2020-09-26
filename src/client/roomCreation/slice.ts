@@ -12,7 +12,7 @@ const initialState: roomCreationSliceState = {
 
 export const roomCreationSlice = createSlice({
   initialState,
-  name: 'createRoomModalSlice',
+  name: 'roomCreationSlice',
   reducers: {},
   extraReducers: (builder) => {
     builder.addCase(roomCreationActions.close, (s, { payload: username }) => resetRoom(s, username));

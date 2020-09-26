@@ -25,13 +25,13 @@ import {
   setRoomGistDetails,
   removeFile,
   allFileDetailsStates,
-  setGistFileDetails,
+  setFileDetailsState,
   fileDetailsState,
-  switchToRoom,
   renameFile,
   provisionTab,
   unprovisionTab,
   switchCurrentFile,
+  fileRenamingActions,
 } from './types';
 import { Action } from 'redux';
 import * as Y from 'yjs';
@@ -77,7 +77,7 @@ export const initRoomEpic: Epic = (
           settings: { theme: startingTheme },
         },
       ]) => {
-        const theme$ = action$.pipe(
+        const theme$: Observable<theme> = action$.pipe(
           filter(settingsActions.toggleTheme.match),
           withLatestFrom(state$),
           map(([, state]) => state.settings.theme),
@@ -91,7 +91,7 @@ export const initRoomEpic: Epic = (
         });
 
         const fileDetailsStateUpdateAction$ = manager.fileDetails$.pipe(
-          map((fileDetails) => setGistFileDetails(fileDetails)),
+          map((fileDetails) => setFileDetailsState(fileDetails)),
         );
 
         const roomDataPromise = gqlRequest<getRoomResponse>(GRAPHQL_URL, GET_ROOM, {
@@ -141,10 +141,10 @@ export const initRoomEpic: Epic = (
         manager.provider.connect();
         roomManager$$.next(manager);
 
-        const firstCurrentFile$ = manager.fileDetails$.pipe(
-          first(),
-          map((state) => switchCurrentFile(Object.keys(state)[0])),
-        );
+        // const firstCurrentFile$ = manager.fileDetails$.pipe(
+        //   first(),
+        //   map((state) => switchCurrentFile(Object.keys(state)[0])),
+        // );
 
         return concat(
           of(roomInitialized()),
@@ -152,7 +152,7 @@ export const initRoomEpic: Epic = (
             roomDataPromise.then(setRoomData),
             gistDataPromise.then(setRoomGistDetails),
             fileDetailsStateUpdateAction$,
-            firstCurrentFile$,
+            // firstCurrentFile$,
           ),
         );
       },
@@ -163,9 +163,9 @@ export const addNewFileEpic: Epic = (action$, state$, { roomManager$$ }: epicDep
   action$.pipe(
     filter(addNewFile.match),
     withLatestFrom(roomManager$$),
-    map(([, roomManager]) => {
+    concatMap(([, roomManager]) => {
       const fileState = roomManager.addNewFile();
-      return switchCurrentFile(fileState.tabId);
+      return of(switchCurrentFile(fileState.tabId), fileRenamingActions.startRenameCurrentFile());
     }),
   );
 

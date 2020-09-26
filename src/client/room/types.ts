@@ -48,6 +48,11 @@ export type roomSliceState = {
     gistDetails?: gistDetails;
     currentTabId?: string;
     fileDetailsStates?: allFileDetailsStates;
+    currentRename?: {
+      tabIdToRename: string;
+      newFilename: string;
+      userChangedNewFilename: boolean;
+    };
   };
 };
 
@@ -80,9 +85,15 @@ export const setCurrentFile = createAction('setCurrentFile', (id: string | numbe
 export const renameFile = createAction('renameFile', (tabId: string | number, newFilename: string) => ({
   payload: { tabId, newFilename },
 }));
-export const setGistFileDetails = createAction('setFileDetailState', (allFileDetailsState: allFileDetailsStates) => ({
+export const setFileDetailsState = createAction('setFileDetailState', (allFileDetailsState: allFileDetailsStates) => ({
   payload: allFileDetailsState,
 }));
 export const removeFile = createAction('removeFile', (filename: string) => ({ payload: filename }));
 export const saveBackToGist = createAction('saveBackToGist');
 export const gistSaved = createAction('gistSaved');
+
+export const fileRenamingActions = {
+  startRenameCurrentFile: createAction('startRenameCurrentFile'),
+  close: createAction('closeRenameFileModal'),
+  setNewFileName: createAction('setNewFileName', (filename: string) => ({ payload: filename })),
+};
