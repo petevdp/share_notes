@@ -1,14 +1,14 @@
-import React, { ReactElement, useState, useEffect } from 'react';
-import { Modal, ModalHeader, ModalBody } from 'baseui/modal';
-import { CreateRoomInput } from 'Shared/inputs/roomInputs';
+import { Button } from 'baseui/button';
 import { FormControl } from 'baseui/form-control';
 import { Input } from 'baseui/input';
-import { Button } from 'baseui/button';
+import { Modal, ModalBody, ModalHeader } from 'baseui/modal';
+import { roomSliceStateWithErrorSelector } from 'Client/roomCreation/slice';
+import { roomCreationActions } from 'Client/roomCreation/types';
+import { rootState } from 'Client/store';
+import React, { ReactElement, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
-import { rootState } from 'Client/store';
-import { roomCreationActions } from 'Client/roomCreation/types';
-import { roomSliceStateWithErrorSelector } from 'Client/roomCreation/slice';
+import { CreateRoomInput } from 'Shared/inputs/roomInputs';
 
 export function CreateRoomModal(): ReactElement {
   const dispatch = useDispatch();

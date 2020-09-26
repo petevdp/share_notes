@@ -1,24 +1,25 @@
-import express, { Router } from 'express';
-import axios from 'axios';
 import 'cross-fetch/polyfill';
-import bodyParser from 'body-parser';
-import { config } from 'dotenv';
-import * as GithubUtils from 'Server/utils/githubUtils';
+
 import ApolloClient, { gql } from 'apollo-boost';
+import axios from 'axios';
+import bodyParser from 'body-parser';
+import cookieParser from 'cookie-parser';
+import { config } from 'dotenv';
+import express, { Router } from 'express';
+import querystring from 'querystring';
+import * as GithubUtils from 'Server/utils/githubUtils';
 import {
+  DEV_SERVER_PORT,
   GITHUB_0AUTH_ACCESS_TOKEN_URL,
   GITHUB_CLIENT_ID,
   GITHUB_GRAPHQL_API_URL,
-  DEV_SERVER_PORT,
   SESSION_TOKEN_COOKIE_KEY,
 } from 'Shared/environment';
-import cookieParser from 'cookie-parser';
-
-import querystring from 'querystring';
-import { TedisService, USER_ID_BY_SESSION_KEY } from './services/tedisService';
 import { Repository } from 'typeorm';
-import { User } from './models/user';
+
 import { Context } from './context';
+import { User } from './models/user';
+import { TedisService, USER_ID_BY_SESSION_KEY } from './services/tedisService';
 interface github0AuthIdentityParams {
   client_id: string;
   client_secret: string;

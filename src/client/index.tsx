@@ -1,11 +1,3 @@
-import ReactDOM from 'react-dom';
-import React from 'react';
-import { Provider as ReduxProvider, useDispatch, useSelector } from 'react-redux';
-import { PersistGate } from 'redux-persist/integration/react';
-
-import { App } from './App';
-import { store, persistor } from './store';
-
 import 'codemirror/theme/3024-day.css';
 import 'codemirror/theme/3024-night.css';
 import 'codemirror/theme/abcdef.css';
@@ -70,6 +62,14 @@ import 'codemirror/theme/yeti.css';
 import 'codemirror/theme/yonce.css';
 import 'codemirror/theme/zenburn.css';
 import 'codemirror/mode/xml/xml.js';
+
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { Provider as ReduxProvider, useDispatch, useSelector } from 'react-redux';
+import { PersistGate } from 'redux-persist/integration/react';
+
+import { App } from './App';
+import { persistor, store } from './store';
 
 declare global {
   interface Window {

@@ -1,6 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { settingsSliceState, settingsActions } from './types';
 import { rootState } from 'Client/store';
+
+import { settingsActions, settingsSliceState } from './types';
 
 const initialState: settingsSliceState = {
   theme: 'light',

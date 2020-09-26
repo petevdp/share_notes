@@ -1,9 +1,10 @@
-import { Entity, EntityRepository, EntityManager, Repository } from 'typeorm';
-import { User } from 'Server/models/user';
 import { Room } from 'Server/models/room';
+import { User } from 'Server/models/user';
 import { HashIdService } from 'Server/services/hashIdService';
-import { Service, Inject } from 'typedi';
+import { Inject, Service } from 'typedi';
+import { Entity, EntityManager, EntityRepository, Repository } from 'typeorm';
 import { InjectRepository } from 'typeorm-typedi-extensions';
+
 import { RoomInput } from '../../../dist/src/shared/inputs/roomInputs';
 
 export interface createRoomFields {
@@ -19,7 +20,7 @@ export class ClientSideRoomService {
   ) {}
 
   async findRoom(input: RoomInput) {
-    let { hashId, ...rest } = input;
+    const { hashId, ...rest } = input;
     let roomPartial: Partial<Room> = rest;
     if (input.id) {
       roomPartial = { id: input.id };

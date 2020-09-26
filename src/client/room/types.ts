@@ -1,7 +1,5 @@
 import { createAction } from '@reduxjs/toolkit';
-import { RoomManager } from './epics';
-import { createRoomResponse, getRoomResponse, gistDetails, roomDetails } from 'Client/queries';
-import { CreateRoomInput } from 'Shared/inputs/roomInputs';
+import { createRoomResponse, gistDetails, roomDetails } from 'Client/queries';
 import * as Y from 'yjs';
 
 export type gistDetailKeys = 'description' | 'name' | 'url';
@@ -39,10 +37,24 @@ export interface room {
   };
 }
 
+interface anonymousLogin {
+  username: string;
+}
+
+interface userAwareness {
+  name: string;
+  color: string;
+}
+
+export interface roomAwareness {
+  [id: string]: userAwareness;
+}
+
 export type roomSliceState = {
   isCurrentUserCreatingRoom: boolean;
   currentRoom?: {
     hashId: string;
+    awareness?: roomAwareness;
     loadedTabs: string[];
     roomDetails?: roomDetails;
     gistDetails?: gistDetails;
@@ -60,6 +72,7 @@ export const roomCreated = createAction('roomCreated', (data: createRoomResponse
 export const switchToRoom = createAction('switchToRoom', (hashId: string) => ({
   payload: hashId,
 }));
+
 export const provisionTab = createAction('provisionTab', (tabId: string, containerElement: HTMLElement) => ({
   payload: { tabId, containerElement },
 }));

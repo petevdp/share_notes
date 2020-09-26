@@ -1,8 +1,8 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { provisionTab, unprovisionTab } from 'Client/room/types';
 import { useStyletron } from 'baseui';
+import { provisionTab, unprovisionTab } from 'Client/room/types';
 import { rootState } from 'Client/store';
+import React, { useEffect, useRef, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 
 export function TabContent() {
   const currentRoom = useSelector((s: rootState) => s.room.currentRoom);
@@ -22,6 +22,7 @@ function EditorTab({ tabId, visible }: { tabId: string; visible: boolean }) {
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
   const [css] = useStyletron();
   const dispatch = useDispatch();
+  const fileDetailsPresent = useSelector((state: rootState) => !!state.room.currentRoom?.fileDetailsStates);
   useEffect(() => {
     if (editorContainerRef.current) {
       dispatch(provisionTab(tabId, editorContainerRef.current));
@@ -29,7 +30,7 @@ function EditorTab({ tabId, visible }: { tabId: string; visible: boolean }) {
     return () => {
       unprovisionTab(tabId);
     };
-  }, [tabId, editorContainerRef]);
+  }, [tabId, editorContainerRef, fileDetailsPresent]);
   return (
     <div
       ref={editorContainerRef}

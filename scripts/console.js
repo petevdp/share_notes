@@ -1,9 +1,7 @@
-// const { createConnection } = require('typeorm');
-// const { Room } = require('../dist/src/server/models/room');
-// const { User } = require('../dist/src/server/models/user');
-// const { Tedis } = require('tedis');
+/* eslint-disable */
 
-require('module-alias/register');
+const register = require('module-alias/register');
+
 const { createConnection } = require('typeorm');
 const path = require('path');
 const { Room } = require('Server/models/room');

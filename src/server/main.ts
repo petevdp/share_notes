@@ -1,25 +1,26 @@
 import 'reflect-metadata';
 import 'module-alias/register';
 
-import express from 'express';
-import WebSocket from 'ws';
-import http from 'http';
 import { ApolloServer } from 'apollo-server-express';
-import * as TypeORM from 'typeorm';
-import { Container } from 'typedi';
-import { buildSchema } from 'type-graphql';
+import cookieParser from 'cookie-parser';
+import express from 'express';
+import http from 'http';
 import { API_PORT, YJS_ROOM } from 'Shared/environment';
+import { buildSchema } from 'type-graphql';
+import { Container } from 'typedi';
+import * as TypeORM from 'typeorm';
+import { OrmManager } from 'typeorm-typedi-extensions';
+import WebSocket from 'ws';
+import { docs, setupWSConnection, WSSharedDoc } from 'y-websocket/bin/utils';
+
+import { getAuthChecker } from './authChecker';
 import { getAuthRouter } from './authRouter';
 import { Context } from './context';
-import { UserResolver } from './resolvers/userResolver';
-import { RoomResolver } from './resolvers/roomResolver';
 import { createDatabaseConnection } from './db';
-import { setupWSConnection, docs, WSSharedDoc } from 'y-websocket/bin/utils';
-import { OrmManager } from 'typeorm-typedi-extensions';
-import cookieParser from 'cookie-parser';
-import { TedisService } from './services/tedisService';
-import { getAuthChecker } from './authChecker';
 import { User } from './models/user';
+import { RoomResolver } from './resolvers/roomResolver';
+import { UserResolver } from './resolvers/userResolver';
+import { TedisService } from './services/tedisService';
 
 TypeORM.useContainer(Container);
 async function runServer() {

@@ -1,19 +1,20 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { rootState } from 'Client/store';
+
 import {
+  fileRenamingActions,
+  initRoom,
+  leaveRoom,
+  renameFile,
+  room,
+  roomCreated,
+  roomInitialized,
   roomSliceState,
   setCurrentFile,
-  roomCreated,
-  room,
-  roomInitialized,
-  setRoomGistDetails,
   setFileDetailsState as setFileDetailsStates,
-  leaveRoom,
-  initRoom,
   setRoomData,
+  setRoomGistDetails,
   switchCurrentFile,
-  fileRenamingActions,
-  renameFile,
 } from './types';
 
 export const roomSlice = createSlice({
@@ -179,27 +180,33 @@ export const roomSlice = createSlice({
       };
     });
 
-    builder.addCase(fileRenamingActions.close, closeFileRename);
-    builder.addCase(renameFile, closeFileRename);
+    {
+      const closeFileRename = (state: roomSliceState) => {
+        if (!state.currentRoom) {
+          throw 'current room not set';
+        }
 
-    function closeFileRename(state: roomSliceState) {
-      if (!state.currentRoom) {
-        throw 'current room not set';
-      }
-
-      return {
-        ...state,
-        currentRoom: {
-          ...state.currentRoom,
-          currentRename: undefined,
-        },
+        return {
+          ...state,
+          currentRoom: {
+            ...state.currentRoom,
+            currentRename: undefined,
+          },
+        };
       };
+
+      builder.addCase(fileRenamingActions.close, closeFileRename);
+      builder.addCase(renameFile, closeFileRename);
     }
   },
 });
 
+export function isLoggedInForRoomSelector(rootState: rootState) {
+  return !!(rootState.session.token || rootState.session.anonymousUser);
+}
+
 export function currentFileRenameWithErrorsSelector(rootState: rootState) {
-  let currentRename = rootState.room.currentRoom?.currentRename;
+  const currentRename = rootState.room.currentRoom?.currentRename;
   if (!currentRename) {
     return;
   }

@@ -1,6 +1,6 @@
-import { GraphQLClient, gql } from 'graphql-request';
-import { GITHUB_GRAPHQL_API_URL } from 'Shared/environment';
+import { gql, GraphQLClient } from 'graphql-request';
 import { Context } from 'Server/context';
+import { GITHUB_GRAPHQL_API_URL } from 'Shared/environment';
 
 export function runQuery<T>(query: string, context: Context, variables?: any) {
   const client = new GraphQLClient(GITHUB_GRAPHQL_API_URL, {

@@ -1,8 +1,9 @@
-import { createSlice, AnyAction } from '@reduxjs/toolkit';
-import { roomCreationActions, roomCreationSliceState } from './types';
+import { AnyAction, createSlice } from '@reduxjs/toolkit';
 import { roomSliceState } from 'Client/room/types';
 import { rootState } from 'Client/store';
 import { reset } from 'module-alias';
+
+import { roomCreationActions, roomCreationSliceState } from './types';
 
 const initialState: roomCreationSliceState = {
   isOpen: false,
@@ -39,7 +40,7 @@ export interface roomCreationSliceStateWithError extends roomCreationSliceState 
 export function roomSliceStateWithErrorSelector(rootState: rootState): roomCreationSliceStateWithError {
   const { gistUrl, roomName } = rootState.roomCreation;
 
-  let gistUrlError = (() => {
+  const gistUrlError = (() => {
     let url: URL;
     try {
       if (!gistUrl) {

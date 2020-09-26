@@ -1,23 +1,32 @@
-import { Epic } from 'redux-observable';
-import { filter, map, concatMap, first } from 'rxjs/operators';
-import { setSessionGithubDetails, logOut, clearSessionData, setCurrentUserData, setSessionToken } from './types';
-import { merge } from 'rxjs';
 import {
+  GET_CURRENT_USER,
   GET_VIEWER_GITHUB_DETAILS,
   getCurrentUserGithubDetailsResponse,
-  GET_CURRENT_USER,
   getCurrentUserResult,
 } from 'Client/queries';
-import { request as gqlRequest, GraphQLClient } from 'graphql-request';
-import { getCookie, getGithubGraphqlClient } from 'Client/utils/utils';
+import { epicDependencies } from 'Client/store';
+import { eraseCookie, getCookie, getGithubGraphqlClient } from 'Client/utils/utils';
+import { GraphQLClient, request as gqlRequest } from 'graphql-request';
+import { Epic } from 'redux-observable';
+import { merge } from 'rxjs';
+import { concatMap, filter, first, ignoreElements, map, withLatestFrom } from 'rxjs/operators';
 import { GITHUB_GRAPHQL_API_URL, GRAPHQL_URL, SESSION_TOKEN_COOKIE_KEY } from 'Shared/environment';
+
+import {
+  anonymousLoginActions,
+  clearSessionData,
+  logOut,
+  setCurrentUserData,
+  setSessionGithubDetails,
+  setSessionToken,
+} from './types';
 
 export const setSessionTokenEpic: Epic = (action$, state$) =>
   state$.pipe(
     // on store init, if we haven't yet set the session token(might have persisted state), do so
     first(),
-    filter((s) => !s.session.token && !!getCookie(SESSION_TOKEN_COOKIE_KEY)),
-    map(() => setSessionToken(getCookie(SESSION_TOKEN_COOKIE_KEY) as string)),
+    filter((s) => !s.session.token),
+    map(() => setSessionToken(getCookie(SESSION_TOKEN_COOKIE_KEY) as string | undefined)),
   );
 
 /**
@@ -27,6 +36,7 @@ export const fetchCurrentUserDataOnSetSessionTokenEpic: Epic = (action$) =>
   action$.pipe(
     // when we have a session token
     filter(setSessionToken.match),
+    filter(({ payload: token }) => !!token),
     first(),
     concatMap(({ payload: token }) => {
       // get user data from server
@@ -51,7 +61,18 @@ export const logOutEpic: Epic = (action$) =>
   action$.pipe(
     filter(logOut.match),
     concatMap(async () => {
+      eraseCookie(SESSION_TOKEN_COOKIE_KEY);
       await fetch('/auth/logout');
       return clearSessionData();
     }),
+  );
+
+export const loginAnonymouslyEpic: Epic = (aciton$, state$, { roomManager$$ }: epicDependencies) =>
+  aciton$.pipe(
+    filter(anonymousLoginActions.logInAnonymously.match),
+    withLatestFrom(roomManager$$),
+    map(([{ payload: username }, roomManager]) => {
+      roomManager.setAwarenessUserDetails(username);
+    }),
+    ignoreElements(),
   );

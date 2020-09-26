@@ -1,11 +1,12 @@
+import { BaseProvider, DarkTheme, LightTheme } from 'baseui';
+import { Theme } from 'baseui/theme';
 import React, { ReactElement } from 'react';
-import { BaseProvider, LightTheme, DarkTheme } from 'baseui';
+import { useSelector } from 'react-redux';
 import { Client as Styletron } from 'styletron-engine-atomic';
 import { Provider as StyletronProvider } from 'styletron-react';
-import { settingsSelector } from './settings/slice';
-import { Theme } from 'baseui/theme';
-import { useSelector } from 'react-redux';
+
 import { Root } from './components/Root';
+import { settingsSelector } from './settings/slice';
 
 const engine = new Styletron();
 

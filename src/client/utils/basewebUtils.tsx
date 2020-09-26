@@ -1,5 +1,5 @@
 import { Override } from 'baseui/overrides';
-import React, { Component } from 'react';
+import React from 'react';
 
 export function getOverrideProps<T>(override: Override<T>) {
   if (override && typeof override === 'object') {
@@ -33,7 +33,7 @@ export function getOverride(override: Override<any>): any {
 export function getOverrides(
   override: any,
   defaultComponent: React.ComponentType<any>,
-): [React.ComponentType<any>, {}] {
+): [React.ComponentType<any>, any] {
   const Component = getOverride(override) || defaultComponent;
 
   if (override && typeof override === 'object' && typeof override.props === 'function') {

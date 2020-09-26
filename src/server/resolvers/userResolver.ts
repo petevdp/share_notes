@@ -1,13 +1,13 @@
-import { Resolver, Query, Arg, FieldResolver, Root, Ctx, Authorized } from 'type-graphql';
+import { AuthorizedContext } from 'Server/context';
+import { ClientSideRoom, Room } from 'Server/models/room';
 import { User } from 'Server/models/user';
-import { Service } from 'typedi';
-import { InjectRepository } from 'typeorm-typedi-extensions';
-import { Repository } from 'typeorm';
-import { UserInput } from 'Shared/inputs/userInputs';
-import { Room, ClientSideRoom } from 'Server/models/room';
 import { HashIdService } from 'Server/services/hashIdService';
 import { TedisService, USER_ID_BY_SESSION_KEY } from 'Server/services/tedisService';
-import { AuthorizedContext } from 'Server/context';
+import { UserInput } from 'Shared/inputs/userInputs';
+import { Arg, Authorized, Ctx, FieldResolver, Query, Resolver, Root } from 'type-graphql';
+import { Service } from 'typedi';
+import { Repository } from 'typeorm';
+import { InjectRepository } from 'typeorm-typedi-extensions';
 
 @Service()
 @Resolver(() => User)

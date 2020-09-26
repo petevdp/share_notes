@@ -1,38 +1,24 @@
-import React, { useState, useMemo } from 'react';
-import { useStyletron, styled, withStyle } from 'baseui';
+import { styled, useStyletron, withStyle } from 'baseui';
+import { MainNavItemT, UserNavItemT } from 'baseui/app-nav-bar';
+import { Avatar } from 'baseui/avatar';
+import { Button } from 'baseui/button';
+import { ALIGN, HeaderNavigation, StyledNavigationItem, StyledNavigationList } from 'baseui/header-navigation';
+import { ChevronDown, Plus } from 'baseui/icon';
 import { StyledLink } from 'baseui/link';
-import { rootState } from 'Client/store';
-import { Layer } from 'baseui/layer';
-import { Delete, Plus, ArrowRight } from 'baseui/icon';
-import { Unstable_AppNavBar as AppNavBar, UserNavItemT, MainNavItemT, AppNavBarPropsT } from 'baseui/app-nav-bar';
-import { StyledNavItem } from 'baseui/side-navigation';
-import { MenuAdapter, MenuAdapterPropsT } from 'baseui/list';
-import {} from 'baseui/header-navigation';
-import { Button as span, Button } from 'baseui/button';
-import { Heading } from 'baseui/heading';
-import { useSelector, useDispatch } from 'react-redux';
-import { GITHUB_0AUTH_URL, GITHUB_CLIENT_ID, AUTH_REDIRECT_URL } from 'Shared/environment';
-import { sessionSliceState, logOut, fetchCurrentUserData } from 'Client/session/types';
-import { settingsSelector } from 'Client/settings/slice';
-import { settingsActions } from 'Client/settings/types';
+import { ItemT, StatefulMenu, StyledList, StyledListItem } from 'baseui/menu';
+import { StatefulPopover } from 'baseui/popover';
+import { LabelMedium } from 'baseui/typography';
 import { roomCreationActions } from 'Client/roomCreation/types';
+import { logOut } from 'Client/session/types';
+import { settingsActions } from 'Client/settings/types';
+import { rootState } from 'Client/store';
+import React, { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
+import { AUTH_REDIRECT_URL, GITHUB_0AUTH_URL, GITHUB_CLIENT_ID } from 'Shared/environment';
 
 function renderItem(item: any) {
   return item.label;
-}
-function isActive(arr: Array<any>, item: any, activeItem: any): boolean {
-  let active = false;
-  for (let i = 0; i < arr.length; i++) {
-    const elm = arr[i];
-    if (elm === item) {
-      if (item === activeItem) return true;
-      return isActive((item && item.nav) || [], activeItem, activeItem);
-    } else if (elm.nav) {
-      active = isActive(elm.nav || [], item, activeItem);
-    }
-  }
-  return active;
 }
 
 interface avatarNavProps {
@@ -42,53 +28,76 @@ interface avatarNavProps {
   userImgUrl?: string;
 }
 
+export const StyledUserMenuListItem = withStyle(StyledListItem, {
+  paddingTop: '0',
+  paddingBottom: '0',
+  paddingRight: '0',
+});
+
+export const StyledUserProfileTileContainer = styled('div', ({ $theme }) => {
+  return {
+    boxSizing: 'border-box',
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'row',
+    flexWrap: 'nowrap',
+    justifyContent: 'flex-start',
+    paddingTop: $theme.sizing.scale600,
+    paddingBottom: $theme.sizing.scale600,
+  };
+});
+
+export const StyledUserProfilePictureContainer = styled('div', ({ $theme }) => {
+  return {
+    marginRight: $theme.sizing.scale600,
+  };
+});
+
+export const StyledUserProfileInfoContainer = styled('div', () => {
+  return {
+    boxSizing: 'border-box',
+    alignSelf: 'center',
+  };
+});
+
 export function GlobalHeader() {
-  const [css, theme] = useStyletron();
+  const [css] = useStyletron();
   const session = useSelector((state: rootState) => state.session);
   const currentRoomDetails = useSelector((state: rootState) => state.room.currentRoom?.roomDetails);
   // const =
   const isLoggedIn = !!session.user;
   const dispatch = useDispatch();
-  const [isNavBarVisible, setIsNavBarVisible] = useState(false);
-  const [activeNavItem, setActiveNavItem] = useState(undefined as undefined | UserNavItemT);
-
-  const USER_NAV: UserNavItemT[] = [
-    {
-      item: { label: 'Log Out', key: 'logOut' },
-      mapItemToNode: renderItem,
-      mapItemToString: renderItem,
-    },
-    {
-      item: { label: `Toggle Night Mode`, key: 'toggleTheme' },
-      mapItemToNode: renderItem,
-      mapItemToString: renderItem,
-    },
-  ];
+  const [] = useState(false);
+  const [] = useState(undefined as undefined | UserNavItemT);
 
   const githubLogin = session.user?.githubLogin;
   const avatarUrl = session.githubUserDetails?.avatarUrl;
 
-  const { data: navProps } = React.useMemo(() => {
-    let data: null | avatarNavProps;
-    let loading = false;
-    if (githubLogin && avatarUrl) {
-      data = {
-        userImgUrl: avatarUrl,
-        username: githubLogin,
-        userNav: USER_NAV,
-      };
-    } else {
-      loading = true;
-      data = null;
+  let userNav: ItemT[] = [
+    { label: 'Log Out', key: 'logOut' },
+    { label: `Toggle Night Mode`, key: 'toggleTheme' },
+  ];
+
+  const onUserNavItemSelect = (item: ItemT) => {
+    console.log('item: ', item);
+
+    switch (item.item.key) {
+      case 'logOut':
+        dispatch(logOut());
+        break;
+      case 'toggleTheme':
+        dispatch(settingsActions.toggleTheme());
+        break;
+      case 'createNewRoom':
+        dispatch(roomCreationActions.open());
+        break;
     }
-    // const navProps = {
-    //   userNav: USER_NAV,
-    //   username: session.user?.githubLogin,
-    //   usernameSubtitle: '5.0',
-    //   userImgUrl: '',
-    // };
-    return { loading, data };
-  }, [githubLogin, avatarUrl]);
+  };
+
+  if (githubLogin) {
+    const userProfileItem: ItemT = { key: 'userProfile', label: githubLogin };
+    userNav = [...userNav, userProfileItem];
+  }
 
   const loginWithGithub = () => {
     const url = new URL(GITHUB_0AUTH_URL);
@@ -103,25 +112,7 @@ export function GlobalHeader() {
     boxSizing: 'border-box',
     width: '100vw',
     height: '72px',
-    // position: 'sticky',
-    // top: '0',
-    // left: '0',
   });
-  const appDisplayName = (
-    <>
-      <Link
-        to={'/'}
-        className={css({
-          textDecoration: 'none',
-          color: 'inherit',
-          ':hover': { color: 'inherit' },
-          ':visited': { color: 'inherit' },
-        })}
-      >
-        Share Notes
-      </Link>
-    </>
-  );
   const renderLoginButton = () => <span onClick={() => loginWithGithub()}>Log In</span>;
 
   let mainNav: MainNavItemT[] = [];
@@ -149,31 +140,92 @@ export function GlobalHeader() {
 
   return (
     <div className={containerStyles}>
-      <AppNavBar
-        username={githubLogin}
-        appDisplayName={appDisplayName}
-        mainNav={mainNav}
-        isNavItemActive={({ item }) => {
-          return item === activeNavItem || isActive(mainNav, item, activeNavItem);
+      <HeaderNavigation
+        overrides={{
+          Root: {
+            style: {
+              paddingTop: '0px',
+              paddingBottom: '0px',
+              paddingLeft: '8px',
+              paddingRight: '8px',
+            },
+          },
         }}
-        onNavItemSelect={({ item }) => {
-          switch (item.item.key) {
-            case 'logOut':
-              dispatch(logOut());
-              break;
-            case 'toggleTheme':
-              dispatch(settingsActions.toggleTheme());
-              break;
-            case 'createNewRoom':
-              dispatch(roomCreationActions.open());
-              break;
-          }
-          console.log('nav item selected: ', item);
-          // if (item === activeNavItem) return;
-          // setActiveNavItem(item);
-        }}
-        {...(navProps || {})}
-      />
+      >
+        <StyledNavigationList $align={ALIGN.left}>
+          <StyledLink $as={Link} to="/" overrides={{ Root: { style: { textDecoration: 'none' } } }}>
+            <h1>Share Notes</h1>
+          </StyledLink>
+        </StyledNavigationList>
+        <StyledNavigationList $align={ALIGN.center}>
+          {currentRoomDetails && <StyledNavigationItem>Users</StyledNavigationItem>}
+        </StyledNavigationList>
+        <StyledNavigationList $align={ALIGN.right}>
+          {isLoggedIn ? (
+            <>
+              <StyledNavigationItem>
+                <Button kind="minimal" onClick={() => dispatch(roomCreationActions.open())}>
+                  Create New Room
+                </Button>
+              </StyledNavigationItem>
+              <StyledNavigationItem>
+                <StatefulPopover
+                  placement={'bottom'}
+                  content={() => (
+                    <StatefulMenu
+                      overrides={{
+                        List: {
+                          component: React.forwardRef(function UserMenu({ children, ...restProps }, ref) {
+                            return (
+                              <StyledList {...restProps} ref={ref}>
+                                <StyledUserMenuListItem>
+                                  <StyledUserProfileTileContainer>
+                                    <StyledUserProfilePictureContainer>
+                                      <Avatar name={githubLogin || ''} src={avatarUrl} size={'48px'} />
+                                    </StyledUserProfilePictureContainer>
+                                    <StyledUserProfileInfoContainer>
+                                      <LabelMedium>{githubLogin}</LabelMedium>
+                                    </StyledUserProfileInfoContainer>
+                                  </StyledUserProfileTileContainer>
+                                </StyledUserMenuListItem>
+                                {children}
+                              </StyledList>
+                            );
+                          }),
+                        },
+                      }}
+                      onItemSelect={onUserNavItemSelect}
+                      items={userNav}
+                    />
+                  )}
+                >
+                  <Button
+                    kind="minimal"
+                    shape="pill"
+                    endEnhancer={ChevronDown}
+                    overrides={{
+                      Root: {
+                        style: {
+                          paddingLeft: '7px',
+                          paddingRight: '7px',
+                          paddingTop: '5px',
+                          paddingBottom: '5px',
+                        },
+                      },
+                    }}
+                  >
+                    <Avatar name={'Current User Github Profile'} src={avatarUrl} />
+                  </Button>
+                </StatefulPopover>
+              </StyledNavigationItem>
+            </>
+          ) : (
+            <StyledNavigationItem>
+              <Button shape="pill">Log In</Button>
+            </StyledNavigationItem>
+          )}
+        </StyledNavigationList>
+      </HeaderNavigation>
     </div>
   );
 }

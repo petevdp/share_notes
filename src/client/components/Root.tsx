@@ -1,18 +1,19 @@
-import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
-import React, { ReactElement } from 'react';
+import { styled, useStyletron } from 'baseui';
 import { Block } from 'baseui/block';
-import { useStyletron, styled } from 'baseui';
+import { Layer } from 'baseui/layer';
+import { isLoggedInWithGithubSelector } from 'Client/session/slice';
+import React, { ReactElement } from 'react';
+import { useSelector } from 'react-redux';
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+
+import { CreateRoomModal } from './CreateRoomModal';
 import { GlobalHeader } from './GlobalHeader';
 import { Home } from './Home';
 import { Room } from './Room';
-import { CreateRoomModal } from './CreateRoomModal';
-import { useSelector } from 'react-redux';
-import { isLoggedInSelector } from 'Client/session/slice';
-import { Layer } from 'baseui/layer';
 
 export function Root(): ReactElement {
   const [css, theme] = useStyletron();
-  const isLoggedIn = useSelector(isLoggedInSelector);
+  const isLoggedIn = useSelector(isLoggedInWithGithubSelector);
   return (
     <Router>
       <Layer index={1}>

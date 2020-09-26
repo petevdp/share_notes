@@ -1,6 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, BaseEntity } from 'typeorm';
+import { Field, ID, ObjectType } from 'type-graphql';
+import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+
 import { User } from './user';
-import { ObjectType, Field, ID } from 'type-graphql';
 
 @Entity()
 export class Room {
@@ -32,5 +33,5 @@ export class ClientSideRoom {
   owner: User;
 
   @Field()
-  hashId: String;
+  hashId: string;
 }

@@ -1,28 +1,33 @@
-import { createEpicMiddleware, combineEpics } from 'redux-observable';
-import { configureStore, combineReducers, getDefaultMiddleware } from '@reduxjs/toolkit';
-import { sessionSlice } from './session/slice';
-import { logOutEpic, fetchCurrentUserDataOnSetSessionTokenEpic, setSessionTokenEpic } from './session/epics';
-import { roomSlice } from './room/slice';
-import {
-  initRoomEpic,
-  addNewFileEpic,
-  saveBackToGistEpic,
-  destroyRoomEpic,
-  createRoomEpic,
-  RoomManager,
-  removeFileEpic,
-  renameFileEpic,
-  provisionTabEpic,
-  unprovisionTabEpic,
-} from './room/epics';
-
-import { FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER, persistReducer, persistStore } from 'redux-persist';
+import { combineReducers, configureStore, getDefaultMiddleware } from '@reduxjs/toolkit';
+import { RoomManager } from 'Client/services/roomManager';
+import { combineEpics, createEpicMiddleware } from 'redux-observable';
+import { FLUSH, PAUSE, PERSIST, persistReducer, persistStore, PURGE, REGISTER, REHYDRATE } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 import { Subject } from 'rxjs';
-import { settingsSlice } from './settings/slice';
-import { roomCreationSlice } from './roomCreation/slice';
-import { initializeRoomCreationEpic } from './roomCreation/epics';
+
+import {
+  addNewFileEpic,
+  createRoomEpic,
+  destroyRoomEpic,
+  initRoomEpic,
+  provisionTabEpic,
+  removeFileEpic,
+  renameFileEpic,
+  saveBackToGistEpic,
+  unprovisionTabEpic,
+} from './room/epics';
+import { roomSlice } from './room/slice';
 import { initRoom, provisionTab } from './room/types';
+import { initializeRoomCreationEpic } from './roomCreation/epics';
+import { roomCreationSlice } from './roomCreation/slice';
+import {
+  fetchCurrentUserDataOnSetSessionTokenEpic,
+  loginAnonymouslyEpic,
+  logOutEpic,
+  setSessionTokenEpic,
+} from './session/epics';
+import { sessionSlice } from './session/slice';
+import { settingsSlice } from './settings/slice';
 
 export interface epicDependencies {
   roomManager$$: Subject<RoomManager>;
@@ -30,16 +35,22 @@ export interface epicDependencies {
 
 const epicMiddleware = createEpicMiddleware({ dependencies: { roomManager$$: new Subject<RoomManager>() } });
 
-const settingsPersistConfig = {
+const persistSettingsConfig = {
   key: 'settings',
   version: 1,
   storage,
 };
 
+const persistSessionConfig = {
+  key: 'session',
+  version: 1,
+  storage,
+};
+
 const rootReducer = combineReducers({
-  session: sessionSlice.reducer,
+  session: persistReducer(persistSessionConfig, sessionSlice.reducer),
   room: roomSlice.reducer,
-  settings: persistReducer(settingsPersistConfig, settingsSlice.reducer),
+  settings: persistReducer(persistSettingsConfig, settingsSlice.reducer),
   roomCreation: roomCreationSlice.reducer,
 });
 
@@ -64,7 +75,6 @@ const epics = [
   logOutEpic,
   createRoomEpic,
   initRoomEpic,
-  // switchCurrentFileEpic,
   provisionTabEpic,
   unprovisionTabEpic,
   addNewFileEpic,
@@ -72,6 +82,7 @@ const epics = [
   removeFileEpic,
   saveBackToGistEpic,
   destroyRoomEpic,
+  loginAnonymouslyEpic,
 ];
 
 epicMiddleware.run(combineEpics(...epics));

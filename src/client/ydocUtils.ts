@@ -1,11 +1,11 @@
+import { current } from '@reduxjs/toolkit';
 import { createIterator } from 'lib0/iterator';
 import Y from 'yjs';
-import { current } from '@reduxjs/toolkit';
 
 export function iteratorOfArray<T>(arr: T[]) {
   let currIndex = 0;
   return createIterator<T>(() => {
-    let elt = arr[currIndex];
+    const elt = arr[currIndex];
     currIndex += 1;
     return {
       value: elt,
@@ -16,7 +16,7 @@ export function iteratorOfArray<T>(arr: T[]) {
 
 export function getKeysForMap(map: Y.Map<unknown>) {
   const keyIterator = map.keys();
-  let keys = [];
+  const keys = [];
   let curr = keyIterator.next();
   while (!curr.done) {
     keys.push(curr.value);
@@ -27,7 +27,7 @@ export function getKeysForMap(map: Y.Map<unknown>) {
 
 export function getEntriesForMap<T>(map: Y.Map<T>) {
   const entryIterator = map.entries();
-  let entries: [string, T][] = [];
+  const entries: [string, T][] = [];
   let curr = entryIterator.next();
   while (!curr.done) {
     entries.push(curr.value);

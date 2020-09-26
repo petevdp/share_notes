@@ -1,12 +1,12 @@
 import 'module-alias/register';
 const path = require('path');
-import { CLIENT_BUILD_PATH, CLIENT_ROOT, SHARED_ROOT, MONACO_ROOT } from 'Server/paths';
+import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
+import HtmlWebPackPlugin from 'html-webpack-plugin';
+import { CLIENT_BUILD_PATH, CLIENT_ROOT, MONACO_ROOT, SHARED_ROOT } from 'Server/paths';
 import * as p from 'Server/paths';
 import { API_PORT, DEV_SERVER_PORT } from 'Shared/environment';
-import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
-
-import HtmlWebPackPlugin from 'html-webpack-plugin';
 import { Configuration } from 'webpack';
+
 import { API_URL } from '../dist/src/shared/environment';
 
 console.log(p);

@@ -1,6 +1,6 @@
-import { Service } from 'typedi';
-import { Tedis } from 'tedis';
 import { extraUserDetails } from 'Server/utils/githubUtils';
+import { Tedis } from 'tedis';
+import { Service } from 'typedi';
 
 export const USER_ID_BY_SESSION_KEY = 'session';
 

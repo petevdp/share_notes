@@ -1,45 +1,33 @@
-import { useParams } from 'react-router-dom';
-import React, { useEffect, useRef, useState, MutableRefObject } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { rootState } from 'Client/store';
-import { useStyletron, styled } from 'baseui';
+import { useStyletron } from 'baseui';
+import { Button } from 'baseui/button';
+import { ChevronDown, Delete, Plus } from 'baseui/icon';
+import { ItemT, StatefulMenu } from 'baseui/menu';
+import { StatefulPopover } from 'baseui/popover';
 import { Skeleton } from 'baseui/skeleton';
-import { Tabs, Tab, StatefulTabs } from 'baseui/tabs-motion';
+import { Tab, Tabs } from 'baseui/tabs-motion';
 import {
-  initRoom,
-  destroyRoom,
-  switchCurrentFile,
   addNewFile,
+  destroyRoom,
+  fileRenamingActions,
+  initRoom,
   removeFile,
   saveBackToGist,
-  renameFile,
-  fileRenamingActions,
+  switchCurrentFile,
 } from 'Client/room/types';
-import { Plus, Delete, Menu } from 'baseui/icon';
-import { TabContent } from './TabContent';
+import { rootState } from 'Client/store';
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useParams } from 'react-router-dom';
 import { StyleObject } from 'styletron-react';
-import { StatefulPopover } from 'baseui/popover';
-import { ItemT, StatefulMenu } from 'baseui/menu';
-import { Button } from 'baseui/button';
+
+import { AnonymousLoginModal } from './AnonymousLoginModal';
 import { RenameFileModal } from './RenameFileModal';
-
-const ControlPanel = styled('div', { display: 'flex', justifyContent: 'space-between', padding: '.5em' });
-const RightButtonGroup = styled('span', { display: 'flex', justifyContent: 'flex-end', alignItems: 'center' });
-
-const circle = (
-  <svg width="4" height="4" viewBox="0 0 4 4" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="2" cy="2" r="2" fill="#C4C4C4" />
-  </svg>
-);
+import { TabContent } from './TabContent';
 
 const tabsRootStyle: StyleObject = {};
 
-class Test {
-  testMethod() {}
-}
-
 export function Room() {
-  const [css, theme] = useStyletron();
+  const [css] = useStyletron();
   const { roomHashId } = useParams<{ roomHashId: string }>();
   const dispatch = useDispatch();
   const currentRoom = useSelector((s: rootState) => s.room.currentRoom);
@@ -54,11 +42,9 @@ export function Room() {
   }, [roomHashId]);
 
   let tabArr: JSX.Element[];
-  let tabMenuItems: ItemT[];
 
   if (currentRoom?.fileDetailsStates) {
     tabArr = Object.values(currentRoom.fileDetailsStates).map((state) => {
-      const triggerPopover = () => {};
       return (
         <Tab
           overrides={{
@@ -116,14 +102,8 @@ export function Room() {
         />
       );
     });
-
-    tabMenuItems = Object.values(currentRoom.fileDetailsStates).map((f) => ({
-      label: f.filename,
-      key: f.tabId,
-    }));
   } else {
     tabArr = [];
-    tabMenuItems = [];
   }
 
   // obfuscate key for addNewFile with the room hash to avoid potential duplicate keys
@@ -206,7 +186,7 @@ export function Room() {
           })}
         >
           {tabs}
-          <Button key={addNewFileKey} onClick={() => dispatch(addNewFile())} kind="minimal">
+          <Button key={addNewFileKey} onClick={() => dispatch(addNewFile())} kind="tertiary">
             <Plus />
           </Button>
         </span>
@@ -215,7 +195,7 @@ export function Room() {
             placement={'bottom'}
             content={() => <StatefulMenu onItemSelect={onActionItemSelect} items={actionItems}></StatefulMenu>}
           >
-            <Button kind="secondary" shape="pill">
+            <Button kind="secondary" shape="pill" endEnhancer={() => <ChevronDown />}>
               Actions
             </Button>
           </StatefulPopover>
@@ -223,6 +203,7 @@ export function Room() {
       </div>
       <TabContent />
       <RenameFileModal />
+      <AnonymousLoginModal />
     </div>
   );
 }

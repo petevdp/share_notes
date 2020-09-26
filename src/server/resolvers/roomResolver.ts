@@ -1,14 +1,14 @@
-import { Resolver, Query, Mutation, Arg, FieldResolver, Root, Ctx, Authorized } from 'type-graphql';
-import { Room, ClientSideRoom } from 'Server/models/room';
-import { CreateRoomInput, RoomInput } from 'Shared/inputs/roomInputs';
+import { ClientSideRoom, Room } from 'Server/models/room';
 import { User } from 'Server/models/user';
-import { Service } from 'typedi';
-import { InjectRepository } from 'typeorm-typedi-extensions';
-import { Repository } from 'typeorm';
 import { ClientSideRoomService } from 'Server/services/clientSideRoomService';
+import { CreateRoomInput, RoomInput } from 'Shared/inputs/roomInputs';
+import { Arg, FieldResolver, Mutation, Query, Resolver, Root } from 'type-graphql';
+import { Service } from 'typedi';
+import { Repository } from 'typeorm';
+import { InjectRepository } from 'typeorm-typedi-extensions';
 
 @Service()
-@Resolver((of) => ClientSideRoom)
+@Resolver(() => ClientSideRoom)
 export class RoomResolver {
   constructor(
     @InjectRepository(Room) private readonly roomRepository: Repository<Room>,
@@ -37,7 +37,7 @@ export class RoomResolver {
   async createRoom(@Arg('data') userData: CreateRoomInput) {
     const owner = await this.userRepository.findOne({ id: Number(userData.ownerId) });
 
-    let room = this.roomRepository.create({
+    const room = this.roomRepository.create({
       ...userData,
       owner,
     });

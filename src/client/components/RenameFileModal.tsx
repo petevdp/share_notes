@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Modal, ModalHeader, ModalBody, ModalFooter } from 'baseui/modal';
-import { Input } from 'baseui/input';
-import { FormControl } from 'baseui/form-control';
-import { useDispatch, useSelector } from 'react-redux';
-import { renameFile, fileRenamingActions } from 'Client/room/types';
 import { Button } from 'baseui/button';
+import { FormControl } from 'baseui/form-control';
+import { Input } from 'baseui/input';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from 'baseui/modal';
+import { fileRenamingActions, renameFile } from 'Client/room/types';
 import { rootState } from 'Client/store';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Root } from 'type-graphql';
 export function RenameFileModal() {
   const dispatch = useDispatch();
@@ -78,7 +78,7 @@ export function RenameFileModal() {
               error={!!error}
               inputMode="inputmode"
               clearable
-              value={currentRename?.newFilename}
+              value={currentRename?.newFilename || ''}
               onChange={onChange}
             />
           </FormControl>

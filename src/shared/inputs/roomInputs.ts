@@ -1,5 +1,5 @@
-import { InputType, Field, ID } from 'type-graphql';
 import { kStringMaxLength } from 'buffer';
+import { Field, ID, InputType } from 'type-graphql';
 
 @InputType()
 export class RoomInput {
