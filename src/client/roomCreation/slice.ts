@@ -1,7 +1,6 @@
-import { AnyAction, createSlice } from '@reduxjs/toolkit';
-import { roomSliceState } from 'Client/room/types';
+import { createSlice } from '@reduxjs/toolkit';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';
-import { reset } from 'module-alias';
 
 import { roomCreationActions, roomCreationSliceState } from './types';
 
@@ -16,16 +15,16 @@ export const roomCreationSlice = createSlice({
   name: 'roomCreationSlice',
   reducers: {},
   extraReducers: (builder) => {
-    builder.addCase(roomCreationActions.close, (s, { payload: username }) => resetRoom(s, username));
+    builder.addCase(roomCreationActions.close, (s, { payload: username }) => resetRoom(username));
     builder.addCase(roomCreationActions.open, (s) => ({ ...s, isOpen: true }));
     builder.addCase(roomCreationActions.setGistUrl, (s, { payload: gistUrl }) => ({ ...s, gistUrl }));
     builder.addCase(roomCreationActions.setRoomName, (s, { payload: roomName }) => ({ ...s, roomName }));
-    builder.addCase(roomCreationActions.initialize, (s, { payload: username }) => resetRoom(s, username));
-    builder.addCase(roomCreationActions.createRoom, (s, { payload: { username } }) => resetRoom(s, username));
+    builder.addCase(roomCreationActions.initialize, (s, { payload: username }) => resetRoom(username));
+    builder.addCase(roomCreationActions.createRoom, (s, { payload: { username } }) => resetRoom(username));
   },
 });
 
-function resetRoom(state: roomCreationSliceState, username: string): roomCreationSliceState {
+function resetRoom(username: string): roomCreationSliceState {
   return {
     isOpen: false,
     roomName: `${username}'s Room`,
@@ -38,7 +37,7 @@ export interface roomCreationSliceStateWithError extends roomCreationSliceState 
 }
 
 export function roomSliceStateWithErrorSelector(rootState: rootState): roomCreationSliceStateWithError {
-  const { gistUrl, roomName } = rootState.roomCreation;
+  const { gistUrl } = rootState.roomCreation;
 
   const gistUrlError = (() => {
     let url: URL;

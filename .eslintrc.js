@@ -23,6 +23,7 @@ module.exports = {
   rules: {
     indent: ['error', 2, { SwitchCase: 1 }],
     '@typescript-eslint/explicit-module-boundary-types': 'off',
+    '@typescript-eslint/no-unused-vars': ['warn', { vars: 'all', args: 'none', varsIgnorePattern: '_' }],
     'baseui/deprecated-theme-api': 'warn',
     'baseui/deprecated-component-api': 'warn',
     '@typescript-eslint/no-explicit-any': 'off',

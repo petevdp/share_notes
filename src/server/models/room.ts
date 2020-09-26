@@ -1,5 +1,5 @@
 import { Field, ID, ObjectType } from 'type-graphql';
-import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 import { User } from './user';
 
@@ -14,7 +14,7 @@ export class Room {
   @Column({ nullable: true })
   gistName: string;
 
-  @ManyToOne((type) => User, (user) => user.ownedRooms, { cascade: true })
+  @ManyToOne(() => User, (user) => user.ownedRooms, { cascade: true })
   owner: User;
 }
 

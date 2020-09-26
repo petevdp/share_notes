@@ -6,7 +6,7 @@ import {
 } from 'Client/queries';
 import { epicDependencies } from 'Client/store';
 import { eraseCookie, getCookie, getGithubGraphqlClient } from 'Client/utils/utils';
-import { GraphQLClient, request as gqlRequest } from 'graphql-request';
+import { request as gqlRequest } from 'graphql-request';
 import { Epic } from 'redux-observable';
 import { merge } from 'rxjs';
 import { concatMap, filter, first, ignoreElements, map, withLatestFrom } from 'rxjs/operators';

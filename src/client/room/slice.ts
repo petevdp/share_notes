@@ -1,4 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';
 
 import {
@@ -6,11 +7,9 @@ import {
   initRoom,
   leaveRoom,
   renameFile,
-  room,
   roomCreated,
   roomInitialized,
   roomSliceState,
-  setCurrentFile,
   setFileDetailsState as setFileDetailsStates,
   setRoomData,
   setRoomGistDetails,
@@ -22,7 +21,7 @@ export const roomSlice = createSlice({
   initialState: { isCurrentUserCreatingRoom: false } as roomSliceState,
   reducers: {},
   extraReducers: (builder) => {
-    builder.addCase(leaveRoom, (s) => ({
+    builder.addCase(leaveRoom, () => ({
       isCurrentUserCreatingRoom: false,
     }));
 

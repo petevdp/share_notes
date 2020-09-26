@@ -1,5 +1,4 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { rootState } from 'Client/store';
 
 import { settingsActions, settingsSliceState } from './types';
 

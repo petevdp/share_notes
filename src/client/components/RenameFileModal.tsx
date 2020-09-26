@@ -1,12 +1,12 @@
 import { Button } from 'baseui/button';
 import { FormControl } from 'baseui/form-control';
 import { Input } from 'baseui/input';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from 'baseui/modal';
+import { Modal, ModalBody, ModalHeader } from 'baseui/modal';
 import { fileRenamingActions, renameFile } from 'Client/room/types';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Root } from 'type-graphql';
 export function RenameFileModal() {
   const dispatch = useDispatch();
   const { fileDetails, otherFilenames, currentRename } = useSelector((rootState: rootState) => {

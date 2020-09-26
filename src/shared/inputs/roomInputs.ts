@@ -1,4 +1,3 @@
-import { kStringMaxLength } from 'buffer';
 import { Field, ID, InputType } from 'type-graphql';
 
 @InputType()

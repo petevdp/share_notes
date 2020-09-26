@@ -1,5 +1,3 @@
-import path from 'path';
-// non-sensitive environment configuration
 export const CONVERGENCE_SERVICE_URL = `http://localhost:8000/api/realtime/convergence/default`;
 export const EDITOR_COLLECTION = 'editor-collection';
 export const ROOM_COLLECTION = 'room-collection';

@@ -5,7 +5,7 @@ import { Modal, ModalBody, ModalHeader } from 'baseui/modal';
 import { roomSliceStateWithErrorSelector } from 'Client/roomCreation/slice';
 import { roomCreationActions } from 'Client/roomCreation/types';
 import { rootState } from 'Client/store';
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { ReactElement, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import { CreateRoomInput } from 'Shared/inputs/roomInputs';

@@ -1,8 +1,8 @@
 import { Room } from 'Server/models/room';
 import { User } from 'Server/models/user';
 import { HashIdService } from 'Server/services/hashIdService';
-import { Inject, Service } from 'typedi';
-import { Entity, EntityManager, EntityRepository, Repository } from 'typeorm';
+import { Service } from 'typedi';
+import { Repository } from 'typeorm';
 import { InjectRepository } from 'typeorm-typedi-extensions';
 
 import { RoomInput } from '../../../dist/src/shared/inputs/roomInputs';
@@ -20,7 +20,7 @@ export class ClientSideRoomService {
   ) {}
 
   async findRoom(input: RoomInput) {
-    const { hashId, ...rest } = input;
+    const { hashId: _, ...rest } = input;
     let roomPartial: Partial<Room> = rest;
     if (input.id) {
       roomPartial = { id: input.id };

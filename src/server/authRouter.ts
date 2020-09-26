@@ -1,11 +1,9 @@
 import 'cross-fetch/polyfill';
 
-import ApolloClient, { gql } from 'apollo-boost';
 import axios from 'axios';
 import bodyParser from 'body-parser';
-import cookieParser from 'cookie-parser';
 import { config } from 'dotenv';
-import express, { Router } from 'express';
+import { Router } from 'express';
 import querystring from 'querystring';
 import * as GithubUtils from 'Server/utils/githubUtils';
 import {
@@ -52,11 +50,6 @@ export const getAuthRouter = (tedisService: TedisService, userRepository: Reposi
 
     const githubResData = (querystring.parse(githubRes.data) as unknown) as github0AuthResponse;
     console.log('data', githubResData);
-
-    const githubClient = new ApolloClient({
-      uri: GITHUB_GRAPHQL_API_URL,
-      headers: { Authorization: `${githubResData.token_type} ${githubResData.access_token}` },
-    });
 
     const context: Context = {
       githubSessionToken: githubResData.access_token,

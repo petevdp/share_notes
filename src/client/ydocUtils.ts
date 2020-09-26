@@ -1,4 +1,3 @@
-import { current } from '@reduxjs/toolkit';
 import { createIterator } from 'lib0/iterator';
 import Y from 'yjs';
 

@@ -1,8 +1,5 @@
 import { request as octokitRequest } from '@octokit/request';
-import fastDeepEqual from 'fast-deep-equal';
 import { GraphQLClient } from 'graphql-request';
-import { StateObservable } from 'redux-observable';
-import { distinctUntilChanged, map } from 'rxjs/operators';
 import { GITHUB_GRAPHQL_API_URL, SESSION_TOKEN_COOKIE_KEY } from 'Shared/environment';
 
 export function setCookie(name: string, value: string, days = 5) {

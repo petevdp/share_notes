@@ -1,9 +1,9 @@
 import { styled, useStyletron, withStyle } from 'baseui';
-import { MainNavItemT, UserNavItemT } from 'baseui/app-nav-bar';
+import { UserNavItemT } from 'baseui/app-nav-bar';
 import { Avatar } from 'baseui/avatar';
 import { Button } from 'baseui/button';
 import { ALIGN, HeaderNavigation, StyledNavigationItem, StyledNavigationList } from 'baseui/header-navigation';
-import { ChevronDown, Plus } from 'baseui/icon';
+import { ChevronDown } from 'baseui/icon';
 import { StyledLink } from 'baseui/link';
 import { ItemT, StatefulMenu, StyledList, StyledListItem } from 'baseui/menu';
 import { StatefulPopover } from 'baseui/popover';
@@ -16,17 +16,6 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { AUTH_REDIRECT_URL, GITHUB_0AUTH_URL, GITHUB_CLIENT_ID } from 'Shared/environment';
-
-function renderItem(item: any) {
-  return item.label;
-}
-
-interface avatarNavProps {
-  userNav?: UserNavItemT[];
-  username?: string;
-  usernameSubtitle?: string;
-  userImgUrl?: string;
-}
 
 export const StyledUserMenuListItem = withStyle(StyledListItem, {
   paddingTop: '0',
@@ -99,44 +88,11 @@ export function GlobalHeader() {
     userNav = [...userNav, userProfileItem];
   }
 
-  const loginWithGithub = () => {
-    const url = new URL(GITHUB_0AUTH_URL);
-    url.searchParams.set('client_id', GITHUB_CLIENT_ID);
-    url.searchParams.set('redirect_url', AUTH_REDIRECT_URL);
-    url.searchParams.set('scope', 'gist,read:user');
-    window.location.href = url.toString();
-    return;
-  };
-
   const containerStyles = css({
     boxSizing: 'border-box',
     width: '100vw',
     height: '72px',
   });
-  const renderLoginButton = () => <span onClick={() => loginWithGithub()}>Log In</span>;
-
-  let mainNav: MainNavItemT[] = [];
-  if (!isLoggedIn) {
-    mainNav = [
-      ...mainNav,
-      {
-        // 'Log In' is used as key to identify the item, please fix
-        item: { label: 'Log In' },
-        mapItemToNode: renderLoginButton,
-        mapItemToString: (item: any) => item.label,
-      },
-    ];
-  } else {
-    mainNav = [
-      ...mainNav,
-      {
-        icon: Plus,
-        item: { label: 'Create New Room', key: 'createNewRoom' },
-        mapItemToString: renderItem,
-        mapItemToNode: renderItem,
-      },
-    ];
-  }
 
   return (
     <div className={containerStyles}>
@@ -164,7 +120,7 @@ export function GlobalHeader() {
           {isLoggedIn ? (
             <>
               <StyledNavigationItem>
-                <Button kind="minimal" onClick={() => dispatch(roomCreationActions.open())}>
+                <Button kind="tertiary" onClick={() => dispatch(roomCreationActions.open())}>
                   Create New Room
                 </Button>
               </StyledNavigationItem>
@@ -200,7 +156,7 @@ export function GlobalHeader() {
                   )}
                 >
                   <Button
-                    kind="minimal"
+                    kind="tertiary"
                     shape="pill"
                     endEnhancer={ChevronDown}
                     overrides={{

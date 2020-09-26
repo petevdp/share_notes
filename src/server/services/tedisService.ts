@@ -1,4 +1,3 @@
-import { extraUserDetails } from 'Server/utils/githubUtils';
 import { Tedis } from 'tedis';
 import { Service } from 'typedi';
 

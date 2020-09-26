@@ -1,4 +1,4 @@
-import { styled, useStyletron } from 'baseui';
+import { useStyletron } from 'baseui';
 import { Block } from 'baseui/block';
 import { Layer } from 'baseui/layer';
 import { isLoggedInWithGithubSelector } from 'Client/session/slice';
@@ -12,7 +12,7 @@ import { Home } from './Home';
 import { Room } from './Room';
 
 export function Root(): ReactElement {
-  const [css, theme] = useStyletron();
+  const [] = useStyletron();
   const isLoggedIn = useSelector(isLoggedInWithGithubSelector);
   return (
     <Router>

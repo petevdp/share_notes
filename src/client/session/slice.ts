@@ -1,10 +1,9 @@
-import { createAction, createSlice } from '@reduxjs/toolkit';
+import { createSlice } from '@reduxjs/toolkit';
 import { rootState } from 'Client/store';
 
 import {
   anonymousLoginActions,
   clearSessionData,
-  logOut,
   sessionSliceState,
   setCurrentUserData,
   setSessionGithubDetails,

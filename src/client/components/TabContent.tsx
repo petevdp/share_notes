@@ -1,7 +1,7 @@
 import { useStyletron } from 'baseui';
 import { provisionTab, unprovisionTab } from 'Client/room/types';
 import { rootState } from 'Client/store';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 export function TabContent() {
