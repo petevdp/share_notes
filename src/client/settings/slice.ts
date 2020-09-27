@@ -1,4 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { rootState } from 'Client/store';
 
 import { settingsActions, settingsSliceState } from './types';
 

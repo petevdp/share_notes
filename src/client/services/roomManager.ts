@@ -1,76 +1,18 @@
-// import 'codemirror/theme/abcdef.css';
-// import 'codemirror/theme/ambiance.css';
-// import 'codemirror/theme/ambiance-mobile.css';
-// import 'codemirror/theme/ayu-dark.css';
-// import 'codemirror/theme/ayu-mirage.css';
-// import 'codemirror/theme/base16-dark.css';
-// import 'codemirror/theme/base16-light.css';
-// import 'codemirror/theme/bespin.css';
-// import 'codemirror/theme/blackboard.css';
-// import 'codemirror/theme/cobalt.css';
-// import 'codemirror/theme/colorforth.css';
-// import 'codemirror/theme/darcula.css';
-// import 'codemirror/theme/dracula.css';
-// import 'codemirror/theme/duotone-dark.css';
-// import 'codemirror/theme/duotone-light.css';
-// import 'codemirror/theme/eclipse.css';
-// import 'codemirror/theme/elegant.css';
-// import 'codemirror/theme/erlang-dark.css';
-// import 'codemirror/theme/gruvbox-dark.css';
-// import 'codemirror/theme/hopscotch.css';
-// import 'codemirror/theme/icecoder.css';
-// import 'codemirror/theme/idea.css';
-// import 'codemirror/theme/isotope.css';
-// import 'codemirror/theme/lesser-dark.css';
-// import 'codemirror/theme/liquibyte.css';
-// import 'codemirror/theme/lucario.css';
-// import 'codemirror/theme/material.css';
-// import 'codemirror/theme/material-darker.css';
-// import 'codemirror/theme/material-ocean.css';
-// import 'codemirror/theme/material-palenight.css';
-// import 'codemirror/theme/mbo.css';
-// import 'codemirror/theme/mdn-like.css';
-// import 'codemirror/theme/midnight.css';
-// import 'codemirror/theme/monokai.css';
-// import 'codemirror/theme/moxer.css';
-// import 'codemirror/theme/neat.css';
-// import 'codemirror/theme/neo.css';
-// import 'codemirror/theme/night.css';
-// import 'codemirror/theme/nord.css';
-// import 'codemirror/theme/oceanic-next.css';
-// import 'codemirror/theme/panda-syntax.css';
-// import 'codemirror/theme/paraiso-dark.css';
-// import 'codemirror/theme/paraiso-light.css';
-// import 'codemirror/theme/pastel-on-dark.css';
-// import 'codemirror/theme/railscasts.css';
-// import 'codemirror/theme/rubyblue.css';
-// import 'codemirror/theme/seti.css';
-// import 'codemirror/theme/shadowfox.css';
-// import 'codemirror/theme/solarized.css';
-// import 'codemirror/theme/ssms.css';
-// import 'codemirror/theme/the-matrix.css';
-// import 'codemirror/theme/tomorrow-night-bright.css';
-// import 'codemirror/theme/tomorrow-night-eighties.css';
-// import 'codemirror/theme/ttcn.css';
-// import 'codemirror/theme/twilight.css';
-// import 'codemirror/theme/vibrant-ink.css';
-// import 'codemirror/theme/xq-dark.css';
-// import 'codemirror/theme/xq-light.css';
-// import 'codemirror/theme/yeti.css';
-// import 'codemirror/theme/yonce.css';
-// import 'codemirror/theme/zenburn.css';
-// import 'codemirror/mode/xml/xml.js';
 import 'codemirror/theme/3024-day.css';
 import 'codemirror/theme/3024-night.css';
 
-import { gistDetails } from 'Client/queries';
-import { allFileDetailsStates, fileDetailsState, roomAwareness } from 'Client/room/types';
+import { LightTheme } from 'baseui';
+import { allFileDetailsStates, fileDetailsState } from 'Client/room/types';
 import { theme } from 'Client/settings/types';
 import { getKeysForMap } from 'Client/ydocUtils';
 import CodeMirror from 'codemirror';
 import { BehaviorSubject } from 'rxjs/internal/BehaviorSubject';
 import { Observable } from 'rxjs/internal/Observable';
 import { ConnectableObservable } from 'rxjs/internal/observable/ConnectableObservable';
+import { distinctUntilChanged } from 'rxjs/internal/operators/distinctUntilChanged';
+import { filter } from 'rxjs/internal/operators/filter';
+import { first } from 'rxjs/internal/operators/first';
+import { map } from 'rxjs/internal/operators/map';
 import { publish } from 'rxjs/internal/operators/publish';
 import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { Subject } from 'rxjs/internal/Subject';
@@ -80,25 +22,56 @@ import { CodeMirrorBinding, CodemirrorBinding } from 'y-codemirror';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 
+export interface userAwareness {
+  userId?: string;
+  name: string;
+  color: string;
+}
+
+export interface userAwarenessInput {
+  userId?: string;
+  name: string;
+}
+
+export type globalAwareness = Map<number, { user?: userAwareness }>;
+export type roomAwareness = {
+  [id: string]: userAwareness;
+};
+
+export type sharedRoomDetails = {
+  assignedColours: { [cliendId: string]: string };
+};
+
+const allColors = [
+  LightTheme.colors.accent,
+  LightTheme.colors.negative,
+  LightTheme.colors.warning,
+  LightTheme.colors.positive,
+];
+
 export class RoomManager {
   yData: {
     // storing file text and details separately as a performance optimization
     fileDetailsState: Y.Map<Y.Map<any>>;
     fileContents: Y.Map<Y.Text>;
     // for now just contains an object with details, there's probably a better way to do this though
-    details: Y.Map<gistDetails>;
+    details: Y.Map<any>;
   };
   ydoc: Y.Doc;
   provider: WebsocketProvider;
   bindings: Map<string, CodemirrorBinding>;
 
   currentFile$$: BehaviorSubject<string | null>;
+  availableColors$$: BehaviorSubject<string[] | null>;
+
   roomDestroyed$$: Subject<boolean>;
   provisionedTab$$: Subject<{ tabId: string; editorContainer: HTMLElement }>;
   providerSynced: Promise<true>;
   fileDetails$: Observable<allFileDetailsStates>;
+  roomDetails$: ConnectableObservable<sharedRoomDetails>;
   fileDetailsSubscription: Subscription;
-  awareness$: Observable<roomAwareness>;
+  userAwarenessSubscription: Subscription;
+  roomAwareness$: ConnectableObservable<roomAwareness>;
 
   constructor(roomHashId: string, private theme$: Observable<theme>) {
     this.roomDestroyed$$ = new Subject<boolean>();
@@ -115,15 +88,6 @@ export class RoomManager {
 
     this.provider = new WebsocketProvider(YJS_WEBSOCKET_URL_WS, YJS_ROOM, this.ydoc);
 
-    // this.editor = monacoEditor.create(editorContainerElement, {
-    //   readOnly: true,
-    //   minimap: { enabled: false },
-    //   lineNumbers: 'off',
-    //   automaticLayout: true,
-    //   theme: themeMap[startingTheme],
-    // });
-    // });
-
     /*
       3024-night
       material-darker
@@ -135,8 +99,6 @@ export class RoomManager {
     const themeMap = {
       light: '3024-day',
       dark: '3024-night',
-      // dark: 'pastel-on-dark',
-      // dark: 'material-darker',
     };
 
     this.provisionedTab$$.pipe(withLatestFrom(this.theme$)).subscribe(([{ tabId, editorContainer }, currentTheme]) => {
@@ -187,12 +149,71 @@ export class RoomManager {
         s.complete();
       });
     }).pipe(publish());
-    this.fileDetailsSubscription = (this.fileDetails$ as ConnectableObservable<allFileDetailsStates>).connect();
 
-    this.awareness$ = new Observable((s) => {
-      // const state = this.provider.awareness.getStates();
-      // s.next();
-    });
+    this.roomAwareness$ = new Observable<globalAwareness | undefined>((s) => {
+      const state = this.provider.awareness.getStates() as globalAwareness;
+
+      const awarenessListener = () => {
+        const state = this.provider.awareness.getStates() as globalAwareness;
+        s.next(state);
+      };
+
+      s.next(state);
+      this.provider.awareness.on('change', awarenessListener);
+
+      this.roomDestroyed$$.subscribe(() => {
+        this.provider.awareness.off('change', awarenessListener);
+        s.complete();
+      });
+    }).pipe(
+      map<globalAwareness, roomAwareness>((awareness) => {
+        const roomAwareness: roomAwareness = {};
+        for (const [key, value] of awareness.entries()) {
+          if (value.user) {
+            roomAwareness[key] = value.user;
+          }
+        }
+        return roomAwareness;
+      }),
+      distinctUntilChanged(),
+      publish(),
+    ) as ConnectableObservable<roomAwareness>;
+
+    this.roomDetails$ = new Observable<sharedRoomDetails>((s) => {
+      const listener = () => {
+        s.next(this.yData.details.toJSON() as sharedRoomDetails);
+      };
+      this.yData.details.observeDeep(listener);
+      this.providerSynced.then(() => s.next(this.yData.details.toJSON() as sharedRoomDetails));
+
+      this.roomDestroyed$$.subscribe(() => {
+        this.yData.details.unobserveDeep(listener);
+        s.complete();
+      });
+    }).pipe(publish()) as ConnectableObservable<sharedRoomDetails>;
+
+    this.availableColors$$ = new BehaviorSubject(null);
+
+    this.roomDetails$
+      .pipe(
+        map((d) => d.assignedColours),
+        distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
+        map((assignedColors) => {
+          if (!assignedColors) {
+            return allColors;
+          }
+          const takenColors = Object.values(assignedColors);
+          return allColors.filter((c) => !takenColors.includes(c));
+        }),
+      )
+      .subscribe(this.availableColors$$);
+  }
+
+  connect() {
+    this.fileDetailsSubscription = (this.fileDetails$ as ConnectableObservable<allFileDetailsStates>).connect();
+    this.userAwarenessSubscription = (this.roomAwareness$ as ConnectableObservable<roomAwareness>).connect();
+    this.roomDetails$.connect();
+    this.provider.connect();
   }
 
   async provisionTab(tabId: string, editorContainer: HTMLElement) {
@@ -200,9 +221,21 @@ export class RoomManager {
     this.provisionedTab$$.next({ tabId, editorContainer });
   }
 
-  setAwarenessUserDetails(username: string) {
-    console.log('setting awareness');
-    this.provider.awareness.setLocalStateField('user', { name: username, color: '#008833' });
+  async setAwarenessUserDetails(user: userAwarenessInput) {
+    const availableColors = (await this.availableColors$$
+      .pipe(
+        filter((s) => !!s),
+        first(),
+      )
+      .toPromise()) as string[];
+
+    let assignedColoursMap = this.yData.details.get('assignedColours');
+    if (!assignedColoursMap) {
+      assignedColoursMap = new Y.Map();
+      this.yData.details.set('assignedColours', assignedColoursMap);
+    }
+    assignedColoursMap.set(this.provider.awareness.doc.clientID.toString(), availableColors[0]);
+    this.provider.awareness.setLocalStateField('user', { name: user.name, color: availableColors[0] });
   }
 
   unprovisionTab(tabId: string) {
@@ -222,7 +255,6 @@ export class RoomManager {
     const tabId = (Number(highestId) + 1).toString();
     fileDetails.set('tabId', tabId);
     fileDetails.set('deleted', false);
-    console.log('details: ', detailsInput);
     if (detailsInput) {
       text.insert(0, detailsInput.content);
       this.yData.fileContents.set(tabId, new Y.Text());
@@ -232,8 +264,6 @@ export class RoomManager {
     }
     this.yData.fileDetailsState.set(tabId, fileDetails);
     this.yData.fileContents.set(tabId, text);
-    console.log('added new file: new file details: ');
-    console.log(fileDetails.toJSON());
     return fileDetails.toJSON() as fileDetailsState;
   }
 
@@ -249,7 +279,6 @@ export class RoomManager {
     this.bindings.delete(tabId);
     this.yData.fileDetailsState.delete(tabId);
     this.yData.fileContents.delete(tabId);
-    console.log('removed file');
   }
 
   destroy() {
@@ -260,6 +289,8 @@ export class RoomManager {
     this.roomDestroyed$$.next(true);
     this.roomDestroyed$$.complete();
     this.fileDetailsSubscription.unsubscribe();
+    this.userAwarenessSubscription.unsubscribe();
+    this.availableColors$$.complete();
 
     for (const binding of this.bindings.values()) {
       binding.destroy();

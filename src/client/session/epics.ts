@@ -72,7 +72,7 @@ export const loginAnonymouslyEpic: Epic = (aciton$, state$, { roomManager$$ }: e
     filter(anonymousLoginActions.logInAnonymously.match),
     withLatestFrom(roomManager$$),
     map(([{ payload: username }, roomManager]) => {
-      roomManager.setAwarenessUserDetails(username);
+      roomManager.setAwarenessUserDetails({ name: username });
     }),
     ignoreElements(),
   );

@@ -11,6 +11,7 @@ import {
   roomInitialized,
   roomSliceState,
   setFileDetailsState as setFileDetailsStates,
+  setRoomAwarenessState,
   setRoomData,
   setRoomGistDetails,
   switchCurrentFile,
@@ -197,6 +198,20 @@ export const roomSlice = createSlice({
       builder.addCase(fileRenamingActions.close, closeFileRename);
       builder.addCase(renameFile, closeFileRename);
     }
+
+    builder.addCase(setRoomAwarenessState, (state, { payload: roomAwareness }) => {
+      if (!state.currentRoom) {
+        throw 'current room not set';
+      }
+
+      return {
+        ...state,
+        currentRoom: {
+          ...state.currentRoom,
+          awareness: roomAwareness,
+        },
+      };
+    });
   },
 });
 

@@ -1,5 +1,6 @@
 import { createAction } from '@reduxjs/toolkit';
 import { createRoomResponse, gistDetails, roomDetails } from 'Client/queries';
+import { roomAwareness } from 'Client/services/roomManager';
 import * as Y from 'yjs';
 
 export type gistDetailKeys = 'description' | 'name' | 'url';
@@ -39,15 +40,6 @@ export interface room {
 
 interface anonymousLogin {
   username: string;
-}
-
-interface userAwareness {
-  name: string;
-  color: string;
-}
-
-export interface roomAwareness {
-  [id: string]: userAwareness;
 }
 
 export type roomSliceState = {
@@ -110,3 +102,7 @@ export const fileRenamingActions = {
   close: createAction('closeRenameFileModal'),
   setNewFileName: createAction('setNewFileName', (filename: string) => ({ payload: filename })),
 };
+
+export const setRoomAwarenessState = createAction('setRoomAwarenessState', (awareness: roomAwareness) => ({
+  payload: awareness,
+}));

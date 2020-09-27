@@ -15,7 +15,6 @@ import { rootState } from 'Client/store';
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { AUTH_REDIRECT_URL, GITHUB_0AUTH_URL, GITHUB_CLIENT_ID } from 'Shared/environment';
 
 export const StyledUserMenuListItem = withStyle(StyledListItem, {
   paddingTop: '0',
@@ -50,9 +49,10 @@ export const StyledUserProfileInfoContainer = styled('div', () => {
 });
 
 export function GlobalHeader() {
-  const [css] = useStyletron();
+  const [css, theme] = useStyletron();
   const session = useSelector((state: rootState) => state.session);
   const currentRoomDetails = useSelector((state: rootState) => state.room.currentRoom?.roomDetails);
+  const roomAwareness = useSelector((state: rootState) => state.room.currentRoom?.awareness);
   // const =
   const isLoggedIn = !!session.user;
   const dispatch = useDispatch();
@@ -114,7 +114,24 @@ export function GlobalHeader() {
           </StyledLink>
         </StyledNavigationList>
         <StyledNavigationList $align={ALIGN.center}>
-          {currentRoomDetails && <StyledNavigationItem>Users</StyledNavigationItem>}
+          {roomAwareness && (
+            <StyledNavigationItem>
+              <Button kind="tertiary" shape="pill">
+                {Object.entries(roomAwareness).map(([key, u]) => {
+                  console.log('key: ', key);
+                  console.log('value: ', u);
+                  return (
+                    <Avatar
+                      size={theme.sizing.scale800}
+                      key={key}
+                      name={u.name}
+                      overrides={{ Root: { style: { backgroundColor: u.color } } }}
+                    />
+                  );
+                })}
+              </Button>
+            </StyledNavigationItem>
+          )}
         </StyledNavigationList>
         <StyledNavigationList $align={ALIGN.right}>
           {isLoggedIn ? (

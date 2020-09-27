@@ -16,6 +16,7 @@ import { Epic, StateObservable } from 'redux-observable';
 import { concat, merge, Observable, of } from 'rxjs';
 import { concatMap, filter, ignoreElements, map, startWith, withLatestFrom } from 'rxjs/operators';
 import { GRAPHQL_URL } from 'Shared/environment';
+import * as Y from 'yjs';
 
 import {
   addNewFile,
@@ -30,6 +31,7 @@ import {
   roomInitialized,
   saveBackToGist,
   setFileDetailsState,
+  setRoomAwarenessState,
   setRoomData,
   setRoomGistDetails,
   switchCurrentFile,
@@ -124,17 +126,14 @@ export const initRoomEpic: Epic = (
           });
         }
 
-        manager.provider.connect();
-        roomManager$$.next(manager);
-
+        const roomAwarenessUpdate$ = manager.roomAwareness$.pipe(map((s) => setRoomAwarenessState(s)));
+        manager.connect();
         const unifiedUserDetails = unifiedUserSelector(rootState);
         if (unifiedUserDetails) {
-          manager.setAwarenessUserDetails(unifiedUserDetails.username);
+          manager.setAwarenessUserDetails({ name: unifiedUserDetails.username });
         }
-        // const firstCurrentFile$ = manager.fileDetails$.pipe(
-        //   first(),
-        //   map((state) => switchCurrentFile(Object.keys(state)[0])),
-        // );
+
+        roomManager$$.next(manager);
 
         return concat(
           of(roomInitialized()),
@@ -142,7 +141,7 @@ export const initRoomEpic: Epic = (
             roomDataPromise.then(setRoomData),
             gistDataPromise.then(setRoomGistDetails),
             fileDetailsStateUpdateAction$,
-            // firstCurrentFile$,
+            roomAwarenessUpdate$,
           ),
         );
       },
