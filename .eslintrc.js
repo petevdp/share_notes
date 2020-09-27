@@ -27,6 +27,7 @@ module.exports = {
     'baseui/deprecated-theme-api': 'warn',
     'baseui/deprecated-component-api': 'warn',
     '@typescript-eslint/no-explicit-any': 'off',
+    'prefer-const': 'off',
     'baseui/no-deep-imports': 'warn',
     'simple-import-sort/sort': 'error', // sort imports
     'sort-imports': 'off', // turn off to avoid conflicts with simple-import-sort

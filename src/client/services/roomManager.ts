@@ -62,7 +62,7 @@ export class RoomManager {
   bindings: Map<string, CodemirrorBinding>;
 
   currentFile$$: BehaviorSubject<string | null>;
-  availableColors$$: BehaviorSubject<string[] | null>;
+  availableColours$$: BehaviorSubject<string[] | null>;
 
   roomDestroyed$$: Subject<boolean>;
   provisionedTab$$: Subject<{ tabId: string; editorContainer: HTMLElement }>;
@@ -112,7 +112,6 @@ export class RoomManager {
       if (!content) {
         throw 'tried to provision nonexistant editor';
       }
-      console.log('provisioning tab!');
       const binding = new CodeMirrorBinding(content, editor, this.provider.awareness);
       this.bindings.set(tabId, binding);
     });
@@ -151,31 +150,34 @@ export class RoomManager {
     }).pipe(publish());
 
     this.roomAwareness$ = new Observable<globalAwareness | undefined>((s) => {
-      const state = this.provider.awareness.getStates() as globalAwareness;
+      this.providerSynced.then(() => {
+        const state = this.provider.awareness.getStates() as globalAwareness;
+        s.next(state);
+      });
 
       const awarenessListener = () => {
         const state = this.provider.awareness.getStates() as globalAwareness;
         s.next(state);
       };
 
-      s.next(state);
-      this.provider.awareness.on('change', awarenessListener);
+      // change doesn't catch all changes to local state fields it seems
+      this.provider.awareness.on('update', awarenessListener);
 
       this.roomDestroyed$$.subscribe(() => {
-        this.provider.awareness.off('change', awarenessListener);
+        this.provider.awareness.off('update', awarenessListener);
         s.complete();
       });
     }).pipe(
       map<globalAwareness, roomAwareness>((awareness) => {
         const roomAwareness: roomAwareness = {};
-        for (const [key, value] of awareness.entries()) {
+        for (let [key, value] of awareness.entries()) {
           if (value.user) {
             roomAwareness[key] = value.user;
           }
         }
         return roomAwareness;
       }),
-      distinctUntilChanged(),
+      distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
       publish(),
     ) as ConnectableObservable<roomAwareness>;
 
@@ -184,7 +186,7 @@ export class RoomManager {
         s.next(this.yData.details.toJSON() as sharedRoomDetails);
       };
       this.yData.details.observeDeep(listener);
-      this.providerSynced.then(() => s.next(this.yData.details.toJSON() as sharedRoomDetails));
+      // this.providerSynced.then(() => s.next(this.yData.details.toJSON() as sharedRoomDetails));
 
       this.roomDestroyed$$.subscribe(() => {
         this.yData.details.unobserveDeep(listener);
@@ -192,21 +194,20 @@ export class RoomManager {
       });
     }).pipe(publish()) as ConnectableObservable<sharedRoomDetails>;
 
-    this.availableColors$$ = new BehaviorSubject(null);
+    this.availableColours$$ = new BehaviorSubject(null);
 
-    this.roomDetails$
+    this.roomAwareness$
       .pipe(
-        map((d) => d.assignedColours),
-        distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
-        map((assignedColors) => {
-          if (!assignedColors) {
+        map((awareness) => {
+          if (Object.keys(awareness).length === 0) {
             return allColors;
           }
-          const takenColors = Object.values(assignedColors);
+          const takenColors = Object.values(awareness).map((u) => u.color);
           return allColors.filter((c) => !takenColors.includes(c));
         }),
+        distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
       )
-      .subscribe(this.availableColors$$);
+      .subscribe(this.availableColours$$);
   }
 
   connect() {
@@ -222,19 +223,13 @@ export class RoomManager {
   }
 
   async setAwarenessUserDetails(user: userAwarenessInput) {
-    const availableColors = (await this.availableColors$$
+    console.log('local state: ', this.provider.awareness.getLocalState());
+    const availableColors = (await this.availableColours$$
       .pipe(
         filter((s) => !!s),
         first(),
       )
       .toPromise()) as string[];
-
-    let assignedColoursMap = this.yData.details.get('assignedColours');
-    if (!assignedColoursMap) {
-      assignedColoursMap = new Y.Map();
-      this.yData.details.set('assignedColours', assignedColoursMap);
-    }
-    assignedColoursMap.set(this.provider.awareness.doc.clientID.toString(), availableColors[0]);
     this.provider.awareness.setLocalStateField('user', { name: user.name, color: availableColors[0] });
   }
 
@@ -290,7 +285,7 @@ export class RoomManager {
     this.roomDestroyed$$.complete();
     this.fileDetailsSubscription.unsubscribe();
     this.userAwarenessSubscription.unsubscribe();
-    this.availableColors$$.complete();
+    this.availableColours$$.complete();
 
     for (const binding of this.bindings.values()) {
       binding.destroy();

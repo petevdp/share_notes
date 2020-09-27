@@ -25,7 +25,7 @@ export function Home() {
 
   const roomElements =
     ownedRooms &&
-    ownedRooms.slice(0, 10).map((r) => (
+    ownedRooms.map((r) => (
       <RoomListItem key={r.id}>
         <StyledLink $as={Link} to={`/rooms/${r.hashId}`}>
           {r.name}

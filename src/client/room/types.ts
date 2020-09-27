@@ -1,6 +1,8 @@
 import { createAction } from '@reduxjs/toolkit';
 import { createRoomResponse, gistDetails, roomDetails } from 'Client/queries';
 import { roomAwareness } from 'Client/services/roomManager';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { rootState } from 'Client/store';
 import * as Y from 'yjs';
 
 export type gistDetailKeys = 'description' | 'name' | 'url';
@@ -106,3 +108,14 @@ export const fileRenamingActions = {
 export const setRoomAwarenessState = createAction('setRoomAwarenessState', (awareness: roomAwareness) => ({
   payload: awareness,
 }));
+
+export function isLoggedInForRoomSelector(rootState: rootState) {
+  return !!(rootState.session.token || rootState.session.anonymousUser);
+}
+
+export function currentFileRenameWithErrorsSelector(rootState: rootState) {
+  const currentRename = rootState.room.currentRoom?.currentRename;
+  if (!currentRename) {
+    return;
+  }
+}

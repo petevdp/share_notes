@@ -1,6 +1,4 @@
 import { createSlice } from '@reduxjs/toolkit';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { rootState } from 'Client/store';
 
 import {
   fileRenamingActions,
@@ -214,14 +212,3 @@ export const roomSlice = createSlice({
     });
   },
 });
-
-export function isLoggedInForRoomSelector(rootState: rootState) {
-  return !!(rootState.session.token || rootState.session.anonymousUser);
-}
-
-export function currentFileRenameWithErrorsSelector(rootState: rootState) {
-  const currentRename = rootState.room.currentRoom?.currentRename;
-  if (!currentRename) {
-    return;
-  }
-}

@@ -9,12 +9,14 @@ import { ItemT, StatefulMenu, StyledList, StyledListItem } from 'baseui/menu';
 import { StatefulPopover } from 'baseui/popover';
 import { LabelMedium } from 'baseui/typography';
 import { roomCreationActions } from 'Client/roomCreation/types';
+import { isLoggedInWithGithubSelector } from 'Client/session/slice';
 import { logOut } from 'Client/session/types';
 import { settingsActions } from 'Client/settings/types';
 import { rootState } from 'Client/store';
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
+import { AUTH_REDIRECT_URL, GITHUB_0AUTH_URL, GITHUB_CLIENT_ID } from 'Shared/environment';
 
 export const StyledUserMenuListItem = withStyle(StyledListItem, {
   paddingTop: '0',
@@ -47,6 +49,15 @@ export const StyledUserProfileInfoContainer = styled('div', () => {
     alignSelf: 'center',
   };
 });
+
+function loginWithGithub() {
+  const url = new URL(GITHUB_0AUTH_URL);
+  url.searchParams.set('client_id', GITHUB_CLIENT_ID);
+  url.searchParams.set('redirect_url', AUTH_REDIRECT_URL);
+  url.searchParams.set('scope', 'gist,read:user');
+  window.location.href = url.toString();
+  return;
+}
 
 export function GlobalHeader() {
   const [css, theme] = useStyletron();
@@ -194,7 +205,9 @@ export function GlobalHeader() {
             </>
           ) : (
             <StyledNavigationItem>
-              <Button shape="pill">Log In</Button>
+              <Button shape="pill" onClick={() => loginWithGithub()}>
+                Log In
+              </Button>
             </StyledNavigationItem>
           )}
         </StyledNavigationList>
