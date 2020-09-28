@@ -5,6 +5,7 @@ import { Modal, ModalBody, ModalHeader } from 'baseui/modal';
 import { fileRenamingActions, renameFile } from 'Client/room/types';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';
+import { RoomModalZIndexOverride } from 'Client/utils/basewebUtils';
 import React, { useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 export function RenameFileModal() {
@@ -55,13 +56,7 @@ export function RenameFileModal() {
       isOpen={!!currentRename}
       onClose={() => dispatch(fileRenamingActions.close())}
       unstable_ModalBackdropScroll={true}
-      overrides={{
-        Root: {
-          style: {
-            zIndex: 5,
-          },
-        },
-      }}
+      overrides={RoomModalZIndexOverride}
     >
       <ModalHeader>Rename {fileDetails?.filename || 'File'}</ModalHeader>
       <ModalBody>

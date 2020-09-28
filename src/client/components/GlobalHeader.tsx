@@ -3,7 +3,7 @@ import { UserNavItemT } from 'baseui/app-nav-bar';
 import { Avatar } from 'baseui/avatar';
 import { Button } from 'baseui/button';
 import { ALIGN, HeaderNavigation, StyledNavigationItem, StyledNavigationList } from 'baseui/header-navigation';
-import { ChevronDown } from 'baseui/icon';
+import { ChevronDown, Menu } from 'baseui/icon';
 import { StyledLink } from 'baseui/link';
 import { ItemT, StatefulMenu, StyledList, StyledListItem } from 'baseui/menu';
 import { StatefulPopover } from 'baseui/popover';
@@ -13,10 +13,13 @@ import { isLoggedInWithGithubSelector } from 'Client/session/slice';
 import { logOut } from 'Client/session/types';
 import { settingsActions } from 'Client/settings/types';
 import { rootState } from 'Client/store';
+import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { AUTH_REDIRECT_URL, GITHUB_0AUTH_URL, GITHUB_CLIENT_ID } from 'Shared/environment';
+
+import { RoomMemberDisplay } from './RoomMemberDisplay';
 
 export const StyledUserMenuListItem = withStyle(StyledListItem, {
   paddingTop: '0',
@@ -127,20 +130,7 @@ export function GlobalHeader() {
         <StyledNavigationList $align={ALIGN.center}>
           {roomAwareness && (
             <StyledNavigationItem>
-              <Button kind="tertiary" shape="pill">
-                {Object.entries(roomAwareness).map(([key, u]) => {
-                  console.log('key: ', key);
-                  console.log('value: ', u);
-                  return (
-                    <Avatar
-                      size={theme.sizing.scale800}
-                      key={key}
-                      name={u.name}
-                      overrides={{ Root: { style: { backgroundColor: u.color } } }}
-                    />
-                  );
-                })}
-              </Button>
+              <RoomMemberDisplay />
             </StyledNavigationItem>
           )}
         </StyledNavigationList>
@@ -155,6 +145,7 @@ export function GlobalHeader() {
               <StyledNavigationItem>
                 <StatefulPopover
                   placement={'bottom'}
+                  overrides={RoomPopoverZIndexOverride}
                   content={() => (
                     <StatefulMenu
                       overrides={{

@@ -3,6 +3,7 @@ import 'codemirror/theme/3024-night.css';
 
 import { LightTheme } from 'baseui';
 import { allFileDetailsStates, fileDetailsState } from 'Client/room/types';
+import { unifiedUser, userType } from 'Client/session/types';
 import { theme } from 'Client/settings/types';
 import { getKeysForMap } from 'Client/ydocUtils';
 import CodeMirror from 'codemirror';
@@ -22,15 +23,16 @@ import { CodeMirrorBinding, CodemirrorBinding } from 'y-codemirror';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 
-export interface userAwareness {
-  userId?: string;
+export interface userAwarenessInput {
+  type: userType;
   name: string;
-  color: string;
+  userId?: string;
+  avatarUrl?: string;
 }
 
-export interface userAwarenessInput {
-  userId?: string;
-  name: string;
+export interface userAwareness extends userAwarenessInput {
+  clientID: number;
+  color: string;
 }
 
 export type globalAwareness = Map<number, { user?: userAwareness }>;
@@ -202,7 +204,9 @@ export class RoomManager {
           if (Object.keys(awareness).length === 0) {
             return allColors;
           }
-          const takenColors = Object.values(awareness).map((u) => u.color);
+          const takenColors = Object.values(awareness)
+            .filter((u) => !!u.color)
+            .map((u) => u.color);
           return allColors.filter((c) => !takenColors.includes(c));
         }),
         distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
@@ -230,7 +234,8 @@ export class RoomManager {
         first(),
       )
       .toPromise()) as string[];
-    this.provider.awareness.setLocalStateField('user', { name: user.name, color: availableColors[0] });
+    const userAwareness: userAwareness = { clientID: this.ydoc.clientID, color: availableColors[0], ...user };
+    this.provider.awareness.setLocalStateField('user', userAwareness);
   }
 
   unprovisionTab(tabId: string) {

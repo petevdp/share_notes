@@ -5,6 +5,7 @@ import { Modal, ModalBody, ModalHeader } from 'baseui/modal';
 import { roomSliceStateWithErrorSelector } from 'Client/roomCreation/slice';
 import { roomCreationActions } from 'Client/roomCreation/types';
 import { rootState } from 'Client/store';
+import { RoomModalZIndexOverride } from 'Client/utils/basewebUtils';
 import React, { ReactElement, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
@@ -35,13 +36,7 @@ export function CreateRoomModal(): ReactElement {
       unstable_ModalBackdropScroll={true}
       isOpen={roomCreation.isOpen}
       onClose={() => dispatch(roomCreationActions.close(currentUser.githubLogin))}
-      overrides={{
-        Root: {
-          style: {
-            zIndex: 5,
-          },
-        },
-      }}
+      overrides={RoomModalZIndexOverride}
     >
       <ModalHeader>New Room</ModalHeader>
       <ModalBody>

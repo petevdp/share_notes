@@ -46,19 +46,35 @@ export const anonymousLoginActions = {
   cancel: createAction('cancelAnonymousLogin'),
 };
 
+export type userType = 'github' | 'anonymous';
+
 export interface unifiedUser {
-  username: string;
+  type: userType;
+  name: string;
+  userId?: string;
+  avatarUrl?: string;
 }
 
 export function unifiedUserSelector(s: rootState): unifiedUser | undefined {
+  let user: unifiedUser;
+
   if (s.session.user) {
-    return {
-      username: s.session.user.githubLogin,
+    user = {
+      type: 'github',
+      name: s.session.user.githubLogin,
     };
-  }
-  if (s.session.anonymousUser) {
-    return {
-      username: s.session.anonymousUser.username,
+    if (s.session.githubUserDetails) {
+      user.avatarUrl = s.session.githubUserDetails.avatarUrl;
+    }
+
+    return user;
+  } else if (s.session.anonymousUser) {
+    user = {
+      type: 'anonymous',
+      name: s.session.anonymousUser.username,
     };
+  } else {
+    return;
   }
+  return user;
 }

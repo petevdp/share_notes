@@ -130,13 +130,13 @@ export const initRoomEpic: Epic = (
         manager.connect();
         const unifiedUserDetails = unifiedUserSelector(rootState);
         if (unifiedUserDetails) {
-          manager.setAwarenessUserDetails({ name: unifiedUserDetails.username });
+          manager.setAwarenessUserDetails(unifiedUserDetails);
         }
 
         roomManager$$.next(manager);
 
         return concat(
-          of(roomInitialized()),
+          of(roomInitialized(manager.provider.doc.clientID)),
           merge(
             roomDataPromise.then(setRoomData),
             gistDataPromise.then(setRoomGistDetails),

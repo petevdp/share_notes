@@ -1,4 +1,6 @@
+import { ModalOverrides } from 'baseui/modal';
 import { Override } from 'baseui/overrides';
+import { PopoverOverrides } from 'baseui/popover';
 import React from 'react';
 
 export function getOverrideProps<T>(override: Override<T>) {
@@ -49,3 +51,19 @@ export function getOverrides(
   const props = getOverrideProps(override);
   return [Component, props];
 }
+
+export const RoomPopoverZIndexOverride: PopoverOverrides = {
+  Body: {
+    style: {
+      zIndex: 3,
+    },
+  },
+};
+
+export const RoomModalZIndexOverride: ModalOverrides = {
+  Root: {
+    style: {
+      zIndex: 3,
+    },
+  },
+};

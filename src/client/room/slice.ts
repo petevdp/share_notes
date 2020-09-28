@@ -59,7 +59,16 @@ export const roomSlice = createSlice({
       },
     }));
 
-    builder.addCase(roomInitialized, (s) => ({ ...s, isCurrentUserCreatingRoom: false }));
+    builder.addCase(roomInitialized, (s, { payload: yjsClientId }) => {
+      if (!s.currentRoom) {
+        throw 'current room not set';
+      }
+      return {
+        ...s,
+        isCurrentUserCreatingRoom: false,
+        currentRoom: { ...s.currentRoom, yjsClientId },
+      };
+    });
 
     builder.addCase(setFileDetailsStates, (s, { payload: newFileDetails }) => {
       if (!s?.currentRoom) {

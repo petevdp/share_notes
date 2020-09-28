@@ -1,6 +1,7 @@
 import { createAction } from '@reduxjs/toolkit';
 import { createRoomResponse, gistDetails, roomDetails } from 'Client/queries';
-import { roomAwareness } from 'Client/services/roomManager';
+import { roomAwareness, userAwareness } from 'Client/services/roomManager';
+import { unifiedUser } from 'Client/session/types';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';
 import * as Y from 'yjs';
@@ -23,23 +24,6 @@ export interface allFileDetailsStates {
   [id: string]: fileDetailsState;
 }
 
-export interface room {
-  id: string;
-  hashId: string;
-  name: string;
-  currentFileid?: string;
-  fileDetailsStates?: allFileDetailsStates;
-  owner: {
-    id: string;
-    githubLogin: string;
-  };
-  gist?: {
-    id: string;
-    details: gistDetails;
-    files: gistDetails;
-  };
-}
-
 interface anonymousLogin {
   username: string;
 }
@@ -50,6 +34,7 @@ export type roomSliceState = {
     hashId: string;
     awareness?: roomAwareness;
     loadedTabs: string[];
+    yjsClientId?: number;
     roomDetails?: roomDetails;
     gistDetails?: gistDetails;
     currentTabId?: string;
@@ -83,7 +68,7 @@ export const setIsCreatingRoom = createAction('setIsCreatingFroom');
 export const initRoom = createAction('initRoom', (roomHashId: string, startingTab?: string) => ({
   payload: { roomHashId, startingTab },
 }));
-export const roomInitialized = createAction('roomInitialized');
+export const roomInitialized = createAction('roomInitialized', (yjsClientId: number) => ({ payload: yjsClientId }));
 
 export const destroyRoom = createAction('destroyRoom');
 export const switchCurrentFile = createAction('switchCurrentFile', (tabId: string) => ({ payload: tabId }));
@@ -117,5 +102,12 @@ export function currentFileRenameWithErrorsSelector(rootState: rootState) {
   const currentRename = rootState.room.currentRoom?.currentRename;
   if (!currentRename) {
     return;
+  }
+}
+
+export function roomUsersAwarenessSelector(rootState: rootState): userAwareness[] | undefined {
+  const awareness = rootState.room.currentRoom?.awareness;
+  if (awareness) {
+    return [...Object.values(awareness)];
   }
 }
