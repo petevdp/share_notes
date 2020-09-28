@@ -1,11 +1,10 @@
 import { useStyletron } from 'baseui';
 import { Avatar } from 'baseui/avatar';
-import { Button, ButtonProps } from 'baseui/button';
+import { Button } from 'baseui/button';
 import { ChevronDown } from 'baseui/icon';
 import { OptionProfile, StatefulMenu } from 'baseui/menu';
-import { Popover, StatefulPopover } from 'baseui/popover';
-import { StatefulTooltip, StatefulTooltipProps, Tooltip } from 'baseui/tooltip';
-import { roomUsersAwarenessSelector } from 'Client/room/types';
+import { StatefulPopover } from 'baseui/popover';
+import { roomUsersAwarenessDetailsSelector } from 'Client/room/types';
 import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
 import React from 'react';
 import { useSelector } from 'react-redux';
@@ -19,7 +18,7 @@ interface profileItem {
 
 export function RoomMemberDisplay() {
   const [css, theme] = useStyletron();
-  const usersAwareness = useSelector(roomUsersAwarenessSelector);
+  const usersAwareness = useSelector(roomUsersAwarenessDetailsSelector);
 
   if (!usersAwareness) {
     return null;

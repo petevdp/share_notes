@@ -206,7 +206,7 @@ export const roomSlice = createSlice({
       builder.addCase(renameFile, closeFileRename);
     }
 
-    builder.addCase(setRoomAwarenessState, (state, { payload: roomAwareness }) => {
+    builder.addCase(setRoomAwarenessState, (state, { payload: globalAwareness }) => {
       if (!state.currentRoom) {
         throw 'current room not set';
       }
@@ -215,7 +215,7 @@ export const roomSlice = createSlice({
         ...state,
         currentRoom: {
           ...state.currentRoom,
-          awareness: roomAwareness,
+          awareness: globalAwareness,
         },
       };
     });

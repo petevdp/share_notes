@@ -1,7 +1,6 @@
 import { createAction } from '@reduxjs/toolkit';
 import { createRoomResponse, gistDetails, roomDetails } from 'Client/queries';
-import { roomAwareness, userAwareness } from 'Client/services/roomManager';
-import { unifiedUser } from 'Client/session/types';
+import { globalAwareness, globalAwarenessMap, userAwareness, userAwarenessDetails } from 'Client/services/roomManager';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';
 import * as Y from 'yjs';
@@ -32,7 +31,7 @@ export type roomSliceState = {
   isCurrentUserCreatingRoom: boolean;
   currentRoom?: {
     hashId: string;
-    awareness?: roomAwareness;
+    awareness?: globalAwareness;
     loadedTabs: string[];
     yjsClientId?: number;
     roomDetails?: roomDetails;
@@ -90,7 +89,7 @@ export const fileRenamingActions = {
   setNewFileName: createAction('setNewFileName', (filename: string) => ({ payload: filename })),
 };
 
-export const setRoomAwarenessState = createAction('setRoomAwarenessState', (awareness: roomAwareness) => ({
+export const setRoomAwarenessState = createAction('setRoomAwarenessState', (awareness: globalAwareness) => ({
   payload: awareness,
 }));
 
@@ -105,9 +104,15 @@ export function currentFileRenameWithErrorsSelector(rootState: rootState) {
   }
 }
 
-export function roomUsersAwarenessSelector(rootState: rootState): userAwareness[] | undefined {
+export function roomUsersAwarenessDetailsSelector(rootState: rootState): userAwarenessDetails[] | undefined {
   const awareness = rootState.room.currentRoom?.awareness;
+  console.log('awarenss in selector: ', awareness);
+
   if (awareness) {
-    return [...Object.values(awareness)];
+    return [
+      ...Object.values(awareness)
+        .filter((a) => !!a.user)
+        .map((s) => s.user as userAwarenessDetails),
+    ];
   }
 }

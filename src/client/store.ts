@@ -15,6 +15,7 @@ import {
   renameFileEpic,
   saveBackToGistEpic,
   unprovisionTabEpic,
+  updateCurrentFileAwarenessEpic,
 } from './room/epics';
 import { roomSlice } from './room/slice';
 import { initRoom, provisionTab } from './room/types';
@@ -83,6 +84,7 @@ const epics = [
   saveBackToGistEpic,
   destroyRoomEpic,
   loginAnonymouslyEpic,
+  updateCurrentFileAwarenessEpic,
 ];
 
 epicMiddleware.run(combineEpics(...epics));

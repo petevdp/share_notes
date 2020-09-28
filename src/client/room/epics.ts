@@ -14,7 +14,15 @@ import { request as gqlRequest } from 'graphql-request';
 import { Action } from 'redux';
 import { Epic, StateObservable } from 'redux-observable';
 import { concat, merge, Observable, of } from 'rxjs';
-import { concatMap, filter, ignoreElements, map, startWith, withLatestFrom } from 'rxjs/operators';
+import {
+  concatMap,
+  distinctUntilChanged,
+  filter,
+  ignoreElements,
+  map,
+  startWith,
+  withLatestFrom,
+} from 'rxjs/operators';
 import { GRAPHQL_URL } from 'Shared/environment';
 import * as Y from 'yjs';
 
@@ -126,7 +134,7 @@ export const initRoomEpic: Epic = (
           });
         }
 
-        const roomAwarenessUpdate$ = manager.roomAwareness$.pipe(map((s) => setRoomAwarenessState(s)));
+        const roomAwarenessUpdate$ = manager.awareness$.pipe(map((s) => setRoomAwarenessState(s)));
         manager.connect();
         const unifiedUserDetails = unifiedUserSelector(rootState);
         if (unifiedUserDetails) {
@@ -273,6 +281,21 @@ export const destroyRoomEpic: Epic = (action$, state$, { roomManager$$ }: epicDe
     withLatestFrom(roomManager$$),
     map(([, roomManager]) => {
       roomManager.destroy();
+    }),
+    ignoreElements(),
+  );
+
+export const updateCurrentFileAwarenessEpic: Epic = (
+  action$,
+  state$: StateObservable<rootState>,
+  { roomManager$$ }: epicDependencies,
+) =>
+  state$.pipe(
+    map((s) => s.room.currentRoom?.currentTabId),
+    distinctUntilChanged(),
+    withLatestFrom(roomManager$$),
+    map(([tabId, roomManager]) => {
+      roomManager.provider.awareness.setLocalStateField('currentTab', tabId);
     }),
     ignoreElements(),
   );

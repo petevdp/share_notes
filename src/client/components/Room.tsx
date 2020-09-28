@@ -31,6 +31,7 @@ export function Room() {
   const { roomHashId } = useParams<{ roomHashId: string }>();
   const dispatch = useDispatch();
   const currentRoom = useSelector((s: rootState) => s.room.currentRoom);
+  const awareness = useSelector((s: rootState) => s.room.currentRoom?.awareness);
 
   useEffect(() => {
     if (roomHashId) {
@@ -44,7 +45,7 @@ export function Room() {
   let tabArr: JSX.Element[];
 
   if (currentRoom?.fileDetailsStates) {
-    tabArr = Object.values(currentRoom.fileDetailsStates).map((state) => {
+    tabArr = Object.values(currentRoom.fileDetailsStates).map((tabState) => {
       return (
         <Tab
           overrides={{
@@ -58,44 +59,68 @@ export function Room() {
                 onContextMenu: () => alert('context menu'),
               },
               style: {
-                width: 'min-content',
-                whiteSpace: 'nowrap',
-                display: 'flex',
-                // padding: '5px',
-                paddingTop: '5px',
+                paddingTop: '3px',
                 paddingBottom: '5px',
                 paddingLeft: '3px',
                 paddingRight: '3px',
+                display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center',
-                alignContent: 'center',
+                alignItems: 'flex-start',
+                flexDirection: 'column',
               },
             },
           }}
-          key={state.tabId}
+          key={tabState.tabId}
           title={
             <>
-              <span key="filename">{state.filename}</span>
+              <span className={css({ display: 'flex', justifyContent: 'space-between' })}>
+                {awareness &&
+                  Object.values(awareness)
+                    .filter((a) => a.currentTab && a.user && a.currentTab === tabState.tabId)
+                    .map((a) => (
+                      <span
+                        key={a.user?.clientID}
+                        className={css({
+                          marginRight: '2px',
+                          width: '4px',
+                          height: '4px',
+                          lineHeight: '4px',
+                          marginBottom: '2px',
+                        })}
+                      >
+                        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                          <circle fill={a.user?.color} cx="50" cy="50" r="50" />
+                        </svg>
+                      </span>
+                    ))}
+              </span>
               <span
-                key={'delete button'}
-                onClick={(e) => dispatch(removeFile(state.tabId)) && e.stopPropagation()}
-                className={css({
-                  ':hover': {
-                    backgroundColor: '#c4c4c4',
-                    color: '#000000',
-                  },
-                  backgroundColor: 'transparent',
-                  color: '#c4c4c4',
-                  display: 'flex',
-                  alignContent: 'center',
-                  justifyContent: 'center',
-                  alignSelf: 'start',
-                  justifySelf: 'flex-end',
-                  padding: '.2px',
-                  borderRadius: '50%',
-                })}
+                className={css({ whiteSpace: 'nowrap', width: 'min-content', display: 'flex', alignItems: 'center' })}
               >
-                <Delete />
+                <span className={css({ display: 'inline-block' })} key="filename">
+                  {tabState.filename}
+                </span>
+                <span
+                  key={'delete button'}
+                  onClick={(e) => dispatch(removeFile(tabState.tabId)) && e.stopPropagation()}
+                  className={css({
+                    ':hover': {
+                      backgroundColor: '#c4c4c4',
+                      color: '#000000',
+                    },
+                    backgroundColor: 'transparent',
+                    color: '#c4c4c4',
+                    display: 'flex',
+                    // alignContent: 'center',
+                    // justifyContent: 'center',
+                    alignSelf: 'start',
+                    justifySelf: 'flex-end',
+                    padding: '.2px',
+                    borderRadius: '50%',
+                  })}
+                >
+                  <Delete />
+                </span>
               </span>
             </>
           }

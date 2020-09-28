@@ -3,7 +3,7 @@ import 'codemirror/theme/3024-night.css';
 
 import { LightTheme } from 'baseui';
 import { allFileDetailsStates, fileDetailsState } from 'Client/room/types';
-import { unifiedUser, userType } from 'Client/session/types';
+import { userType } from 'Client/session/types';
 import { theme } from 'Client/settings/types';
 import { getKeysForMap } from 'Client/ydocUtils';
 import CodeMirror from 'codemirror';
@@ -17,28 +17,30 @@ import { map } from 'rxjs/internal/operators/map';
 import { publish } from 'rxjs/internal/operators/publish';
 import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { Subject } from 'rxjs/internal/Subject';
-import { Subscription } from 'rxjs/internal/Subscription';
 import { YJS_ROOM, YJS_WEBSOCKET_URL_WS } from 'Shared/environment';
 import { CodeMirrorBinding, CodemirrorBinding } from 'y-codemirror';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 
-export interface userAwarenessInput {
+export interface userAwarenessDetailsInput {
   type: userType;
   name: string;
   userId?: string;
   avatarUrl?: string;
 }
 
-export interface userAwareness extends userAwarenessInput {
+export interface userAwarenessDetails extends userAwarenessDetailsInput {
   clientID: number;
   color: string;
 }
 
-export type globalAwareness = Map<number, { user?: userAwareness }>;
-export type roomAwareness = {
-  [id: string]: userAwareness;
-};
+export interface userAwareness {
+  user?: userAwarenessDetails;
+  currentTab?: string;
+}
+
+export type globalAwarenessMap = Map<number, userAwareness>;
+export type globalAwareness = { [id: string]: userAwareness };
 
 export type sharedRoomDetails = {
   assignedColours: { [cliendId: string]: string };
@@ -69,11 +71,9 @@ export class RoomManager {
   roomDestroyed$$: Subject<boolean>;
   provisionedTab$$: Subject<{ tabId: string; editorContainer: HTMLElement }>;
   providerSynced: Promise<true>;
-  fileDetails$: Observable<allFileDetailsStates>;
+  fileDetails$: ConnectableObservable<allFileDetailsStates>;
   roomDetails$: ConnectableObservable<sharedRoomDetails>;
-  fileDetailsSubscription: Subscription;
-  userAwarenessSubscription: Subscription;
-  roomAwareness$: ConnectableObservable<roomAwareness>;
+  awareness$: ConnectableObservable<globalAwareness>;
 
   constructor(roomHashId: string, private theme$: Observable<theme>) {
     this.roomDestroyed$$ = new Subject<boolean>();
@@ -149,16 +149,16 @@ export class RoomManager {
         this.yData.fileDetailsState.unobserveDeep(fileDetailsListener);
         s.complete();
       });
-    }).pipe(publish());
+    }).pipe(publish()) as ConnectableObservable<allFileDetailsStates>;
 
-    this.roomAwareness$ = new Observable<globalAwareness | undefined>((s) => {
+    this.awareness$ = new Observable<globalAwarenessMap>((s) => {
       this.providerSynced.then(() => {
-        const state = this.provider.awareness.getStates() as globalAwareness;
+        const state = this.provider.awareness.getStates() as globalAwarenessMap;
         s.next(state);
       });
 
       const awarenessListener = () => {
-        const state = this.provider.awareness.getStates() as globalAwareness;
+        const state = this.provider.awareness.getStates() as globalAwarenessMap;
         s.next(state);
       };
 
@@ -170,18 +170,19 @@ export class RoomManager {
         s.complete();
       });
     }).pipe(
-      map<globalAwareness, roomAwareness>((awareness) => {
-        const roomAwareness: roomAwareness = {};
-        for (let [key, value] of awareness.entries()) {
-          if (value.user) {
-            roomAwareness[key] = value.user;
-          }
+      map((globalAwarenessMap) => {
+        const globalAwareness: globalAwareness = {};
+        for (let [i, v] of globalAwarenessMap.entries()) {
+          globalAwareness[i.toString()] = {
+            currentTab: v.currentTab,
+            user: v.user,
+          };
         }
-        return roomAwareness;
+        return globalAwareness;
       }),
       distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
       publish(),
-    ) as ConnectableObservable<roomAwareness>;
+    ) as ConnectableObservable<globalAwareness>;
 
     this.roomDetails$ = new Observable<sharedRoomDetails>((s) => {
       const listener = () => {
@@ -198,15 +199,15 @@ export class RoomManager {
 
     this.availableColours$$ = new BehaviorSubject(null);
 
-    this.roomAwareness$
+    this.awareness$
       .pipe(
         map((awareness) => {
           if (Object.keys(awareness).length === 0) {
             return allColors;
           }
           const takenColors = Object.values(awareness)
-            .filter((u) => !!u.color)
-            .map((u) => u.color);
+            .filter((u) => !!u?.user?.color)
+            .map((u) => u?.user?.color as string);
           return allColors.filter((c) => !takenColors.includes(c));
         }),
         distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
@@ -215,8 +216,8 @@ export class RoomManager {
   }
 
   connect() {
-    this.fileDetailsSubscription = (this.fileDetails$ as ConnectableObservable<allFileDetailsStates>).connect();
-    this.userAwarenessSubscription = (this.roomAwareness$ as ConnectableObservable<roomAwareness>).connect();
+    this.fileDetails$.connect();
+    this.awareness$.connect();
     this.roomDetails$.connect();
     this.provider.connect();
   }
@@ -226,7 +227,7 @@ export class RoomManager {
     this.provisionedTab$$.next({ tabId, editorContainer });
   }
 
-  async setAwarenessUserDetails(user: userAwarenessInput) {
+  async setAwarenessUserDetails(user: userAwarenessDetailsInput) {
     console.log('local state: ', this.provider.awareness.getLocalState());
     const availableColors = (await this.availableColours$$
       .pipe(
@@ -234,7 +235,7 @@ export class RoomManager {
         first(),
       )
       .toPromise()) as string[];
-    const userAwareness: userAwareness = { clientID: this.ydoc.clientID, color: availableColors[0], ...user };
+    const userAwareness: userAwarenessDetails = { clientID: this.ydoc.clientID, color: availableColors[0], ...user };
     this.provider.awareness.setLocalStateField('user', userAwareness);
   }
 
@@ -288,8 +289,6 @@ export class RoomManager {
     this.currentFile$$.complete();
     this.roomDestroyed$$.next(true);
     this.roomDestroyed$$.complete();
-    this.fileDetailsSubscription.unsubscribe();
-    this.userAwarenessSubscription.unsubscribe();
     this.availableColours$$.complete();
 
     for (const binding of this.bindings.values()) {
