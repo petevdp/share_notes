@@ -5,6 +5,7 @@ import { Modal, ModalBody, ModalHeader } from 'baseui/modal';
 import { isLoggedInForRoomSelector } from 'Client/room/types';
 import { anonymousLoginActions } from 'Client/session/types';
 import { rootState } from 'Client/store';
+import { RoomModalZIndexOverride } from 'Client/utils/basewebUtils';
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -27,6 +28,7 @@ export function AnonymousLoginModal() {
 
   return (
     <Modal
+      overrides={RoomModalZIndexOverride}
       isOpen={!!formData}
       onClose={() => dispatch(anonymousLoginActions.cancel())}
       unstable_ModalBackdropScroll={true}

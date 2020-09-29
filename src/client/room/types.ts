@@ -81,7 +81,7 @@ export const setFileDetailsState = createAction('setFileDetailState', (allFileDe
 }));
 export const removeFile = createAction('removeFile', (filename: string) => ({ payload: filename }));
 export const saveBackToGist = createAction('saveBackToGist');
-export const gistSaved = createAction('gistSaved');
+export const gistSaved = createAction('gistSaved', (updatedDetails: gistDetails) => ({ payload: updatedDetails }));
 
 export const fileRenamingActions = {
   startRenameCurrentFile: createAction('startRenameCurrentFile'),

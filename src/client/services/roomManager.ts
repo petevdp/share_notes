@@ -2,6 +2,7 @@ import 'codemirror/theme/3024-day.css';
 import 'codemirror/theme/3024-night.css';
 
 import { LightTheme } from 'baseui';
+import { DEBUG_FLAGS } from 'Client/debugFlags';
 import { allFileDetailsStates, fileDetailsState } from 'Client/room/types';
 import { userType } from 'Client/session/types';
 import { theme } from 'Client/settings/types';
@@ -115,6 +116,9 @@ export class RoomManager {
         throw 'tried to provision nonexistant editor';
       }
       const binding = new CodeMirrorBinding(content, editor, this.provider.awareness);
+      if (process.env.NODE_ENV === 'development' && DEBUG_FLAGS.stopRemoveCursorOnBlur) {
+        binding.cm.off('blur', binding._blurListeer);
+      }
       this.bindings.set(tabId, binding);
     });
 
@@ -159,6 +163,7 @@ export class RoomManager {
 
       const awarenessListener = () => {
         const state = this.provider.awareness.getStates() as globalAwarenessMap;
+        console.log('awareness state: ', JSON.parse(JSON.stringify([...state.entries()])));
         s.next(state);
       };
 

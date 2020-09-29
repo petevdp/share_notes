@@ -253,25 +253,38 @@ export const saveBackToGistEpic: Epic = (
         throw 'no token set';
       }
 
-      const entriesForGithub = getEntriesForMap(roomManager.yData.fileDetailsState).reduce((obj, [filename, ytext]) => {
-        return {
-          ...obj,
-          filename: {
-            filename,
-            content: ytext.toString(),
-          },
+      const originalFileData = rootState.room.currentRoom?.gistDetails?.files;
+      const allFileDetails = rootState.room.currentRoom?.fileDetailsStates;
+      const allFileContents = roomManager.yData.fileContents.toJSON() as { [tabId: string]: string };
+      if (!allFileDetails || !allFileContents || !originalFileData) {
+        return 'no file details and/or contents';
+      }
+      const filesForGithub: any = {};
+      for (let key in allFileDetails) {
+        const details = allFileDetails[key];
+        const content = allFileContents[key];
+        filesForGithub[details.filename] = {
+          filename: details.filename,
+          content,
         };
-      }, {});
+      }
 
-      await octokitRequest('PATCH /gists/{id}', {
+      // explicitely set nulls to delete removed files from the gist
+      Object.keys(originalFileData)
+        .filter((k) => !Object.keys(filesForGithub).includes(k))
+        .forEach((k) => {
+          filesForGithub[k] = null;
+        });
+
+      const updatedDetails: gistDetails = await octokitRequest('PATCH /gists/{id}', {
         id: gist.id,
-        files: entriesForGithub,
+        files: filesForGithub,
         headers: {
           Authorization: `bearer ${sessionData.token}`,
         },
-      });
+      }).then((res) => res.data);
 
-      return gistSaved();
+      return gistSaved(updatedDetails);
     }),
   );
 

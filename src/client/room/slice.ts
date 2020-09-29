@@ -2,6 +2,7 @@ import { createSlice } from '@reduxjs/toolkit';
 
 import {
   fileRenamingActions,
+  gistSaved,
   initRoom,
   leaveRoom,
   renameFile,
@@ -47,6 +48,20 @@ export const roomSlice = createSlice({
         currentRoom: {
           ...s.currentRoom,
           roomDetails: details,
+        },
+      };
+    });
+
+    builder.addCase(gistSaved, (s, { payload: gistDetails }) => {
+      if (!s.currentRoom) {
+        throw 'current room not set';
+      }
+
+      return {
+        ...s,
+        currentRoom: {
+          ...s.currentRoom,
+          gistDetails,
         },
       };
     });
