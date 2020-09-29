@@ -1,0 +1,138 @@
+{
+  "entry": {
+    "app": "/home/pete/projects/share_notes/src/client"
+  },
+  "resolve": {
+    "extensions": [
+      ".ts",
+      ".tsx",
+      ".js"
+    ],
+    "alias": {
+      "Shared": "/home/pete/projects/share_notes/src/shared",
+      "Client": "/home/pete/projects/share_notes/src/client"
+    }
+  },
+  "plugins": [
+    {
+      "options": {
+        "template": "/home/pete/projects/share_notes/src/client/index.html",
+        "templateContent": false,
+        "filename": "index.html",
+        "publicPath": "auto",
+        "hash": false,
+        "inject": "body",
+        "scriptLoading": "blocking",
+        "compile": true,
+        "favicon": false,
+        "minify": "auto",
+        "cache": true,
+        "showErrors": true,
+        "chunks": "all",
+        "excludeChunks": [],
+        "chunksSortMode": "auto",
+        "meta": {},
+        "base": {
+          "href": "/"
+        },
+        "title": "Share Notes",
+        "xhtml": false
+      },
+      "version": 4
+    },
+    {
+      "dangerouslyAllowCleanPatternsOutsideProject": false,
+      "dry": false,
+      "verbose": false,
+      "cleanStaleWebpackAssets": true,
+      "protectWebpackAssets": true,
+      "cleanAfterEveryBuildPatterns": [],
+      "cleanOnceBeforeBuildPatterns": [
+        "**/*"
+      ],
+      "currentAssets": [],
+      "initialClean": false,
+      "outputPath": ""
+    },
+    {
+      "definitions": {
+        "process.env.NODE_ENV": "\"production\""
+      }
+    },
+    {
+      "opts": {
+        "analyzerMode": "server",
+        "analyzerHost": "127.0.0.1",
+        "reportFilename": null,
+        "defaultSizes": "parsed",
+        "openAnalyzer": true,
+        "generateStatsFile": false,
+        "statsFilename": "stats.json",
+        "statsOptions": null,
+        "excludeAssets": null,
+        "logLevel": "info",
+        "startAnalyzer": true,
+        "analyzerPort": 8888
+      },
+      "server": null,
+      "logger": {
+        "activeLevels": {}
+      }
+    }
+  ],
+  "mode": "production",
+  "devtool": "source-map",
+  "output": {
+    "globalObject": "self",
+    "filename": "[name].[contenthash].js",
+    "path": "/home/pete/projects/share_notes/bundleProd"
+  },
+  "optimization": {
+    "runtimeChunk": "single",
+    "moduleIds": "hashed",
+    "splitChunks": {
+      "chunks": "all",
+      "cacheGroups": {
+        "vendor": {
+          "test": {},
+          "name": "vendors",
+          "chunks": "all"
+        }
+      }
+    }
+  },
+  "module": {
+    "rules": [
+      {
+        "test": {},
+        "include": [
+          "/home/pete/projects/share_notes/src/client",
+          "/home/pete/projects/share_notes/src/shared"
+        ],
+        "use": [
+          {
+            "loader": "ts-loader",
+            "options": {
+              "transpileOnly": true,
+              "projectReferences": true
+            }
+          }
+        ]
+      },
+      {
+        "test": {},
+        "use": [
+          "style-loader",
+          "css-loader"
+        ]
+      },
+      {
+        "test": {},
+        "loader": "url-loader",
+        "options": {
+          "limit": 8192
+        }
+      }
+    ]
+  }
+}

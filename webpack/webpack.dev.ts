@@ -1,42 +1,28 @@
 import 'module-alias/register';
-const path = require('path');
+import * as path from 'path';
+import * as fs from 'fs';
 import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
-import HtmlWebPackPlugin from 'html-webpack-plugin';
-import { CLIENT_BUILD_PATH, CLIENT_ROOT, MONACO_ROOT, SHARED_ROOT } from 'Server/paths';
+import { CLIENT_BUILD_PATH_DEV, CLIENT_ROOT, SHARED_ROOT, ROOT } from '../src/server/paths';
 import * as p from 'Server/paths';
+import commonConfig from './webpack.common';
 import { API_PORT, DEV_SERVER_PORT } from 'Shared/environment';
-import { Configuration } from 'webpack';
+import { Configuration, DefinePlugin } from 'webpack';
+import { merge } from 'webpack-merge';
 
 import { API_URL } from '../dist/src/shared/environment';
 
-console.log(p);
-
-const config: Configuration = {
+const config: Configuration = merge(commonConfig, {
   mode: 'development',
   devtool: 'inline-source-map',
-  entry: {
-    app: CLIENT_ROOT,
-    // 'json.worker': path.join(MONACO_ROOT, 'language/json/json.worker.js'),
-    // 'css.worker': path.join(MONACO_ROOT, '/language/css/css.worker.js'),
-    // 'html.worker': path.join(MONACO_ROOT, '/language/html/html.worker.js'),
-    // 'ts.worker': path.join(MONACO_ROOT, '/language/typescript/ts.worker.js'),
-    // 'editor.worker': path.join(MONACO_ROOT, '/editor/editor.worker.js'),
-  },
   output: {
     globalObject: 'self',
-    path: CLIENT_BUILD_PATH,
+    path: CLIENT_BUILD_PATH_DEV,
   },
   plugins: [
-    new ReactRefreshWebpackPlugin(),
-    new HtmlWebPackPlugin({
-      title: 'Share Notes',
-      template: path.join(CLIENT_ROOT, 'index.html'),
-      inject: 'body',
-      // resolve all relative urls as a full url
-      base: {
-        href: '/',
-      },
+    new DefinePlugin({
+      'process.env.NODE_ENV': JSON.stringify('development'),
     }),
+    new ReactRefreshWebpackPlugin(),
   ],
   module: {
     rules: [
@@ -72,18 +58,11 @@ const config: Configuration = {
       },
     ],
   },
-  resolve: {
-    extensions: ['.ts', '.tsx', '.js'],
-    alias: {
-      Shared: SHARED_ROOT,
-      Client: CLIENT_ROOT,
-    },
-  },
-};
+});
 
 // the devServer Property appears to be missing on the Configuration typescript interface, so we have to define this separately
 const devServer = {
-  contentBase: CLIENT_BUILD_PATH,
+  contentBase: CLIENT_BUILD_PATH_DEV,
   proxy: {
     '/api': {
       target: API_URL,
@@ -97,5 +76,11 @@ const devServer = {
   historyApiFallback: true,
   port: DEV_SERVER_PORT,
 };
+
+const generatedOutPath = path.join(ROOT, 'webpack/generated/dev.json');
+
+fs.writeFile(generatedOutPath, JSON.stringify(config, undefined, 2), {}, () =>
+  console.log('generated dev config: ', generatedOutPath),
+);
 
 export default { ...config, devServer };

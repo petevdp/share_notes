@@ -9,8 +9,8 @@ export const SRC = path.join(ROOT, 'src');
 export const DIST = path.join(ROOT, 'dist');
 export const CLIENT_ROOT = path.join(SRC, 'client');
 export const SHARED_ROOT = path.join(SRC, 'shared');
-export const MONACO_ROOT = 'monaco-editor/esm/vs';
-export const CLIENT_BUILD_PATH = path.join(ROOT, './bundle');
+export const CLIENT_BUILD_PATH_DEV = path.join(ROOT, 'bundleDev');
+export const CLIENT_BUILD_PATH_PROD = path.join(ROOT, 'bundleProd');
 export const SERVER_BUILD_PATH = path.join(ROOT, './dist/src');
 
 export const ENV_FILE = path.join(ROOT, '.env');

@@ -1,0 +1,5 @@
+{
+  "watch": ["webpack/webpack.{dev,common}.ts", "src/server/paths.ts"],
+  "ext": "ts,json",
+  "exec": "./node_modules/.bin/webpack-dev-server --config webpack/webpack.dev.ts"
+}
