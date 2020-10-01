@@ -6,6 +6,8 @@
 
 # data model
 
+<!--  -->
+
 - anyone can create a room
 - if you create a room
 
@@ -28,6 +30,18 @@ provide gist
 
 if given gist, load gist contents into editors
 (make request to github, and load contents into ydoc on the server side)
+
+### ui description
+
+- Click create room button
+- open modal
+- link input
+  - green when valid url? try
+- incremental search select through current users's owned gists
+- card with selected gist details
+- on select, populate url into url input
+- display gist details
+- if gist not owned, show additional dialogue option asking if user wants to automatically fork the gist
 
 # Styling Notes
 
@@ -57,23 +71,6 @@ if gist already created:
 - move modal buttons to right
 - presence
 - styling pass - global header
-
-  - gloablheader mockup DONE
-  - use github avatar DONE
-  - add logout button DONE
-  - shrink
-  - add create room button DONE
-  - display current room name DONE
-
-- try adding context menu to tabs
-
-- logout button functionality DONE
-- styling pass - room
-
-  - refine tabs to be closer to mockup DONE
-  - add context menu to tabs
-  - better color for close tab highlight
-
 - style scrollbar
 - move add file button out of tab group
 - get list of gists for user at home
@@ -131,3 +128,6 @@ if gist already created:
 - will the current implementation work with private gists?
 - can I provide an interface for commit messages?
 - multiple editors? how will that work with y-monaco?
+
+gen-env-types
+dokku

@@ -10,6 +10,9 @@ import { settingsSelector } from './settings/slice';
 
 const engine = new Styletron();
 
+/**
+ * Setup Baseui and styletron
+ */
 export function App(): ReactElement {
   const settings = useSelector(settingsSelector);
 

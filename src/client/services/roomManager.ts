@@ -96,9 +96,6 @@ export class RoomManager {
       material-darker
       theme: 'ambiance',
     */
-    console.log(CodeMirror.modes);
-    console.log(CodeMirror.mimeModes);
-
     const themeMap = {
       light: '3024-day',
       dark: '3024-night',

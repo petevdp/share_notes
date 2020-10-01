@@ -3,13 +3,12 @@ import { UserNavItemT } from 'baseui/app-nav-bar';
 import { Avatar } from 'baseui/avatar';
 import { Button } from 'baseui/button';
 import { ALIGN, HeaderNavigation, StyledNavigationItem, StyledNavigationList } from 'baseui/header-navigation';
-import { ChevronDown, Menu } from 'baseui/icon';
+import { ChevronDown } from 'baseui/icon';
 import { StyledLink } from 'baseui/link';
 import { ItemT, StatefulMenu, StyledList, StyledListItem } from 'baseui/menu';
 import { StatefulPopover } from 'baseui/popover';
 import { LabelMedium } from 'baseui/typography';
 import { roomCreationActions } from 'Client/roomCreation/types';
-import { isLoggedInWithGithubSelector } from 'Client/session/slice';
 import { logOut } from 'Client/session/types';
 import { settingsActions } from 'Client/settings/types';
 import { rootState } from 'Client/store';
@@ -91,9 +90,6 @@ export function GlobalHeader() {
       case 'toggleTheme':
         dispatch(settingsActions.toggleTheme());
         break;
-      case 'createNewRoom':
-        dispatch(roomCreationActions.open());
-        break;
     }
   };
 
@@ -104,7 +100,7 @@ export function GlobalHeader() {
 
   const containerStyles = css({
     boxSizing: 'border-box',
-    width: '100vw',
+    width: '100%',
     height: '72px',
   });
 
@@ -138,9 +134,9 @@ export function GlobalHeader() {
           {isLoggedIn ? (
             <>
               <StyledNavigationItem>
-                <Button kind="tertiary" onClick={() => dispatch(roomCreationActions.open())}>
+                <StyledLink $as={Link} to="/rooms/create">
                   Create New Room
-                </Button>
+                </StyledLink>
               </StyledNavigationItem>
               <StyledNavigationItem>
                 <StatefulPopover

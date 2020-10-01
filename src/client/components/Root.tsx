@@ -6,7 +6,7 @@ import React, { ReactElement } from 'react';
 import { useSelector } from 'react-redux';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 
-import { CreateRoomModal } from './CreateRoomModal';
+import { CreateRoom } from './CreateRoom';
 import { GlobalHeader } from './GlobalHeader';
 import { Home } from './Home';
 import { Room } from './Room';
@@ -21,11 +21,11 @@ export function Root(): ReactElement {
           backgroundColor="backgroundPrimary"
           color="contentPrimary"
           display="flex"
-          justifyContent="start"
-          alignContent="center"
-          alignItems="center"
+          // justifyContent="start"
+          // alignContent="center"
+          // alignItems="center"
           flexDirection="column"
-          width="100vw"
+          width="100%"
           minHeight="100vh"
         >
           <GlobalHeader />
@@ -34,12 +34,13 @@ export function Root(): ReactElement {
               <Home />
             </Route>
             <Route exact path="/rooms"></Route>
-            <Route exact path="/rooms/create"></Route>
+            <Route exact path="/rooms/create">
+              <CreateRoom />
+            </Route>
             <Route path="/rooms/:roomHashId">
               <Room />
             </Route>
           </Switch>
-          {isLoggedIn && <CreateRoomModal />}
         </Block>
       </Layer>
     </Router>

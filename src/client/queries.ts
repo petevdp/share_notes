@@ -134,6 +134,19 @@ export const GET_GIST = gql`
   }
 `;
 
+const gistDetailsFragment = gql`
+  fragment GistDetails on Gist {
+    id
+    name
+    description
+    url
+    files {
+      name
+      text
+    }
+  }
+`;
+
 export interface getGistResponse {
   user: {
     id: string;
@@ -151,15 +164,69 @@ export interface getGistResponse {
   };
 }
 
+export interface gistFileDetails {
+  filename: string;
+  content: string;
+}
+
 export interface gistDetails {
   id: string;
   name: string;
   description: string;
   url: string;
   files: {
-    [key: string]: {
-      filename: string;
-      content: string;
+    [key: string]: gistFileDetails;
+  };
+}
+
+export interface gistDetailsGraphql {
+  id: string;
+  name: string;
+  description: string;
+  url: string;
+  files: { name: string; content: string }[];
+}
+
+export const GET_CURRENT_USER_GISTS_COUNT = gql`
+  query github__getCurrentUserGistsCount {
+    viewer {
+      gists(first: 0, privacy: ALL) {
+        totalCount
+      }
+    }
+  }
+`;
+
+export interface getCurrentUserGistsCountResponse {
+  viewer: {
+    gists: {
+      totalCount: number;
+    };
+  };
+}
+
+export const GET_CURRENT_USER_GISTS = gql`
+  query github__getCurrentUserGists($gistCount: Int) {
+    viewer {
+      gists(first: $gistCount, privacy: ALL) {
+        nodes {
+          ...GistDetails
+        }
+      }
+    }
+  }
+
+  ${gistDetailsFragment}
+`;
+
+export interface getCurrentUserGistsVariables {
+  gistCount: number;
+}
+
+export interface getCurrentUserGistsResponse {
+  viewer: {
+    gists: {
+      nodes: gistDetailsGraphql[];
     };
   };
 }

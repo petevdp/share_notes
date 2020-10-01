@@ -3,7 +3,7 @@ import { RoomManager } from 'Client/services/roomManager';
 import { combineEpics, createEpicMiddleware } from 'redux-observable';
 import { FLUSH, PAUSE, PERSIST, persistReducer, persistStore, PURGE, REGISTER, REHYDRATE } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
-import { Subject } from 'rxjs';
+import { Subject } from 'rxjs/internal/Subject';
 
 import {
   addNewFileEpic,
@@ -19,7 +19,7 @@ import {
 } from './room/epics';
 import { roomSlice } from './room/slice';
 import { initRoom, provisionTab } from './room/types';
-import { initializeRoomCreationEpic } from './roomCreation/epics';
+import { initializeRoomCreationEpic, openRoomCreationEpic } from './roomCreation/epics';
 import { roomCreationSlice } from './roomCreation/slice';
 import {
   fetchCurrentUserDataOnSetSessionTokenEpic,
@@ -85,6 +85,7 @@ const epics = [
   destroyRoomEpic,
   loginAnonymouslyEpic,
   updateCurrentFileAwarenessEpic,
+  openRoomCreationEpic,
 ];
 
 epicMiddleware.run(combineEpics(...epics));

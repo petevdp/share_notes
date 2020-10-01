@@ -1,5 +1,7 @@
 body {
   margin: 0px;
+  width: 100vw;
+  overflow-x: hidden;
 }
 .CodeMirror {
   /* height: max-content;

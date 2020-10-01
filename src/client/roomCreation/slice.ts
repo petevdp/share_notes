@@ -8,19 +8,50 @@ const initialState: roomCreationSliceState = {
   isOpen: false,
   gistUrl: '',
   roomName: '',
+  selectedGistValue: [],
 };
+
+const {
+  roomCreationClosed: close,
+  roomCreationOpened: open,
+  setGistUrl,
+  setRoomName,
+  setGistSelectionValue,
+  initialize,
+  createRoom,
+  setOwnedGists,
+} = roomCreationActions;
 
 export const roomCreationSlice = createSlice({
   initialState,
   name: 'roomCreationSlice',
   reducers: {},
   extraReducers: (builder) => {
-    builder.addCase(roomCreationActions.close, (s, { payload: username }) => resetRoom(username));
-    builder.addCase(roomCreationActions.open, (s) => ({ ...s, isOpen: true }));
-    builder.addCase(roomCreationActions.setGistUrl, (s, { payload: gistUrl }) => ({ ...s, gistUrl }));
-    builder.addCase(roomCreationActions.setRoomName, (s, { payload: roomName }) => ({ ...s, roomName }));
-    builder.addCase(roomCreationActions.initialize, (s, { payload: username }) => resetRoom(username));
-    builder.addCase(roomCreationActions.createRoom, (s, { payload: { username } }) => resetRoom(username));
+    builder.addCase(close, (s, { payload: username }) => resetRoom(username));
+    builder.addCase(open, (s) => ({ ...s, isOpen: true }));
+    builder.addCase(setGistUrl, (s, { payload: gistUrl }) => ({ ...s, gistUrl }));
+    builder.addCase(setRoomName, (s, { payload: roomName }) => ({ ...s, roomName }));
+    builder.addCase(setGistSelectionValue, (s, { payload: value }) => {
+      const selectedGist = value[0]?.id && s.ownedGists?.find((g) => g.id === value[0].id);
+      if (selectedGist) {
+        if (!selectedGist) {
+          throw "selected gist doesn't exist";
+        }
+        return {
+          ...s,
+          selectedGistValue: value,
+          gistUrl: selectedGist.url,
+        };
+      } else {
+        return {
+          ...s,
+          selectedGistValue: value,
+        };
+      }
+    });
+    builder.addCase(setOwnedGists, (s, { payload: ownedGists }) => ({ ...s, ownedGists }));
+    builder.addCase(initialize, (s, { payload: username }) => resetRoom(username));
+    builder.addCase(createRoom, (s, { payload: { username } }) => resetRoom(username));
   },
 });
 
@@ -29,14 +60,18 @@ function resetRoom(username: string): roomCreationSliceState {
     isOpen: false,
     roomName: `${username}'s Room`,
     gistUrl: '',
+    selectedGistValue: [],
   };
 }
 
 export interface roomCreationSliceStateWithError extends roomCreationSliceState {
-  gistUrlError?: string;
+  gistUrlError?: {
+    status: 'empty' | 'invalid';
+    message?: string;
+  };
 }
 
-export function roomSliceStateWithErrorSelector(rootState: rootState): roomCreationSliceStateWithError {
+export function roomCreationSliceStateWithErrorSelector(rootState: rootState): roomCreationSliceStateWithError {
   const { gistUrl } = rootState.roomCreation;
 
   const gistUrlError = (() => {
@@ -54,7 +89,14 @@ export function roomSliceStateWithErrorSelector(rootState: rootState): roomCreat
       }
     }
 
-    if (!/\/gist\.github\.com\/.+\/.+/.test(url.href)) {
+    console.log('href: ', url.href);
+    console.log('path: ', url.pathname);
+    console.log('host', url.hostname);
+
+    const wrongDomain = url.hostname !== 'gist.github.com';
+    const notGistPath = !/^\/[^\/]+(\/[^\/]+)?\/?$/.test(url.pathname);
+
+    if (wrongDomain || notGistPath) {
       return 'Not a valid Gist url.';
     }
   })();

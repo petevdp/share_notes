@@ -9,22 +9,22 @@ import { unifiedUserSelector } from 'Client/session/types';
 import { settingsActions, theme } from 'Client/settings/types';
 import { epicDependencies, rootState } from 'Client/store';
 import { octokitRequestWithAuth as getOctokitRequestWIthAuth } from 'Client/utils/utils';
-import { getEntriesForMap, getKeysForMap } from 'Client/ydocUtils';
+import { getKeysForMap } from 'Client/ydocUtils';
 import { request as gqlRequest } from 'graphql-request';
 import { Action } from 'redux';
 import { Epic, StateObservable } from 'redux-observable';
-import { concat, merge, Observable, of } from 'rxjs';
-import {
-  concatMap,
-  distinctUntilChanged,
-  filter,
-  ignoreElements,
-  map,
-  startWith,
-  withLatestFrom,
-} from 'rxjs/operators';
+import { Observable } from 'rxjs/internal/Observable';
+import { concat } from 'rxjs/internal/observable/concat';
+import { merge } from 'rxjs/internal/observable/merge';
+import { of } from 'rxjs/internal/observable/of';
+import { concatMap } from 'rxjs/internal/operators/concatMap';
+import { distinctUntilChanged } from 'rxjs/internal/operators/distinctUntilChanged';
+import { filter } from 'rxjs/internal/operators/filter';
+import { ignoreElements } from 'rxjs/internal/operators/ignoreElements';
+import { map } from 'rxjs/internal/operators/map';
+import { startWith } from 'rxjs/internal/operators/startWith';
+import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { GRAPHQL_URL } from 'Shared/environment';
-import * as Y from 'yjs';
 
 import {
   addNewFile,
