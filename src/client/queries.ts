@@ -105,6 +105,7 @@ export const GET_VIEWER_GITHUB_DETAILS = gql`
   query github__getUserDetails {
     viewer {
       avatarUrl
+      id
     }
   }
 `;
@@ -177,6 +178,10 @@ export interface gistDetails {
   files: {
     [key: string]: gistFileDetails;
   };
+  owner: {
+    login: string;
+    id: number;
+  };
 }
 
 export interface gistDetailsGraphql {
@@ -184,6 +189,10 @@ export interface gistDetailsGraphql {
   name: string;
   description: string;
   url: string;
+  owner: {
+    login: string;
+    id: number;
+  };
   files: { name: string; content: string }[];
 }
 

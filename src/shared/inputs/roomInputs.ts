@@ -17,5 +17,5 @@ export class CreateRoomInput {
   gistName: string;
 
   @Field(() => ID)
-  ownerId: string;
+  ownerId?: string;
 }

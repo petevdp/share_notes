@@ -113,7 +113,7 @@ export const roomSlice = createSlice({
       }
 
       let loadedTabs = s.currentRoom.loadedTabs;
-      if (!loadedTabs.includes(currentTabId)) {
+      if (currentTabId && !loadedTabs.includes(currentTabId)) {
         loadedTabs = [...loadedTabs, currentTabId];
       }
 
@@ -146,14 +146,14 @@ export const roomSlice = createSlice({
       };
     });
 
-    builder.addCase(roomCreated, (s, { payload: { createRoom: roomData } }) => ({
+    builder.addCase(roomCreated, (s, { payload: { data, forkDetails } }) => ({
       ...s,
       isCurrentUserCreatingRoom: true,
       currentRoom: {
         ...s.currentRoom,
         loadedTabs: [],
-        hashId: roomData.hashId,
-        roomDetails: roomData,
+        hashId: data.createRoom.hashId,
+        roomDetails: data.createRoom,
       },
     }));
 

@@ -7,7 +7,6 @@ import { Subject } from 'rxjs/internal/Subject';
 
 import {
   addNewFileEpic,
-  createRoomEpic,
   destroyRoomEpic,
   initRoomEpic,
   provisionTabEpic,
@@ -19,7 +18,12 @@ import {
 } from './room/epics';
 import { roomSlice } from './room/slice';
 import { initRoom, provisionTab } from './room/types';
-import { initializeRoomCreationEpic, openRoomCreationEpic } from './roomCreation/epics';
+import {
+  createRoomEpic,
+  getGistPreviewEpic,
+  initializeRoomCreationEpic,
+  openRoomCreationEpic,
+} from './roomCreation/epics';
 import { roomCreationSlice } from './roomCreation/slice';
 import {
   fetchCurrentUserDataOnSetSessionTokenEpic,
@@ -86,6 +90,7 @@ const epics = [
   loginAnonymouslyEpic,
   updateCurrentFileAwarenessEpic,
   openRoomCreationEpic,
+  getGistPreviewEpic,
 ];
 
 epicMiddleware.run(combineEpics(...epics));

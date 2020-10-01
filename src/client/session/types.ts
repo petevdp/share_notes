@@ -14,6 +14,7 @@ export interface currentUser {
 export interface githubUserDetails {
   avatarUrl: string;
 }
+
 export interface sessionSliceState {
   token?: string;
   tokenPresenceChecked: boolean;

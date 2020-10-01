@@ -35,7 +35,6 @@ import {
   provisionTab,
   removeFile,
   renameFile,
-  roomCreated,
   roomInitialized,
   saveBackToGist,
   setFileDetailsState,
@@ -45,16 +44,6 @@ import {
   switchCurrentFile,
   unprovisionTab,
 } from './types';
-
-export const createRoomEpic: Epic = (action$) =>
-  action$.pipe(
-    filter(roomCreationActions.createRoom.match),
-    concatMap(async ({ payload: { input } }) => {
-      const res = await gqlRequest<createRoomResponse>(GRAPHQL_URL, CREATE_ROOM, { data: input });
-      console.log('res: ', res);
-      return roomCreated(res);
-    }),
-  );
 
 export const initRoomEpic: Epic = (
   action$,

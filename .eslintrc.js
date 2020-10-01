@@ -21,7 +21,7 @@ module.exports = {
     'plugin:prettier/recommended', // Enables eslint-plugin-prettier and eslint-config-prettier. This will display prettier errors as ESLint errors. Make sure this is always the last configuration in the extends array.
   ],
   rules: {
-    indent: ['error', 2, { SwitchCase: 1 }],
+    indent: 'off', // leave this to prettier
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-unused-vars': ['warn', { vars: 'all', args: 'none', varsIgnorePattern: '_' }],
     '@typescript-eslint/no-explicit-any': 'off',

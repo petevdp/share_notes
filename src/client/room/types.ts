@@ -1,6 +1,6 @@
 import { createAction } from '@reduxjs/toolkit';
 import { createRoomResponse, gistDetails, roomDetails } from 'Client/queries';
-import { globalAwareness, globalAwarenessMap, userAwareness, userAwarenessDetails } from 'Client/services/roomManager';
+import { globalAwareness, userAwarenessDetails } from 'Client/services/roomManager';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';
 import * as Y from 'yjs';
@@ -46,7 +46,9 @@ export type roomSliceState = {
   };
 };
 
-export const roomCreated = createAction('roomCreated', (data: createRoomResponse) => ({ payload: data }));
+export const roomCreated = createAction('roomCreated', (data: createRoomResponse, forkDetails?: gistDetails) => ({
+  payload: { data, forkDetails },
+}));
 export const switchToRoom = createAction('switchToRoom', (hashId: string) => ({
   payload: hashId,
 }));
