@@ -10,6 +10,7 @@ import { Configuration, DefinePlugin } from 'webpack';
 import { merge } from 'webpack-merge';
 
 import { API_URL } from '../dist/src/shared/environment';
+import { writeGeneratedConfig } from './helpers';
 
 const config: Configuration = merge(commonConfig, {
   mode: 'development',
@@ -77,10 +78,11 @@ const devServer = {
   port: DEV_SERVER_PORT,
 };
 
-const generatedOutPath = path.join(ROOT, 'webpack/generated/dev.json');
+const joinedConfig = {
+  ...config,
+  devServer,
+};
 
-fs.writeFile(generatedOutPath, JSON.stringify(config, undefined, 2), {}, () =>
-  console.log('generated dev config: ', generatedOutPath),
-);
+writeGeneratedConfig(joinedConfig, 'dev');
 
-export default { ...config, devServer };
+export default joinedConfig;

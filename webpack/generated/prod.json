@@ -58,26 +58,6 @@
       "definitions": {
         "process.env.NODE_ENV": "\"production\""
       }
-    },
-    {
-      "opts": {
-        "analyzerMode": "server",
-        "analyzerHost": "127.0.0.1",
-        "reportFilename": null,
-        "defaultSizes": "parsed",
-        "openAnalyzer": true,
-        "generateStatsFile": false,
-        "statsFilename": "stats.json",
-        "statsOptions": null,
-        "excludeAssets": null,
-        "logLevel": "info",
-        "startAnalyzer": true,
-        "analyzerPort": 8888
-      },
-      "server": null,
-      "logger": {
-        "activeLevels": {}
-      }
     }
   ],
   "mode": "production",

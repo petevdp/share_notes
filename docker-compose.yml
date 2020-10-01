@@ -4,7 +4,16 @@ services:
     image: postgres
     ports:
       - "5432:5432"
+    environment:
+      POSTGRES_USER: development
+      POSTGRES_PASSWORD: development
+      POSTGRES_DB: development
+    volumes:
+      - database-data:/var/lib/postgresql/data/ # persist data
   redis:
     image: redis
     ports:
       - "6379:6379"
+
+volumes:
+  database-data:

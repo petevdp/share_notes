@@ -3,10 +3,10 @@ import webpack, { DefinePlugin } from 'webpack';
 import fs from 'fs';
 import { CLIENT_ROOT, SHARED_ROOT, ROOT, CLIENT_BUILD_PATH_PROD } from '../src/server/paths';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
-import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
 import { merge } from 'webpack-merge';
 import path from 'path';
 import commonConfig from './webpack.common';
+import { writeGeneratedConfig } from './helpers';
 
 const config: webpack.Configuration = merge(commonConfig, {
   mode: 'production',
@@ -21,7 +21,6 @@ const config: webpack.Configuration = merge(commonConfig, {
     new DefinePlugin({
       'process.env.NODE_ENV': JSON.stringify('production'),
     }),
-    new BundleAnalyzerPlugin(),
   ],
   optimization: {
     runtimeChunk: 'single',
@@ -69,10 +68,6 @@ const config: webpack.Configuration = merge(commonConfig, {
   },
 });
 
-const generatedOutPath = path.join(ROOT, 'webpack/generated/prod.json');
-
-fs.writeFile(generatedOutPath, JSON.stringify(config, undefined, 2), {}, () =>
-  console.log('generated prod config: ', generatedOutPath),
-);
+writeGeneratedConfig(config, 'prod');
 
 export default config;
