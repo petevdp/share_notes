@@ -136,6 +136,6 @@ export const getGistPreviewEpic: Epic = (action$, state$: StateObservable<rootSt
         (res) => res.data as gistDetails,
       );
 
-      return roomCreationActions.addOtherGistDetails(details);
+      return roomCreationActions.setGistDetails(details);
     }),
   );

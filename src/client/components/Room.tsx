@@ -4,6 +4,7 @@ import { ChevronDown, Delete, Plus } from 'baseui/icon';
 import { ItemT, StatefulMenu } from 'baseui/menu';
 import { StatefulPopover } from 'baseui/popover';
 import { Skeleton } from 'baseui/skeleton';
+import { useSnackbar } from 'baseui/snackbar';
 import { Tab, Tabs } from 'baseui/tabs-motion';
 import {
   addNewFile,
@@ -32,7 +33,13 @@ export function Room() {
   const dispatch = useDispatch();
   const currentRoom = useSelector((s: rootState) => s.room.currentRoom);
   const awareness = useSelector((s: rootState) => s.room.currentRoom?.awareness);
+  const { enqueue } = useSnackbar();
 
+  useEffect(() => {
+    if (currentRoom?.forkedGistDetails) {
+      enqueue({ message: 'Created new Fork for Gist.' });
+    }
+  });
   useEffect(() => {
     if (roomHashId) {
       dispatch(initRoom(roomHashId));
@@ -111,8 +118,6 @@ export function Room() {
                     backgroundColor: 'transparent',
                     color: '#c4c4c4',
                     display: 'flex',
-                    // alignContent: 'center',
-                    // justifyContent: 'center',
                     alignSelf: 'start',
                     justifySelf: 'flex-end',
                     padding: '.2px',

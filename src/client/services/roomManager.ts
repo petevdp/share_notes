@@ -285,7 +285,6 @@ export class RoomManager {
   }
 
   destroy() {
-    // this.binding?.destroy();
     this.provider.destroy();
     this.ydoc.destroy();
     this.currentFile$$.complete();

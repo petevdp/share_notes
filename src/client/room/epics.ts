@@ -2,8 +2,7 @@ import 'codemirror/lib/codemirror.css';
 import 'codemirror/theme/night.css';
 
 import { request as octokitRequest } from '@octokit/request';
-import { CREATE_ROOM, createRoomResponse, GET_ROOM, getRoomResponse, gistDetails } from 'Client/queries';
-import { roomCreationActions } from 'Client/roomCreation/types';
+import { GET_ROOM, getRoomResponse, gistDetails } from 'Client/queries';
 import { RoomManager } from 'Client/services/roomManager';
 import { unifiedUserSelector } from 'Client/session/types';
 import { settingsActions, theme } from 'Client/settings/types';

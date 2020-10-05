@@ -30,6 +30,7 @@ interface anonymousLogin {
 export type roomSliceState = {
   isCurrentUserCreatingRoom: boolean;
   currentRoom?: {
+    forkedGistDetails?: gistDetails;
     hashId: string;
     awareness?: globalAwareness;
     loadedTabs: string[];

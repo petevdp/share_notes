@@ -152,6 +152,7 @@ export const roomSlice = createSlice({
       currentRoom: {
         ...s.currentRoom,
         loadedTabs: [],
+        forkedGistDetails: forkDetails,
         hashId: data.createRoom.hashId,
         roomDetails: data.createRoom,
       },

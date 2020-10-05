@@ -11,6 +11,7 @@ const initialState: roomCreationSliceState = {
   otherGists: {},
   roomName: '',
   selectedGistValue: [],
+  shouldForkCheckboxChecked: false,
 };
 
 const {
@@ -22,7 +23,8 @@ const {
   initialize,
   createRoom,
   setOwnedGists,
-  addOtherGistDetails,
+  setGistDetails,
+  setIsCheckboxChecked,
 } = roomCreationActions;
 
 export const roomCreationSlice = createSlice({
@@ -56,13 +58,15 @@ export const roomCreationSlice = createSlice({
     builder.addCase(initialize, (s, { payload: username }) => resetRoom(username));
     builder.addCase(createRoom, (s, { payload: { username } }) => ({ ...s, submitted: true }));
     builder.addCase(roomCreated, (s, { payload: { data } }) => resetRoom(data.createRoom.owner.githubLogin));
-    builder.addCase(addOtherGistDetails, (s, { payload: gistDetails }) => ({
+    builder.addCase(setGistDetails, (s, { payload: gistDetails }) => ({
       ...s,
       otherGists: {
         ...s.otherGists,
         [gistDetails.id]: gistDetails,
       },
     }));
+
+    builder.addCase(setIsCheckboxChecked, (s, { payload: checked }) => ({ ...s, shouldForkCheckboxChecked: checked }));
   },
 });
 
@@ -74,5 +78,6 @@ function resetRoom(username: string): roomCreationSliceState {
     roomName: `${username}'s Room`,
     gistUrl: '',
     selectedGistValue: [],
+    shouldForkCheckboxChecked: false,
   };
 }

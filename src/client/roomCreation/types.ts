@@ -16,6 +16,7 @@ export interface roomCreationSliceState {
   ownedGists?: gistDetailsStore;
   otherGists: { [id: string]: gistDetails | 'notFound' | undefined };
   selectedGistValue: Value;
+  shouldForkCheckboxChecked: boolean;
 }
 
 export const roomCreationActions = {
@@ -24,7 +25,7 @@ export const roomCreationActions = {
   setOwnedGists: createAction('setOwnedGistsForRoomCreation', (ownedGists: gistDetailsStore) => ({
     payload: ownedGists,
   })),
-  addOtherGistDetails: createAction('addOtherGistsDetailsForRoomCreation', (gistDetails: gistDetails) => ({
+  setGistDetails: createAction('addOtherGistsDetailsForRoomCreation', (gistDetails: gistDetails) => ({
     payload: gistDetails,
   })),
   setGistSelectionValue: createAction('setGistSelectionValueForRoomCreation', (value: Value) => ({
@@ -37,6 +38,9 @@ export const roomCreationActions = {
   })),
   createRoom: createAction('createRoom', (input: CreateRoomInput, username: string) => ({
     payload: { input, username },
+  })),
+  setIsCheckboxChecked: createAction('setIsForkCheckboxCheckedForRoomCreation', (checked: boolean) => ({
+    payload: checked,
   })),
 };
 

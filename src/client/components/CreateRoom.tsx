@@ -1,10 +1,12 @@
 import { useStyletron } from 'baseui';
 import { Button } from 'baseui/button';
 import { Card, StyledAction, StyledBody } from 'baseui/card';
+import { Checkbox } from 'baseui/checkbox';
 import { FormControl } from 'baseui/form-control';
 import { Heading, HeadingLevel } from 'baseui/heading';
 import { Input } from 'baseui/input';
 import { Option, Select } from 'baseui/select';
+import { Skeleton } from 'baseui/skeleton';
 import { Tag } from 'baseui/tag';
 import { Textarea } from 'baseui/textarea';
 import { Label1 } from 'baseui/typography';
@@ -47,7 +49,7 @@ export function CreateRoom() {
       dispatch(roomCreationActions.roomCreationClosed(currentUser.githubLogin));
     };
   }, []);
-  const [css] = useStyletron();
+  const [css, theme] = useStyletron();
 
   if (isCurrentUserCreatingRoom && roomHashId) {
     return <Redirect to={`/rooms/${roomHashId}`} />;
@@ -118,11 +120,9 @@ export function CreateRoom() {
                     <Heading styleLevel={6}>Selected Gist Details</Heading>
                     <div>
                       <Label1>Description</Label1>
-                      <Textarea
-                        disabled
-                        value={roomCreation.detailsForUrlAtGist.description || '(empty)'}
-                        overrides={{ Input: { style: { cursor: 'unset' } } }}
-                      />
+                      <div className={css({ backgroundColor: theme.colors.backgroundTertiary, padding: '5px' })}>
+                        {roomCreation.detailsForUrlAtGist.description || '(empty)'}
+                      </div>
                     </div>
                     <div>
                       <Label1>Files</Label1>
@@ -135,6 +135,17 @@ export function CreateRoom() {
                       {/* </ul> */}
                     </div>
                   </Card>
+                )}
+                {roomCreation.urlInputStatus === GistUrlInputStatus.UnownedGist && (
+                  <Checkbox
+                    checked={roomCreation.shouldForkCheckboxChecked}
+                    onChange={() => {
+                      const checked = (event?.target as any).checked as boolean;
+                      dispatch(roomCreationActions.setIsCheckboxChecked(checked));
+                    }}
+                  >
+                    {"You don't own the currently selected gist. Fork Instead?"}
+                  </Checkbox>
                 )}
               </StyledBody>
               <StyledAction>
@@ -150,7 +161,9 @@ export function CreateRoom() {
                   disabled={
                     ![GistUrlInputStatus.OwnedGist, GistUrlInputStatus.UnownedGist].includes(
                       roomCreation.urlInputStatus,
-                    )
+                    ) ||
+                    (roomCreation.urlInputStatus === GistUrlInputStatus.UnownedGist &&
+                      !roomCreation.shouldForkCheckboxChecked)
                   }
                 >
                   Create

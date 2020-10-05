@@ -1,4 +1,5 @@
 import { BaseProvider, DarkTheme, LightTheme } from 'baseui';
+import { SnackbarProvider } from 'baseui/snackbar';
 import { Theme } from 'baseui/theme';
 import React, { ReactElement } from 'react';
 import { useSelector } from 'react-redux';
@@ -32,7 +33,9 @@ export function App(): ReactElement {
   return (
     <StyletronProvider value={engine}>
       <BaseProvider theme={theme}>
-        <Root />
+        <SnackbarProvider>
+          <Root />
+        </SnackbarProvider>
       </BaseProvider>
     </StyletronProvider>
   );
