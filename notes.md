@@ -65,8 +65,10 @@ if gist already created:
 
 ## now
 
-- choose between monaco and codemirror DONE, codemirror
 - decent styling for presence indicators
+- delete room action
+- add titles for routes
+- add heading to globalheader
 - handle non-gist cases
 - move modal buttons to right
 - presence
@@ -83,36 +85,10 @@ if gist already created:
   - check diff mode
 - handle tab overflow
 
-## done
-
-- fix 0auth DONE
-- setup type-graphql DONE
-- get room data populating DONE
-- assign links to rooms, send to empty page DONE
-- one editor per room DONE
-- simple room creation DONE
-- real time editing in rooms DONE
-- Define a service that gives us a ydoc instance for the application's room DONE, unused
-- load data from a gist DONE
-- load data from a gist on room creation from the client DONE
-- generalize query to work with non-user owned gists DONE
-- save back to gist DONE
-  - retreive gist data for room DONE
-  - get current user data on client side DONE
-- create new gist with room data
-- multiple editors per room DONE
-  - prove provider swap can be done cleanly DONE
-  - get good event listener for room additions/changes DONE
-  - integrate multi-editors with loading gist data for new rooms DONE
-- try refactoring to use observable DONE
-- use github username in profile DONE
-- remove apollo client DONE
-
-## tech debt
+## problems to solve later
 
 - form/input validation
-- reduce bundle size
-- move @type packages to devDeps
+- limit client side routes for non-logged in users
 - tab switching is slow
 
 ## discovery

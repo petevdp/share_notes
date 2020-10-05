@@ -12,13 +12,18 @@ type ClientSideRoom {
 }
 
 input CreateRoomInput {
-  gistName: String
+  gistName: String!
   name: String!
   ownerId: ID!
 }
 
+input DeleteRoomInput {
+  id: ID!
+}
+
 type Mutation {
   createRoom(data: CreateRoomInput!): ClientSideRoom!
+  deleteRoom(data: DeleteRoomInput!): Boolean!
 }
 
 type Query {

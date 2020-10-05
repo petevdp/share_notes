@@ -38,7 +38,7 @@ export class ClientSideRoomService {
   }
 
   getClientSideRooms(rooms: Room[]) {
-    return rooms.map(this.getClientSideRoom);
+    return rooms.map((room) => this.getClientSideRoom(room));
   }
 
   public getClientSideRoom(room: Room) {

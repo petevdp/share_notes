@@ -13,9 +13,15 @@ export class CreateRoomInput {
   @Field(() => String)
   name: string;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => String)
   gistName: string;
 
   @Field(() => ID)
-  ownerId?: string;
+  ownerId: string;
+}
+
+@InputType()
+export class DeleteRoomInput {
+  @Field(() => ID)
+  id: string;
 }
