@@ -127,9 +127,9 @@ export const addNewFileEpic: Epic = (action$, state$, { roomManager$$ }: epicDep
   action$.pipe(
     filter(addNewFile.match),
     withLatestFrom(roomManager$$),
-    concatMap(([, roomManager]) => {
+    map(([, roomManager]) => {
       const fileState = roomManager.addNewFile();
-      return of(switchCurrentFile(fileState.tabId), fileRenamingActions.startRenameCurrentFile());
+      return switchCurrentFile(fileState.tabId);
     }),
   );
 
