@@ -38,6 +38,7 @@ export function TabList() {
     <nav
       className={css({
         display: 'flex',
+        overflowX: 'auto',
       })}
     >
       {Object.values(currentRoom.fileDetailsStates).map((tabState) => {

@@ -86,6 +86,7 @@ export function Room() {
         <span
           className={css({
             display: 'flex',
+            width: '100%',
           })}
         >
           <TabList />
