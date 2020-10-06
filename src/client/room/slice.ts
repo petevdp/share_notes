@@ -1,6 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 import {
+  destroyRoom,
   fileRenamingActions,
   gistSaved,
   initRoom,
@@ -21,9 +22,29 @@ export const roomSlice = createSlice({
   initialState: { isCurrentUserCreatingRoom: false } as roomSliceState,
   reducers: {},
   extraReducers: (builder) => {
-    builder.addCase(leaveRoom, () => ({
-      isCurrentUserCreatingRoom: false,
-    }));
+    builder.addCase(leaveRoom, (s) => {
+      if (!s.currentRoom) {
+        return {};
+      }
+      return {
+        ...s,
+        currentRoom: {
+          ...s.currentRoom,
+        },
+      };
+    });
+
+    builder.addCase(destroyRoom, (s) => {
+      if (!s.currentRoom) {
+        return {};
+      }
+      return {
+        ...s,
+        currentRoom: {
+          ...s.currentRoom,
+        },
+      };
+    });
 
     builder.addCase(setRoomGistDetails, (s, { payload: details }) => {
       if (!s?.currentRoom) {
@@ -69,6 +90,7 @@ export const roomSlice = createSlice({
     builder.addCase(initRoom, (state, { payload: { roomHashId } }) => ({
       ...state,
       currentRoom: {
+        initializingRoom: true,
         hashId: roomHashId,
         loadedTabs: [],
       },
@@ -81,7 +103,7 @@ export const roomSlice = createSlice({
       return {
         ...s,
         isCurrentUserCreatingRoom: false,
-        currentRoom: { ...s.currentRoom, yjsClientId },
+        currentRoom: { ...s.currentRoom, yjsClientId, initializingRoom: false },
       };
     });
 
@@ -148,13 +170,15 @@ export const roomSlice = createSlice({
 
     builder.addCase(roomCreated, (s, { payload: { data, forkDetails } }) => ({
       ...s,
-      isCurrentUserCreatingRoom: true,
       currentRoom: {
-        ...s.currentRoom,
+        initializingRoom: true,
         loadedTabs: [],
         forkedGistDetails: forkDetails,
         hashId: data.createRoom.hashId,
-        roomDetails: data.createRoom,
+        roomDetails: {
+          ...data.createRoom,
+          gistLoaded: false,
+        },
       },
     }));
 

@@ -3,10 +3,8 @@ import 'codemirror/theme/3024-night.css';
 
 import { LightTheme } from 'baseui';
 import { DEBUG_FLAGS } from 'Client/debugFlags';
-import { allFileDetailsStates, fileDetailsState } from 'Client/room/types';
 import { userType } from 'Client/session/types';
 import { theme } from 'Client/settings/types';
-import { getKeysForMap } from 'Client/ydocUtils';
 import CodeMirror from 'codemirror';
 import { BehaviorSubject } from 'rxjs/internal/BehaviorSubject';
 import { Observable } from 'rxjs/internal/Observable';
@@ -18,7 +16,9 @@ import { map } from 'rxjs/internal/operators/map';
 import { publish } from 'rxjs/internal/operators/publish';
 import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { Subject } from 'rxjs/internal/Subject';
-import { YJS_ROOM, YJS_WEBSOCKET_URL_WS } from 'Shared/environment';
+import { getYjsDocNameForRoom, YJS_WEBSOCKET_URL_WS } from 'Shared/environment';
+import { allFileDetailsStates, fileDetailsState, roomDetails, RoomManager } from 'Shared/roomManager';
+import { getKeysForMap } from 'Shared/ydocUtils';
 import { CodeMirrorBinding, CodemirrorBinding } from 'y-codemirror';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
@@ -54,18 +54,9 @@ const allColors = [
   LightTheme.colors.positive,
 ];
 
-export class RoomManager {
-  yData: {
-    // storing file text and details separately as a performance optimization
-    fileDetailsState: Y.Map<Y.Map<any>>;
-    fileContents: Y.Map<Y.Text>;
-    // for now just contains an object with details, there's probably a better way to do this though
-    details: Y.Map<any>;
-  };
-  ydoc: Y.Doc;
+export class ClientSideRoomManager extends RoomManager {
   provider: WebsocketProvider;
   bindings: Map<string, CodemirrorBinding>;
-
   currentFile$$: BehaviorSubject<string | null>;
   availableColours$$: BehaviorSubject<string[] | null>;
 
@@ -73,23 +64,24 @@ export class RoomManager {
   provisionedTab$$: Subject<{ tabId: string; editorContainer: HTMLElement }>;
   providerSynced: Promise<true>;
   fileDetails$: ConnectableObservable<allFileDetailsStates>;
-  roomDetails$: ConnectableObservable<sharedRoomDetails>;
+  roomDetails$: ConnectableObservable<roomDetails>;
   awareness$: ConnectableObservable<globalAwareness>;
 
   constructor(roomHashId: string, private theme$: Observable<theme>) {
+    super();
     this.roomDestroyed$$ = new Subject<boolean>();
     this.ydoc = new Y.Doc();
     this.yData = {
-      fileDetailsState: this.ydoc.getMap(`room/${roomHashId}/fileDetails`),
-      fileContents: this.ydoc.getMap(`room/${roomHashId}/fileContents`),
-      details: this.ydoc.getMap(`room/${roomHashId}/details`),
+      fileDetailsState: this.ydoc.getMap(`fileDetails`),
+      fileContents: this.ydoc.getMap(`fileContents`),
+      details: this.ydoc.getMap(`details`),
     };
 
     this.currentFile$$ = new BehaviorSubject(null);
     this.provisionedTab$$ = new Subject();
     this.bindings = new Map();
 
-    this.provider = new WebsocketProvider(YJS_WEBSOCKET_URL_WS, YJS_ROOM, this.ydoc);
+    this.provider = new WebsocketProvider(YJS_WEBSOCKET_URL_WS, getYjsDocNameForRoom(roomHashId), this.ydoc);
 
     /*
       3024-night
@@ -186,9 +178,9 @@ export class RoomManager {
       publish(),
     ) as ConnectableObservable<globalAwareness>;
 
-    this.roomDetails$ = new Observable<sharedRoomDetails>((s) => {
+    this.roomDetails$ = new Observable<roomDetails>((s) => {
       const listener = () => {
-        s.next(this.yData.details.toJSON() as sharedRoomDetails);
+        s.next(this.yData.details.toJSON() as roomDetails);
       };
       this.yData.details.observeDeep(listener);
       // this.providerSynced.then(() => s.next(this.yData.details.toJSON() as sharedRoomDetails));
@@ -197,7 +189,7 @@ export class RoomManager {
         this.yData.details.unobserveDeep(listener);
         s.complete();
       });
-    }).pipe(publish()) as ConnectableObservable<sharedRoomDetails>;
+    }).pipe(publish()) as ConnectableObservable<roomDetails>;
 
     this.availableColours$$ = new BehaviorSubject(null);
 
@@ -247,7 +239,7 @@ export class RoomManager {
     this.bindings.delete(tabId);
   }
 
-  addNewFile(detailsInput?: { filename?: string; content: string }) {
+  addNewFile(detailsInput?: { filename?: string; content?: string }) {
     const fileDetails = new Y.Map();
     const text = new Y.Text();
     const highestId = getKeysForMap(this.yData.fileDetailsState).reduce(
@@ -259,7 +251,7 @@ export class RoomManager {
     fileDetails.set('tabId', tabId);
     fileDetails.set('deleted', false);
     if (detailsInput) {
-      text.insert(0, detailsInput.content);
+      text.insert(0, detailsInput.content || '');
       this.yData.fileContents.set(tabId, new Y.Text());
       fileDetails.set('filename', detailsInput.filename);
     } else {
@@ -285,8 +277,8 @@ export class RoomManager {
   }
 
   destroy() {
+    super.destroy();
     this.provider.destroy();
-    this.ydoc.destroy();
     this.currentFile$$.complete();
     this.roomDestroyed$$.next(true);
     this.roomDestroyed$$.complete();

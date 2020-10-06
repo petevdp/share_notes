@@ -1,10 +1,9 @@
-import { useStyletron, withStyle } from 'baseui';
+import { useStyletron } from 'baseui';
 import { Button } from 'baseui/button';
 import { Card } from 'baseui/card';
 import { Delete } from 'baseui/icon';
 import { StyledLink } from 'baseui/link';
 import { ListItem } from 'baseui/list';
-import { StyledNavItem } from 'baseui/side-navigation';
 import { rootState } from 'Client/store';
 import React from 'react';
 import { useSelector } from 'react-redux';
@@ -14,7 +13,6 @@ export function Home() {
   const [css] = useStyletron();
   const { ownedRooms } = useSelector((s: rootState) => ({
     ownedRooms: s.session.user?.ownedRooms,
-    isCurrentUserCreatingRoom: s.room.isCurrentUserCreatingRoom,
     roomHashId: s.room.currentRoom?.roomDetails?.hashId,
   }));
 

@@ -104,5 +104,22 @@
         }
       }
     ]
+  },
+  "devServer": {
+    "contentBase": "/home/pete/projects/share_notes/bundleDev",
+    "proxy": {
+      "/api": {
+        "target": "http://localhost:1236",
+        "pathRewrite": {
+          "^/api": ""
+        },
+        "secure": false,
+        "changeOrigin": true
+      }
+    },
+    "compress": true,
+    "hot": true,
+    "historyApiFallback": true,
+    "port": 1234
   }
 }

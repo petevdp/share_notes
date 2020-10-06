@@ -1,11 +1,10 @@
 import { Room } from 'Server/models/room';
 import { User } from 'Server/models/user';
 import { HashIdService } from 'Server/services/hashIdService';
+import { RoomInput } from 'Shared/inputs/roomInputs';
 import { Service } from 'typedi';
 import { Repository } from 'typeorm';
 import { InjectRepository } from 'typeorm-typedi-extensions';
-
-import { RoomInput } from '../../../dist/src/shared/inputs/roomInputs';
 
 export interface createRoomFields {
   name: string;
@@ -33,7 +32,7 @@ export class ClientSideRoomService {
         };
       }
     }
-    const room = await this.roomRepository.findOne(roomPartial);
+    const room = await this.roomRepository.findOne(roomPartial, { relations: ['owner'] });
     return room && this.getClientSideRoom(room);
   }
 

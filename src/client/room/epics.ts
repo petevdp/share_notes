@@ -2,13 +2,12 @@ import 'codemirror/lib/codemirror.css';
 import 'codemirror/theme/night.css';
 
 import { request as octokitRequest } from '@octokit/request';
-import { GET_ROOM, getRoomResponse, gistDetails } from 'Client/queries';
-import { RoomManager } from 'Client/services/roomManager';
+import { GET_ROOM, getRoomResponse } from 'Client/queries';
+import { ClientSideRoomManager } from 'Client/services/clientSideRoomManager';
 import { unifiedUserSelector } from 'Client/session/types';
 import { settingsActions, theme } from 'Client/settings/types';
 import { epicDependencies, rootState } from 'Client/store';
 import { octokitRequestWithAuth as getOctokitRequestWIthAuth } from 'Client/utils/utils';
-import { getKeysForMap } from 'Client/ydocUtils';
 import { request as gqlRequest } from 'graphql-request';
 import { Action } from 'redux';
 import { Epic, StateObservable } from 'redux-observable';
@@ -24,6 +23,8 @@ import { map } from 'rxjs/internal/operators/map';
 import { startWith } from 'rxjs/internal/operators/startWith';
 import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { GRAPHQL_URL } from 'Shared/environment';
+import { gistDetails } from 'Shared/githubTypes';
+import { getKeysForMap } from 'Shared/ydocUtils';
 
 import {
   addNewFile,
@@ -65,7 +66,6 @@ export const initRoomEpic: Epic = (
         // },
       ]) => {
         const {
-          room: { isCurrentUserCreatingRoom },
           settings: { theme: startingTheme },
         } = rootState;
         const theme$: Observable<theme> = action$.pipe(
@@ -75,7 +75,7 @@ export const initRoomEpic: Epic = (
           startWith(startingTheme),
         );
 
-        const manager = new RoomManager(roomHashId, theme$);
+        const manager = new ClientSideRoomManager(roomHashId, theme$);
 
         manager.providerSynced.then(() => {
           console.log('state on sync: ', manager.yData.fileDetailsState.toJSON());
@@ -95,32 +95,11 @@ export const initRoomEpic: Epic = (
           }).then((r) => r.data as gistDetails);
         });
 
-        if (isCurrentUserCreatingRoom) {
-          Promise.all([gistDataPromise, manager.providerSynced]).then(([gistData]) => {
-            const gist = gistData;
-            if (!gist) {
-              throw 'handle no gist case please';
-            }
-            const { files } = gist;
-            console.log('gist: ', gist);
-            console.log('set filestate for ', Object.keys(files));
-            Object.values(files).map((file) => {
-              manager.addNewFile({ filename: file.filename, content: file.content });
-            });
-            const ids = Object.keys(files);
-            if (ids.length > 0) {
-              // manager.switchCurrentFile('1'); // switch to first file
-            } else {
-              manager.addNewFile();
-            }
-          });
-        } else {
-          manager.providerSynced.then(() => {
-            console.log('sync promise resolved');
-            const keys = getKeysForMap(manager.yData.fileDetailsState);
-            console.log(keys);
-          });
-        }
+        manager.providerSynced.then(() => {
+          console.log('sync promise resolved');
+          const keys = getKeysForMap(manager.yData.fileDetailsState);
+          console.log(keys);
+        });
 
         const roomAwarenessUpdate$ = manager.awareness$.pipe(map((s) => setRoomAwarenessState(s)));
         manager.connect();
@@ -300,3 +279,8 @@ export const updateCurrentFileAwarenessEpic: Epic = (
     }),
     ignoreElements(),
   );
+
+// export const deleteRoomEpic: Epic = (action$) =>
+//     state$.pipe(
+//       map()
+//     )

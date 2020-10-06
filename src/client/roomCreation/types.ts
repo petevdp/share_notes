@@ -1,8 +1,8 @@
 import { createAction } from '@reduxjs/toolkit';
 import { Value } from 'baseui/select';
-import { gistDetails } from 'Client/queries';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';
+import { gistDetails } from 'Shared/githubTypes';
 import { CreateRoomInput } from 'Shared/inputs/roomInputs';
 
 export interface gistDetailsStore {
@@ -21,7 +21,6 @@ export interface roomCreationSliceState {
 
 export const roomCreationActions = {
   roomCreationOpened: createAction('roomCreationOpened'),
-  roomCreationClosed: createAction('roomCreationClosed', (username) => ({ payload: username })),
   setOwnedGists: createAction('setOwnedGistsForRoomCreation', (ownedGists: gistDetailsStore) => ({
     payload: ownedGists,
   })),

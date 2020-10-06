@@ -1,4 +1,5 @@
 import { gql } from 'graphql-request';
+import { roomDetails } from 'Shared/roomManager';
 
 export const GET_ROOM = gql`
   query GetRoom($data: RoomInput!) {
@@ -14,17 +15,6 @@ export const GET_ROOM = gql`
     }
   }
 `;
-
-export interface roomDetails {
-  id: string;
-  hashId: string;
-  name: string;
-  gistName: string;
-  owner: {
-    id: string;
-    githubLogin: string;
-  };
-}
 
 export interface getRoomResponse {
   room: roomDetails;
@@ -162,25 +152,6 @@ export interface getGistResponse {
         text: string;
       }[];
     };
-  };
-}
-
-export interface gistFileDetails {
-  filename: string;
-  content: string;
-}
-
-export interface gistDetails {
-  id: string;
-  name: string;
-  description: string;
-  url: string;
-  files: {
-    [key: string]: gistFileDetails;
-  };
-  owner: {
-    login: string;
-    id: number;
   };
 }
 

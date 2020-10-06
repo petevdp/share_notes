@@ -17,7 +17,7 @@ import { Repository } from 'typeorm';
 
 import { Context } from './context';
 import { User } from './models/user';
-import { TedisService, USER_ID_BY_SESSION_KEY } from './services/tedisService';
+import { TedisService, TOKEN_BY_USER_ID, USER_ID_BY_SESSION_KEY } from './services/tedisService';
 interface github0AuthIdentityParams {
   client_id: string;
   client_secret: string;
@@ -49,7 +49,6 @@ export const getAuthRouter = (tedisService: TedisService, userRepository: Reposi
     const githubRes = await axios.get<string>(GITHUB_0AUTH_ACCESS_TOKEN_URL, { params });
 
     const githubResData = (querystring.parse(githubRes.data) as unknown) as github0AuthResponse;
-    console.log('data', githubResData);
 
     const context: Context = {
       githubSessionToken: githubResData.access_token,
@@ -72,6 +71,7 @@ export const getAuthRouter = (tedisService: TedisService, userRepository: Reposi
       }
       res.cookie(SESSION_TOKEN_COOKIE_KEY, githubResData.access_token);
       tedisService.tedis.hset(USER_ID_BY_SESSION_KEY, githubResData.access_token, user.id);
+      tedisService.tedis.hset(TOKEN_BY_USER_ID, user.id.toString(), githubResData.access_token);
     } else {
       throw "couldn't find github user";
     }
@@ -81,6 +81,7 @@ export const getAuthRouter = (tedisService: TedisService, userRepository: Reposi
   authRouter.get('/logout', (req, res) => {
     if (req.cookies(SESSION_TOKEN_COOKIE_KEY)) {
       tedisService.tedis.hdel(USER_ID_BY_SESSION_KEY, req.cookies(SESSION_TOKEN_COOKIE_KEY));
+      // tedisService.tedis.hdel(TOKEN_BY_USER_ID, user.id.toString());
       res.cookie(SESSION_TOKEN_COOKIE_KEY, '');
     }
     res.status(200);

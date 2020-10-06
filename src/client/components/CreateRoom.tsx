@@ -6,11 +6,8 @@ import { FormControl } from 'baseui/form-control';
 import { Heading, HeadingLevel } from 'baseui/heading';
 import { Input } from 'baseui/input';
 import { Option, Select } from 'baseui/select';
-import { Skeleton } from 'baseui/skeleton';
 import { Tag } from 'baseui/tag';
-import { Textarea } from 'baseui/textarea';
 import { Label1 } from 'baseui/typography';
-import { gistDetails } from 'Client/queries';
 import {
   computedRoomCreationSliceStateSelector,
   GistUrlInputStatus,
@@ -20,22 +17,23 @@ import { rootState } from 'Client/store';
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Redirect } from 'react-router-dom';
+import { gistDetails } from 'Shared/githubTypes';
 import { CreateRoomInput } from 'Shared/inputs/roomInputs';
 
 export function CreateRoom() {
   const dispatch = useDispatch();
-  const { isCurrentUserCreatingRoom, roomHashId, currentUser } = useSelector((s: rootState) => ({
-    isCurrentUserCreatingRoom: s.room.isCurrentUserCreatingRoom,
+  const { roomHashId, currentUser, initializingRoom } = useSelector((s: rootState) => ({
     currentUser: s.session.user,
     roomHashId: s.room.currentRoom?.roomDetails?.hashId,
+    initializingRoom: s.room.currentRoom?.initializingRoom,
   }));
   const roomCreation = useSelector(computedRoomCreationSliceStateSelector);
 
   const gistSelectionOptions: Option[] = roomCreation.ownedGists
-    ? (Object.values(roomCreation.ownedGists) as gistDetails[]).map((g) => ({
-        id: g.name,
-        label: Object.values(g.files)[0].filename,
-        details: g,
+    ? (Object.values(roomCreation.ownedGists) as gistDetails[]).map((gist) => ({
+        id: gist.id,
+        label: Object.values(gist.files)[0].filename,
+        details: gist,
       }))
     : [];
 
@@ -45,13 +43,10 @@ export function CreateRoom() {
 
   useEffect(() => {
     dispatch(roomCreationActions.roomCreationOpened());
-    return () => {
-      dispatch(roomCreationActions.roomCreationClosed(currentUser.githubLogin));
-    };
   }, []);
   const [css, theme] = useStyletron();
 
-  if (isCurrentUserCreatingRoom && roomHashId) {
+  if (roomHashId && initializingRoom) {
     return <Redirect to={`/rooms/${roomHashId}`} />;
   }
 

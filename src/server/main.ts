@@ -10,7 +10,6 @@ import { buildSchema } from 'type-graphql';
 import { Container } from 'typedi';
 import * as TypeORM from 'typeorm';
 import WebSocket from 'ws';
-import { setupWSConnection } from 'y-websocket/bin/utils';
 
 import { getAuthChecker } from './authChecker';
 import { getAuthRouter } from './authRouter';
@@ -19,6 +18,7 @@ import { User } from './models/user';
 import { RoomResolver } from './resolvers/roomResolver';
 import { UserResolver } from './resolvers/userResolver';
 import { TedisService } from './services/tedisService';
+import { YjsService } from './services/yjsService';
 
 TypeORM.useContainer(Container);
 async function runServer() {
@@ -46,6 +46,7 @@ async function runServer() {
     });
 
     const userRepository = dbConnection.getRepository(User);
+
     app.use('/auth', getAuthRouter(tedisService, userRepository));
     apolloServer.applyMiddleware({ app });
     return http.createServer(app);
@@ -53,8 +54,15 @@ async function runServer() {
 
   // setup websocket server
   (() => {
-    const websocketServer = new WebSocket.Server({ server: httpServer, path: '/socket/yjs-room' });
-    websocketServer.on('connection', (conn, req) => setupWSConnection(conn, req, { gc: true }));
+    const yjsService = Container.get(YjsService);
+    const websocketServer = new WebSocket.Server({ server: httpServer });
+    websocketServer.on('connection', (conn: WebSocket, req) => {
+      if (req.url && /^\/websocket\/yjs\-room\/.+$/.test(req.url)) {
+        yjsService.setupWsConnection(conn, req);
+      } else {
+        console.log('invalid upgrade');
+      }
+    });
   })();
 
   httpServer.listen({ port: API_PORT }, () => {

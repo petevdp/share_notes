@@ -15,7 +15,6 @@ const initialState: roomCreationSliceState = {
 };
 
 const {
-  roomCreationClosed: close,
   roomCreationOpened: open,
   setGistUrl,
   setRoomName,
@@ -32,7 +31,6 @@ export const roomCreationSlice = createSlice({
   name: 'roomCreationSlice',
   reducers: {},
   extraReducers: (builder) => {
-    builder.addCase(close, (s, { payload: username }) => resetRoom(username));
     builder.addCase(open, (s) => ({ ...s, isOpen: true }));
     builder.addCase(setGistUrl, (s, { payload: gistUrl }) => ({ ...s, gistUrl, selectedGistValue: [] }));
     builder.addCase(setRoomName, (s, { payload: roomName }) => ({ ...s, roomName }));
@@ -45,7 +43,7 @@ export const roomCreationSlice = createSlice({
         return {
           ...s,
           selectedGistValue: value,
-          gistUrl: selectedGist.url,
+          gistUrl: selectedGist.html_url,
         };
       } else {
         return {

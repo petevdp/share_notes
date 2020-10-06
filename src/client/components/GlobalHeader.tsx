@@ -81,8 +81,6 @@ export function GlobalHeader() {
   ];
 
   const onUserNavItemSelect = (item: ItemT) => {
-    console.log('item: ', item);
-
     switch (item.item.key) {
       case 'logOut':
         dispatch(logOut());

@@ -1,8 +1,10 @@
 import { createAction } from '@reduxjs/toolkit';
-import { createRoomResponse, gistDetails, roomDetails } from 'Client/queries';
-import { globalAwareness, userAwarenessDetails } from 'Client/services/roomManager';
+import { createRoomResponse } from 'Client/queries';
+import { globalAwareness, userAwarenessDetails } from 'Client/services/clientSideRoomManager';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';
+import { gistDetails } from 'Shared/githubTypes';
+import { allFileDetailsStates, roomDetails } from 'Shared/roomManager';
 import * as Y from 'yjs';
 
 export type gistDetailKeys = 'description' | 'name' | 'url';
@@ -13,23 +15,13 @@ export interface roomRealTimeData {
   metadata: Y.Map<string>;
 }
 
-export interface fileDetailsState {
-  tabId: string;
-  filename: string;
-  deleted: boolean;
-}
-
-export interface allFileDetailsStates {
-  [id: string]: fileDetailsState;
-}
-
 interface anonymousLogin {
   username: string;
 }
 
 export type roomSliceState = {
-  isCurrentUserCreatingRoom: boolean;
   currentRoom?: {
+    initializingRoom: boolean;
     forkedGistDetails?: gistDetails;
     hashId: string;
     awareness?: globalAwareness;

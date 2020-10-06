@@ -156,7 +156,6 @@ export function Room() {
           dispatch(fileRenamingActions.startRenameCurrentFile());
         }
     }
-    console.log('item: ', key);
   };
 
   const tabsElement = (

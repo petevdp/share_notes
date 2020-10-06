@@ -4,7 +4,7 @@ import { ClientSideRoomService } from 'Server/services/clientSideRoomService';
 import { CreateRoomInput, DeleteRoomInput, RoomInput } from 'Shared/inputs/roomInputs';
 import { Arg, FieldResolver, Mutation, Query, Resolver, Root } from 'type-graphql';
 import { Service } from 'typedi';
-import { DeleteResult, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { InjectRepository } from 'typeorm-typedi-extensions';
 
 @Service()
@@ -43,7 +43,8 @@ export class RoomResolver {
     });
 
     await this.roomRepository.save(room);
-    return this.clientSideRoomService.getClientSideRoom(room);
+    const clientSideRoom = this.clientSideRoomService.getClientSideRoom(room);
+    return clientSideRoom;
   }
 
   @Mutation(() => Boolean)

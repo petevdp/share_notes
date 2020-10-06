@@ -18,9 +18,6 @@ export function AnonymousLoginModal() {
   const error = null;
 
   useEffect(() => {
-    console.log('is logged in: ', isLoggedIn);
-    console.log('presence: ', tokenPresenceChecked);
-
     if (!isLoggedIn && tokenPresenceChecked && currentRoomSet) {
       dispatch(anonymousLoginActions.startAnonymousLogin());
     }

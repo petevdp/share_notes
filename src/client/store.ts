@@ -1,5 +1,5 @@
 import { combineReducers, configureStore, getDefaultMiddleware } from '@reduxjs/toolkit';
-import { RoomManager } from 'Client/services/roomManager';
+import { ClientSideRoomManager } from 'Client/services/clientSideRoomManager';
 import { combineEpics, createEpicMiddleware } from 'redux-observable';
 import { FLUSH, PAUSE, PERSIST, persistReducer, persistStore, PURGE, REGISTER, REHYDRATE } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
@@ -35,10 +35,10 @@ import { sessionSlice } from './session/slice';
 import { settingsSlice } from './settings/slice';
 
 export interface epicDependencies {
-  roomManager$$: Subject<RoomManager>;
+  roomManager$$: Subject<ClientSideRoomManager>;
 }
 
-const epicMiddleware = createEpicMiddleware({ dependencies: { roomManager$$: new Subject<RoomManager>() } });
+const epicMiddleware = createEpicMiddleware({ dependencies: { roomManager$$: new Subject<ClientSideRoomManager>() } });
 
 const persistSettingsConfig = {
   key: 'settings',
