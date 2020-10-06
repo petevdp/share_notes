@@ -54,7 +54,6 @@ export function TabList() {
         return (
           <Popover
             popoverMargin={0}
-            placement={'auto'}
             key={tabState.tabId}
             onClick={() => dispatch(switchCurrentFile(tabState.tabId))}
             isOpen={openTabContextMenus.has(tabState.tabId)}
@@ -66,7 +65,16 @@ export function TabList() {
               ></StatefulMenu>
             }
             onClickOutside={() => closeTabContextMenu(tabState.tabId)}
-            overrides={RoomPopoverZIndexOverride}
+            overrides={{
+              ...RoomPopoverZIndexOverride,
+              Body: {
+                ...RoomPopoverZIndexOverride.Body,
+                style: {
+                  ...RoomPopoverZIndexOverride.Body.style,
+                  top: '42px',
+                },
+              },
+            }}
           >
             <Button
               kind="secondary"

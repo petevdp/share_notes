@@ -52,7 +52,7 @@ export function getOverrides(
   return [Component, props];
 }
 
-export const RoomPopoverZIndexOverride: PopoverOverrides = {
+export const RoomPopoverZIndexOverride = {
   Body: {
     style: {
       zIndex: 3,

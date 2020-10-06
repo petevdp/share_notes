@@ -6,6 +6,7 @@ import { StatefulPopover } from 'baseui/popover';
 import { useSnackbar } from 'baseui/snackbar';
 import { addNewFile, destroyRoom, fileRenamingActions, initRoom, saveBackToGist } from 'Client/room/types';
 import { rootState } from 'Client/store';
+import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
@@ -98,6 +99,7 @@ export function Room() {
           <StatefulPopover
             placement={'bottom'}
             content={() => <StatefulMenu onItemSelect={onActionItemSelect} items={actionItems}></StatefulMenu>}
+            overrides={RoomPopoverZIndexOverride}
           >
             <Button kind="secondary" shape="pill" endEnhancer={() => <ChevronDown />}>
               Actions
