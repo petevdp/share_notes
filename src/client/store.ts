@@ -46,14 +46,14 @@ const persistSettingsConfig = {
   storage,
 };
 
-const persistSessionConfig = {
-  key: 'session',
-  version: 1,
-  storage,
-};
+// const persistSessionConfig = {
+//   key: 'session',
+//   version: 1,
+//   storage,
+// };
 
 const rootReducer = combineReducers({
-  session: persistReducer(persistSessionConfig, sessionSlice.reducer),
+  session: sessionSlice.reducer,
   room: roomSlice.reducer,
   settings: persistReducer(persistSettingsConfig, settingsSlice.reducer),
   roomCreation: roomCreationSlice.reducer,
