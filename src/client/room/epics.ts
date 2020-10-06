@@ -4,7 +4,7 @@ import 'codemirror/theme/night.css';
 import { request as octokitRequest } from '@octokit/request';
 import { GET_ROOM, getRoomResponse } from 'Client/queries';
 import { ClientSideRoomManager } from 'Client/services/clientSideRoomManager';
-import { unifiedUserSelector } from 'Client/session/types';
+import { setCurrentUserData, unifiedUser, unifiedUserSelector } from 'Client/session/types';
 import { settingsActions, theme } from 'Client/settings/types';
 import { epicDependencies, rootState } from 'Client/store';
 import { octokitRequestWithAuth as getOctokitRequestWIthAuth } from 'Client/utils/utils';
@@ -18,6 +18,7 @@ import { of } from 'rxjs/internal/observable/of';
 import { concatMap } from 'rxjs/internal/operators/concatMap';
 import { distinctUntilChanged } from 'rxjs/internal/operators/distinctUntilChanged';
 import { filter } from 'rxjs/internal/operators/filter';
+import { first } from 'rxjs/internal/operators/first';
 import { ignoreElements } from 'rxjs/internal/operators/ignoreElements';
 import { map } from 'rxjs/internal/operators/map';
 import { startWith } from 'rxjs/internal/operators/startWith';
@@ -103,7 +104,13 @@ export const initRoomEpic: Epic = (
 
         const roomAwarenessUpdate$ = manager.awareness$.pipe(map((s) => setRoomAwarenessState(s)));
         manager.connect();
+        state$
+          .pipe(map(unifiedUserSelector), filter(Boolean), first<unifiedUser, unifiedUser>())
+          .subscribe((userDetails) => {
+            manager.setAwarenessUserDetails(userDetails);
+          });
         const unifiedUserDetails = unifiedUserSelector(rootState);
+        console.log('unified user: ', unifiedUserDetails);
         if (unifiedUserDetails) {
           manager.setAwarenessUserDetails(unifiedUserDetails);
         }
