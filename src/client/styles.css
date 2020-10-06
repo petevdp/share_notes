@@ -4,10 +4,11 @@ body {
   overflow-x: hidden;
 }
 .CodeMirror {
-  /* height: max-content;
-      width: max-content; */
-  height: calc(100vh - (32px + 72px + 5px + 17px + 5px + 10px));
+  /* we need to explicitely set the hight here to avoid issues */
+  height: calc(100vh - (120px)) !important;
 }
+
+/* styling for the remote cursors */
 .remote-caret {
   position: absolute;
   border-left: black;
@@ -19,6 +20,7 @@ body {
   position: relative;
   top: -1.05em;
   font-size: 13px;
+  /* will be overridden based on a user's assigned color */
   background-color: rgb(250, 129, 0);
   font-family: serif;
   font-style: normal;
