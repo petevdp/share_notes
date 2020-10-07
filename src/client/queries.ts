@@ -210,3 +210,19 @@ export interface getCurrentUserGistsResponse {
     };
   };
 }
+
+export const DETECT_LANGUAGES = gql`
+  query detectLanguages($data: [LanguageDetectionInput!]!) {
+    detectFiletype(data: $data) {
+      tabId
+      mode
+    }
+  }
+`;
+
+export interface languageDetectionResponse {
+  detectFiletype: {
+    tabId: string;
+    mode: string | null;
+  }[];
+}

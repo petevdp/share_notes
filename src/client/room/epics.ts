@@ -4,7 +4,7 @@ import 'codemirror/theme/night.css';
 import { request as octokitRequest } from '@octokit/request';
 import { GET_ROOM, getRoomResponse } from 'Client/queries';
 import { ClientSideRoomManager } from 'Client/services/clientSideRoomManager';
-import { setCurrentUserData, unifiedUser, unifiedUserSelector } from 'Client/session/types';
+import { unifiedUser, unifiedUserSelector } from 'Client/session/types';
 import { settingsActions, theme } from 'Client/settings/types';
 import { epicDependencies, rootState } from 'Client/store';
 import { octokitRequestWithAuth as getOctokitRequestWIthAuth } from 'Client/utils/utils';
@@ -25,12 +25,10 @@ import { startWith } from 'rxjs/internal/operators/startWith';
 import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { GRAPHQL_URL } from 'Shared/environment';
 import { gistDetails } from 'Shared/githubTypes';
-import { getKeysForMap } from 'Shared/ydocUtils';
 
 import {
   addNewFile,
   destroyRoom,
-  fileRenamingActions,
   gistSaved,
   initRoom,
   provisionTab,
@@ -78,10 +76,6 @@ export const initRoomEpic: Epic = (
 
         const manager = new ClientSideRoomManager(roomHashId, theme$);
 
-        manager.providerSynced.then(() => {
-          console.log('state on sync: ', manager.yData.fileDetailsState.toJSON());
-        });
-
         const fileDetailsStateUpdateAction$ = manager.fileDetails$.pipe(
           map((fileDetails) => setFileDetailsState(fileDetails)),
         );
@@ -96,12 +90,6 @@ export const initRoomEpic: Epic = (
           }).then((r) => r.data as gistDetails);
         });
 
-        manager.providerSynced.then(() => {
-          console.log('sync promise resolved');
-          const keys = getKeysForMap(manager.yData.fileDetailsState);
-          console.log(keys);
-        });
-
         const roomAwarenessUpdate$ = manager.awareness$.pipe(map((s) => setRoomAwarenessState(s)));
         manager.connect();
         state$
@@ -110,7 +98,6 @@ export const initRoomEpic: Epic = (
             manager.setAwarenessUserDetails(userDetails);
           });
         const unifiedUserDetails = unifiedUserSelector(rootState);
-        console.log('unified user: ', unifiedUserDetails);
         if (unifiedUserDetails) {
           manager.setAwarenessUserDetails(unifiedUserDetails);
         }
@@ -191,7 +178,6 @@ export const renameFileEpic: Epic = (action$, state$, { roomManager$$ }: epicDep
         }
 
         detailsMap.set('filename', newFilename);
-        console.log('state', roomManager.yData.fileDetailsState.toJSON());
       },
     ),
     ignoreElements(),
@@ -202,7 +188,6 @@ export const removeFileEpic: Epic = (action$, state$, { roomManager$$ }: epicDep
     filter(removeFile.match),
     withLatestFrom(roomManager$$),
     map(([{ payload: tabId }, roomManager]) => {
-      console.log('removed file I guess');
       roomManager.removeFile(tabId);
     }),
     ignoreElements(),
@@ -286,8 +271,3 @@ export const updateCurrentFileAwarenessEpic: Epic = (
     }),
     ignoreElements(),
   );
-
-// export const deleteRoomEpic: Epic = (action$) =>
-//     state$.pipe(
-//       map()
-//     )

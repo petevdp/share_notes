@@ -21,7 +21,6 @@ const directlyMappedModes = [...new Set(Object.values(detect.extensions))]
 const customMappings = {
   // for html we input some custom settings into codemirror on the client side
   html: 'html',
-  rust: 'rst',
 };
 
 function normalizeFiletypeMap(extMap) {

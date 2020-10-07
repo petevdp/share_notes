@@ -1,11 +1,13 @@
 import 'codemirror/theme/3024-day.css';
 import 'codemirror/theme/3024-night.css';
+import 'codemirror/mode/css/css.js';
 
 import { LightTheme } from 'baseui';
 import { DEBUG_FLAGS } from 'Client/debugFlags';
+import { DETECT_LANGUAGES, languageDetectionResponse } from 'Client/queries';
 import { userType } from 'Client/session/types';
 import { theme } from 'Client/settings/types';
-import CodeMirror from 'codemirror';
+import { request as gqlRequest } from 'graphql-request';
 import { BehaviorSubject } from 'rxjs/internal/BehaviorSubject';
 import { Observable } from 'rxjs/internal/Observable';
 import { ConnectableObservable } from 'rxjs/internal/observable/ConnectableObservable';
@@ -13,10 +15,11 @@ import { distinctUntilChanged } from 'rxjs/internal/operators/distinctUntilChang
 import { filter } from 'rxjs/internal/operators/filter';
 import { first } from 'rxjs/internal/operators/first';
 import { map } from 'rxjs/internal/operators/map';
+import { mergeScan } from 'rxjs/internal/operators/mergeScan';
 import { publish } from 'rxjs/internal/operators/publish';
 import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { Subject } from 'rxjs/internal/Subject';
-import { getYjsDocNameForRoom, YJS_WEBSOCKET_URL_WS } from 'Shared/environment';
+import { getYjsDocNameForRoom, GRAPHQL_URL, YJS_WEBSOCKET_URL_WS } from 'Shared/environment';
 import { allFileDetailsStates, fileDetailsState, roomDetails, RoomManager } from 'Shared/roomManager';
 import { getKeysForMap } from 'Shared/ydocUtils';
 import { CodeMirrorBinding, CodemirrorBinding } from 'y-codemirror';
@@ -38,6 +41,22 @@ export interface userAwarenessDetails extends userAwarenessDetailsInput {
 export interface userAwareness {
   user?: userAwarenessDetails;
   currentTab?: string;
+}
+
+export interface langaugeDetectInput {
+  filename: string;
+  tabId: string;
+}
+
+export interface langaugeDetectPayload extends langaugeDetectInput {
+  filename: string;
+  tabId: string;
+  content: string;
+}
+
+export interface languageDetectState {
+  input: langaugeDetectInput;
+  outputMode: string | null;
 }
 
 export type globalAwarenessMap = Map<number, userAwareness>;
@@ -69,6 +88,7 @@ export class ClientSideRoomManager extends RoomManager {
 
   constructor(roomHashId: string, private theme$: Observable<theme>) {
     super();
+    const CodeMirrorModule = import('codemirror');
     this.roomDestroyed$$ = new Subject<boolean>();
     this.ydoc = new Y.Doc();
     this.yData = {
@@ -93,23 +113,27 @@ export class ClientSideRoomManager extends RoomManager {
       dark: '3024-night',
     };
 
-    this.provisionedTab$$.pipe(withLatestFrom(this.theme$)).subscribe(([{ tabId, editorContainer }, currentTheme]) => {
-      const editor = CodeMirror(editorContainer, {
-        mode: 'xml',
-        viewportMargin: Infinity,
-        lineWrapping: true,
-        theme: themeMap[currentTheme],
+    this.provisionedTab$$
+      .pipe(withLatestFrom(this.theme$))
+      .subscribe(async ([{ tabId, editorContainer }, currentTheme]) => {
+        const CodeMirror = await CodeMirrorModule;
+        const editor = CodeMirror.default(editorContainer, {
+          mode: { name: 'css' },
+          viewportMargin: Infinity,
+          lineWrapping: true,
+          theme: themeMap[currentTheme],
+        });
+
+        const content = this.yData.fileContents.get(tabId);
+        if (!content) {
+          throw 'tried to provision nonexistant editor';
+        }
+        const binding = new CodeMirrorBinding(content, editor, this.provider.awareness);
+        if (process.env.NODE_ENV === 'development' && DEBUG_FLAGS.stopRemoveCursorOnBlur) {
+          binding.cm.off('blur', binding._blurListeer);
+        }
+        this.bindings.set(tabId, binding);
       });
-      const content = this.yData.fileContents.get(tabId);
-      if (!content) {
-        throw 'tried to provision nonexistant editor';
-      }
-      const binding = new CodeMirrorBinding(content, editor, this.provider.awareness);
-      if (process.env.NODE_ENV === 'development' && DEBUG_FLAGS.stopRemoveCursorOnBlur) {
-        binding.cm.off('blur', binding._blurListeer);
-      }
-      this.bindings.set(tabId, binding);
-    });
 
     theme$.subscribe((theme) => {
       for (const binding of this.bindings.values()) {
@@ -152,7 +176,6 @@ export class ClientSideRoomManager extends RoomManager {
 
       const awarenessListener = () => {
         const state = this.provider.awareness.getStates() as globalAwarenessMap;
-        console.log('awareness state: ', JSON.parse(JSON.stringify([...state.entries()])));
         s.next(state);
       };
 
@@ -193,6 +216,58 @@ export class ClientSideRoomManager extends RoomManager {
 
     this.availableColours$$ = new BehaviorSubject(null);
 
+    this.fileDetails$
+      .pipe(
+        map((allDetails) => {
+          let data: { [tabId: string]: langaugeDetectInput } = {};
+          for (let [tabId, details] of Object.entries(allDetails)) {
+            data[tabId] = {
+              tabId,
+              filename: details.filename,
+            };
+          }
+          return data;
+        }),
+        distinctUntilChanged(),
+        mergeScan(async (prevState, newInputs) => {
+          const next: { [key: string]: languageDetectState } = {};
+          const toDetect: langaugeDetectPayload[] = [];
+          for (let input of Object.values(newInputs)) {
+            if (!prevState[input.tabId] || input !== prevState[input.tabId].input) {
+              toDetect.push({
+                ...input,
+                content: this.yData.fileContents.get(input.tabId)?.toJSON() || ('' as string),
+              });
+            } else {
+              next[input.tabId] = prevState[input.tabId];
+            }
+          }
+
+          const response = await gqlRequest<languageDetectionResponse>(GRAPHQL_URL, DETECT_LANGUAGES, {
+            data: toDetect,
+          });
+          return response.detectFiletype.reduce(
+            (state, output) => ({
+              ...state,
+              [output.tabId]: { input: newInputs[output.tabId], outputMode: output.mode },
+            }),
+            {} as { [tabId: string]: languageDetectState },
+          );
+        }, {} as { [tabId: string]: languageDetectState }),
+      )
+      .subscribe(async (langageDetectionState) => {
+        for (let [tabId, state] of Object.entries(langageDetectionState)) {
+          const binding = this.bindings.get(tabId);
+          if (!binding) {
+            continue;
+          }
+          // right now this imports all files that match the blow pattern for a given template variable (https://webpack.js.org/api/module-methods/#magic-comments), could maybe be improved
+          await import(`codemirror/mode/${state.outputMode}/${state.outputMode}.js`);
+
+          binding.cm.setOption('mode', state.outputMode);
+        }
+      });
+
     this.awareness$
       .pipe(
         map((awareness) => {
@@ -222,7 +297,6 @@ export class ClientSideRoomManager extends RoomManager {
   }
 
   async setAwarenessUserDetails(user: userAwarenessDetailsInput) {
-    console.log('local state: ', this.provider.awareness.getLocalState());
     const availableColors = (await this.availableColours$$
       .pipe(
         filter((s) => !!s),

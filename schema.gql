@@ -21,6 +21,17 @@ input DeleteRoomInput {
   id: ID!
 }
 
+input LanguageDetectionInput {
+  content: String!
+  filename: String!
+  tabId: String!
+}
+
+type LanguageDetectionOutput {
+  mode: String
+  tabId: String!
+}
+
 type Mutation {
   createRoom(data: CreateRoomInput!): ClientSideRoom!
   deleteRoom(data: DeleteRoomInput!): Boolean!
@@ -28,6 +39,7 @@ type Mutation {
 
 type Query {
   currentUser: User!
+  detectFiletype(data: [LanguageDetectionInput!]!): [LanguageDetectionOutput!]!
   room(data: RoomInput!): ClientSideRoom!
   rooms: [ClientSideRoom!]!
   user(data: UserInput!): User!

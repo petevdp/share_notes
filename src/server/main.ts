@@ -15,6 +15,7 @@ import { getAuthChecker } from './authChecker';
 import { getAuthRouter } from './authRouter';
 import { createDatabaseConnection } from './db';
 import { User } from './models/user';
+import { LanguageDetectionResolver } from './resolvers/languageDetectionResolver';
 import { RoomResolver } from './resolvers/roomResolver';
 import { UserResolver } from './resolvers/userResolver';
 import { TedisService } from './services/tedisService';
@@ -32,7 +33,7 @@ async function runServer() {
     const tedisService = Container.get(TedisService);
     // const userRepository = Container.get()
     const schema = await buildSchema({
-      resolvers: [UserResolver, RoomResolver],
+      resolvers: [UserResolver, RoomResolver, LanguageDetectionResolver],
       container: Container,
       emitSchemaFile: true,
       authChecker: getAuthChecker(tedisService),

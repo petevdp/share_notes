@@ -101,7 +101,6 @@ export function currentFileRenameWithErrorsSelector(rootState: rootState) {
 
 export function roomUsersAwarenessDetailsSelector(rootState: rootState): userAwarenessDetails[] | undefined {
   const awareness = rootState.room.currentRoom?.awareness;
-  console.log('awarenss in selector: ', awareness);
 
   if (awareness) {
     return [

@@ -49,8 +49,6 @@ export const fetchCurrentUserDataOnSetSessionTokenEpic: Epic = (action$) =>
         setCurrentUserData(r.currentUser),
       );
 
-      getCurrentUserDataPromise.then((d) => console.log('wtf: ', d));
-
       const githubClient = getGithubGraphqlClient();
       // get user data from github
       const getGithubUserDetails = githubClient

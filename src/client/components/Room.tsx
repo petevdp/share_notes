@@ -37,13 +37,6 @@ export function Room() {
     }
   }, [roomHashId]);
 
-  // const openTab = (tabId: string) =>
-  //   setOpenTabs((s) => {
-  //     const newOpen = new Set(s.values());
-  //     newOpen.add(tabId);
-  //     return newOpen;
-  //   });
-
   // obfuscate key for addNewFile with the room hash to avoid potential duplicate keys
   const addNewFileKey = `${roomHashId}-add-new-file`;
   const actionItems: ItemT[] = [
