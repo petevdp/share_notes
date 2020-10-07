@@ -1,7 +1,7 @@
+import { RoomInput } from 'Server/inputs/roomInputs';
 import { Room } from 'Server/models/room';
 import { User } from 'Server/models/user';
 import { HashIdService } from 'Server/services/hashIdService';
-import { RoomInput } from 'Shared/inputs/roomInputs';
 import { Service } from 'typedi';
 import { Repository } from 'typeorm';
 import { InjectRepository } from 'typeorm-typedi-extensions';

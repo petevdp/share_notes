@@ -1,7 +1,8 @@
+import { createRoomInput, deleteRoomInput, roomInput } from 'Shared/inputTypes/roomInputTypes';
 import { Field, ID, InputType } from 'type-graphql';
 
 @InputType()
-export class RoomInput {
+export class RoomInput implements roomInput {
   @Field(() => String, { nullable: true })
   hashId?: string;
 
@@ -9,7 +10,7 @@ export class RoomInput {
   id?: number;
 }
 @InputType()
-export class CreateRoomInput {
+export class CreateRoomInput implements createRoomInput {
   @Field(() => String)
   name: string;
 
@@ -21,7 +22,7 @@ export class CreateRoomInput {
 }
 
 @InputType()
-export class DeleteRoomInput {
+export class DeleteRoomInput implements deleteRoomInput {
   @Field(() => ID)
   id: string;
 }

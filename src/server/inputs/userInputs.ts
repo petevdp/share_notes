@@ -1,7 +1,8 @@
+import { createUserInput, currentUserInput, userInput } from 'Shared/inputTypes/userInputTypes';
 import { Field, ID, InputType } from 'type-graphql';
 
 @InputType()
-export class UserInput {
+export class UserInput implements userInput {
   @Field(() => ID, { nullable: true })
   id?: number;
 
@@ -10,13 +11,13 @@ export class UserInput {
 }
 
 @InputType()
-export class CurrentUserInput {
+export class CurrentUserInput implements currentUserInput {
   @Field(() => String)
   sessionToken: string;
 }
 
 @InputType()
-export class CreateUserInput {
+export class CreateUserInput implements createUserInput {
   @Field(() => String)
   username: string;
 }

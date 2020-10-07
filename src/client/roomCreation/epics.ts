@@ -12,8 +12,8 @@ import { map } from 'rxjs/internal/operators/map';
 import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { GRAPHQL_URL } from 'Shared/environment';
 import { gistDetails } from 'Shared/githubTypes';
+import { createRoomInput } from 'Shared/inputTypes/roomInputTypes';
 
-import { CreateRoomInput } from '../../../dist/src/shared/inputs/roomInputs';
 import {
   computedRoomCreationSliceStateSelector,
   gistDetailsStore,
@@ -54,7 +54,7 @@ export const createRoomEpic: Epic = (action$, state$: StateObservable<rootState>
           throw 'invalid status for room creation';
         }
 
-        const roomCreationInput: CreateRoomInput = {
+        const roomCreationInput: createRoomInput = {
           ...baseInput,
           gistName: gistDetails.id,
         };

@@ -65,8 +65,11 @@ if gist already created:
 
 ## now
 
-- decent styling for presence indicators
 - delete room action
+
+## later
+
+- decent styling for presence indicators
 - add titles for routes
 - add heading to globalheader
 - handle non-gist cases
@@ -75,9 +78,9 @@ if gist already created:
 - styling pass - global header
 - style scrollbar
 - move add file button out of tab group
-- get list of gists for user at home
+- get list of gists for user at home DONE
 - rename files DONE
-- new room button
+- new room button DONE
 - fork room
 - allow removing files - true
 - diff viewer

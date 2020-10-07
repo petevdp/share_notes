@@ -1,8 +1,8 @@
 import { from, of } from 'rxjs';
 import { mergeMap, mergeScan, toArray } from 'rxjs/operators';
+import { LanguageDetectionInput } from 'Server/inputs/languageDetectionInputs';
 import { LanguageDetectionOutput } from 'Server/models/languageDetectionOutput';
 import { detectLanguageMode } from 'Server/utils/languageDetectionUtils';
-import { LanguageDetectionInput } from 'Shared/inputs/languageDetectionInputs';
 import { Arg, Query, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
 

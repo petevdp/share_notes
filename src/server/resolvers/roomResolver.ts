@@ -1,7 +1,7 @@
+import { CreateRoomInput, DeleteRoomInput, RoomInput } from 'Server/inputs/roomInputs';
 import { ClientSideRoom, Room } from 'Server/models/room';
 import { User } from 'Server/models/user';
 import { ClientSideRoomService } from 'Server/services/clientSideRoomService';
-import { CreateRoomInput, DeleteRoomInput, RoomInput } from 'Shared/inputs/roomInputs';
 import { Arg, FieldResolver, Mutation, Query, Resolver, Root } from 'type-graphql';
 import { Service } from 'typedi';
 import { Repository } from 'typeorm';

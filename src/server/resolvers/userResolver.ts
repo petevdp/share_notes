@@ -1,9 +1,9 @@
 import { AuthorizedContext } from 'Server/context';
+import { UserInput } from 'Server/inputs/userInputs';
 import { ClientSideRoom, Room } from 'Server/models/room';
 import { User } from 'Server/models/user';
 import { HashIdService } from 'Server/services/hashIdService';
 import { TedisService, USER_ID_BY_SESSION_KEY } from 'Server/services/tedisService';
-import { UserInput } from 'Shared/inputs/userInputs';
 import { Arg, Authorized, Ctx, FieldResolver, Query, Resolver, Root } from 'type-graphql';
 import { Service } from 'typedi';
 import { Repository } from 'typeorm';

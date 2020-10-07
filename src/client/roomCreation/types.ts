@@ -3,7 +3,7 @@ import { Value } from 'baseui/select';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';
 import { gistDetails } from 'Shared/githubTypes';
-import { CreateRoomInput } from 'Shared/inputs/roomInputs';
+import { createRoomInput } from 'Shared/inputTypes/roomInputTypes';
 
 export interface gistDetailsStore {
   [id: string]: gistDetails | undefined;
@@ -35,7 +35,7 @@ export const roomCreationActions = {
   initialize: createAction('initializeRoomCreation', (username: string) => ({
     payload: username,
   })),
-  createRoom: createAction('createRoom', (input: CreateRoomInput, username: string) => ({
+  createRoom: createAction('createRoom', (input: createRoomInput, username: string) => ({
     payload: { input, username },
   })),
   setIsCheckboxChecked: createAction('setIsForkCheckboxCheckedForRoomCreation', (checked: boolean) => ({

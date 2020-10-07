@@ -18,7 +18,7 @@ import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Redirect } from 'react-router-dom';
 import { gistDetails } from 'Shared/githubTypes';
-import { CreateRoomInput } from 'Shared/inputs/roomInputs';
+import { createRoomInput } from 'Shared/inputTypes/roomInputTypes';
 
 export function CreateRoom() {
   const dispatch = useDispatch();
@@ -76,7 +76,7 @@ export function CreateRoom() {
                 e.preventDefault();
                 const url = new URL(roomCreation.gistUrl);
                 const gistId = url.pathname.substring(url.pathname.lastIndexOf('/') + 1);
-                const roomInput: CreateRoomInput = {
+                const roomInput: createRoomInput = {
                   name: roomCreation.roomName,
                   gistName: gistId,
                   ownerId: currentUser.id,
