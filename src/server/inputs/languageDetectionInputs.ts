@@ -1,4 +1,4 @@
-import { languageDetectionInput } from 'Shared/inputTypes/languageDetectionInputTypes';
+import { languageDetectionInput } from 'Shared/types/languageDetectionTypes';
 import { Field, InputType } from 'type-graphql';
 
 @InputType()

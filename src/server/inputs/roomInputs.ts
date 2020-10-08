@@ -1,4 +1,4 @@
-import { createRoomInput, deleteRoomInput, roomInput } from 'Shared/inputTypes/roomInputTypes';
+import { createRoomInput, deleteRoomInput, roomInput } from 'Shared/types/roomTypes';
 import { Field, ID, InputType } from 'type-graphql';
 
 @InputType()

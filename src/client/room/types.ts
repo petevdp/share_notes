@@ -7,6 +7,8 @@ import { gistDetails } from 'Shared/githubTypes';
 import { allFileDetailsStates, roomDetails } from 'Shared/roomManager';
 import * as Y from 'yjs';
 
+import { clientSideRoom } from '../../../dist/src/shared/types/roomTypes';
+
 export type gistDetailKeys = 'description' | 'name' | 'url';
 export const gistDetailKeys: gistDetailKeys[] = ['description', 'name', 'url'];
 
@@ -27,10 +29,13 @@ export type roomSliceState = {
     awareness?: globalAwareness;
     loadedTabs: string[];
     yjsClientId?: number;
-    roomDetails?: roomDetails;
+    roomDetails?: clientSideRoom;
+    roomSharedState: {
+      gistLoaded: boolean;
+      fileDetailsStates?: allFileDetailsStates;
+    };
     gistDetails?: gistDetails;
     currentTabId?: string;
-    fileDetailsStates?: allFileDetailsStates;
     currentRename?: {
       tabIdToRename: string;
       newFilename: string;
@@ -54,7 +59,7 @@ export const unprovisionTab = createAction('unprovisionTab', (tabId: string) => 
 }));
 
 export const leaveRoom = createAction('leaveRoom');
-export const setRoomData = createAction('setRoomData', (data: roomDetails) => ({ payload: data }));
+export const setRoomData = createAction('setRoomData', (data: clientSideRoom) => ({ payload: data }));
 export const setRoomGistDetails = createAction('setRoomGistDetails', (data: gistDetails) => ({
   payload: data,
 }));
@@ -87,6 +92,9 @@ export const fileRenamingActions = {
 export const setRoomAwarenessState = createAction('setRoomAwarenessState', (awareness: globalAwareness) => ({
   payload: awareness,
 }));
+
+export const deleteRoom = createAction('deleteRoom', (roomId: string) => ({ payload: roomId }));
+export const roomDeleted = createAction('roomDeleted', (roomsLeft: clientSideRoom[]) => ({ payload: roomsLeft }));
 
 export function isLoggedInForRoomSelector(rootState: rootState) {
   return !!(rootState.session.token || rootState.session.anonymousUser);

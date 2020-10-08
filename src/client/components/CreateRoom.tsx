@@ -18,7 +18,7 @@ import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Redirect } from 'react-router-dom';
 import { gistDetails } from 'Shared/githubTypes';
-import { createRoomInput } from 'Shared/inputTypes/roomInputTypes';
+import { createRoomInput } from 'Shared/types/roomTypes';
 
 export function CreateRoom() {
   const dispatch = useDispatch();

@@ -1,23 +1,19 @@
 import { gql } from 'graphql-request';
-import { roomDetails } from 'Shared/roomManager';
+import { languageDetectionOutput } from 'Shared/types/languageDetectionTypes';
+import { clientSideRoom, ROOM_DETAILS_FRAGMENT } from 'Shared/types/roomTypes';
 
 export const GET_ROOM = gql`
   query GetRoom($data: RoomInput!) {
     room(data: $data) {
-      id
-      hashId
-      name
-      gistName
-      owner {
-        id
-        githubLogin
-      }
+      ...RoomDetails
     }
   }
+
+  ${ROOM_DETAILS_FRAGMENT}
 `;
 
 export interface getRoomResponse {
-  room: roomDetails;
+  room: clientSideRoom;
 }
 
 export const USER_ROOMS = gql`
@@ -30,40 +26,40 @@ export const USER_ROOMS = gql`
       }
     }
   }
+  ${ROOM_DETAILS_FRAGMENT}
 `;
 
 export interface userRoomsResponse {
   user: {
-    ownedRooms: { id: string; name: string; hashId: string }[];
+    ownedRooms: clientSideRoom[];
   };
 }
 
 export const CREATE_ROOM = gql`
   mutation CreateRoom($data: CreateRoomInput!) {
     createRoom(data: $data) {
-      id
-      hashId
-      name
-      gistName
-      owner {
-        id
-        githubLogin
-      }
+      ...RoomDetails
     }
   }
+
+  ${ROOM_DETAILS_FRAGMENT}
 `;
 export type createRoomResponse = {
-  createRoom: {
-    id: string;
-    hashId: string;
-    name: string;
-    gistName: string;
-    owner: {
-      id: string;
-      githubLogin: string;
-    };
-  };
+  createRoom: clientSideRoom;
 };
+
+export const DELETE_ROOM = gql`
+  mutation DeleteRoom($data: DeleteRoomInput!) {
+    deleteRoom(data: $data) {
+      ...RoomDetails
+    }
+  }
+  ${ROOM_DETAILS_FRAGMENT}
+`;
+
+export interface deleteRoomResponse {
+  deleteRoom: clientSideRoom[];
+}
 
 export const GET_CURRENT_USER = gql`
   query getCurrentUser {
@@ -83,11 +79,7 @@ export interface getCurrentUserResult {
   currentUser: {
     githubLogin: string;
     id: string;
-    ownedRooms: {
-      id: string;
-      name: string;
-      hashId: string;
-    }[];
+    ownedRooms: clientSideRoom[];
   };
 }
 
@@ -106,26 +98,7 @@ export interface getCurrentUserGithubDetailsResponse {
   };
 }
 
-export const GET_GIST = gql`
-  query github__getGist($name: String!, $ownerLogin: String!) {
-    user(login: $ownerLogin) {
-      id
-      name
-      gist(name: $name) {
-        id
-        name
-        description
-        url
-        files {
-          name
-          text
-        }
-      }
-    }
-  }
-`;
-
-const gistDetailsFragment = gql`
+const GIST_DETAILS_FRAGMENT = gql`
   fragment GistDetails on Gist {
     id
     name
@@ -138,24 +111,7 @@ const gistDetailsFragment = gql`
   }
 `;
 
-export interface getGistResponse {
-  user: {
-    id: string;
-    name: string;
-    gist?: {
-      id: string;
-      name: string;
-      description: string;
-      url: string;
-      files: {
-        name: string;
-        text: string;
-      }[];
-    };
-  };
-}
-
-export interface gistDetailsGraphql {
+export interface gistDetailsGraphqlFragment {
   id: string;
   name: string;
   description: string;
@@ -165,6 +121,28 @@ export interface gistDetailsGraphql {
     id: number;
   };
   files: { name: string; content: string }[];
+}
+
+export const GET_GIST = gql`
+  query github__getGist($name: String!, $ownerLogin: String!) {
+    user(login: $ownerLogin) {
+      id
+      name
+      gist(name: $name) {
+        ...GistDetails
+      }
+    }
+  }
+
+  ${GIST_DETAILS_FRAGMENT}
+`;
+
+export interface getGistResponse {
+  user: {
+    id: string;
+    name: string;
+    gist?: gistDetailsGraphqlFragment;
+  };
 }
 
 export const GET_CURRENT_USER_GISTS_COUNT = gql`
@@ -196,7 +174,7 @@ export const GET_CURRENT_USER_GISTS = gql`
     }
   }
 
-  ${gistDetailsFragment}
+  ${GIST_DETAILS_FRAGMENT}
 `;
 
 export interface getCurrentUserGistsVariables {
@@ -206,7 +184,7 @@ export interface getCurrentUserGistsVariables {
 export interface getCurrentUserGistsResponse {
   viewer: {
     gists: {
-      nodes: gistDetailsGraphql[];
+      nodes: gistDetailsGraphqlFragment[];
     };
   };
 }
@@ -221,8 +199,5 @@ export const DETECT_LANGUAGES = gql`
 `;
 
 export interface languageDetectionResponse {
-  detectFiletype: {
-    tabId: string;
-    mode: string | null;
-  }[];
+  detectFiletype: languageDetectionOutput[];
 }

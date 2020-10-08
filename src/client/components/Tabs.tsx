@@ -30,7 +30,7 @@ export function TabList() {
       return newOpen;
     });
 
-  if (!currentRoom || !currentRoom.fileDetailsStates) {
+  if (!currentRoom || !currentRoom.roomSharedState.fileDetailsStates) {
     return <span>{'..loading'}</span>;
   }
 
@@ -41,7 +41,7 @@ export function TabList() {
         overflowX: 'auto',
       })}
     >
-      {Object.values(currentRoom.fileDetailsStates).map((tabState) => {
+      {Object.values(currentRoom.roomSharedState.fileDetailsStates).map((tabState) => {
         const contextMenuItems = [{ label: 'rename file', key: 'renameFile' }];
         const onContextMenuSelect = ({ item: { key } }: { item: { label: string; key: string } }) => {
           switch (key) {

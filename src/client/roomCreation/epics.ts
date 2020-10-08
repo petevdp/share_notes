@@ -12,7 +12,7 @@ import { map } from 'rxjs/internal/operators/map';
 import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { GRAPHQL_URL } from 'Shared/environment';
 import { gistDetails } from 'Shared/githubTypes';
-import { createRoomInput } from 'Shared/inputTypes/roomInputTypes';
+import { createRoomInput } from 'Shared/types/roomTypes';
 
 import {
   computedRoomCreationSliceStateSelector,

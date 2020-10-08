@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from 'react-redux';
 export function TabContent() {
   const currentRoom = useSelector((s: rootState) => s.room.currentRoom);
 
-  if (!currentRoom?.fileDetailsStates) {
+  if (!currentRoom?.roomSharedState.fileDetailsStates) {
     return <div>empty</div>;
   }
 
@@ -22,7 +22,9 @@ function EditorTab({ tabId, visible }: { tabId: string; visible: boolean }) {
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
   const [css] = useStyletron();
   const dispatch = useDispatch();
-  const fileDetailsPresent = useSelector((state: rootState) => !!state.room.currentRoom?.fileDetailsStates);
+  const fileDetailsPresent = useSelector(
+    (state: rootState) => !!state.room.currentRoom?.roomSharedState.fileDetailsStates,
+  );
   useEffect(() => {
     if (editorContainerRef.current) {
       dispatch(provisionTab(tabId, editorContainerRef.current));

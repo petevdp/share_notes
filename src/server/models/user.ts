@@ -1,3 +1,4 @@
+import { user } from 'Shared/types/userTypes';
 import { Field, ID, ObjectType } from 'type-graphql';
 import { Column, Entity, JoinColumn, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
@@ -5,7 +6,7 @@ import { Room } from './room';
 
 @ObjectType()
 @Entity()
-export class User {
+export class User implements user {
   @Field(() => ID)
   @PrimaryGeneratedColumn()
   id: number;

@@ -1,3 +1,9 @@
+export interface user {
+  id: number;
+  githubDatabaseId: number;
+  githubLogin: string;
+}
+
 export interface userInput {
   id?: number;
   login?: string;

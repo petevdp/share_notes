@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import 'module-alias/register';
 
 import { ApolloServer } from 'apollo-server-express';
+import { ApolloServerPlugin } from 'apollo-server-plugin-base';
 import cookieParser from 'cookie-parser';
 import express from 'express';
 import http from 'http';
@@ -39,11 +40,20 @@ async function runServer() {
       authChecker: getAuthChecker(tedisService),
     });
 
+    const loggingPlugin: ApolloServerPlugin = {
+      requestDidStart: (requestContext) => {
+        console.log(requestContext.request.operationName);
+        console.log(requestContext.request.query);
+        console.log(requestContext.request.variables);
+      },
+    };
+
     const apolloServer = new ApolloServer({
       schema,
       context: async ({ req }) => {
         return { githubSessionToken: req.cookies['session-token'] };
       },
+      plugins: [loggingPlugin],
     });
 
     const userRepository = dbConnection.getRepository(User);

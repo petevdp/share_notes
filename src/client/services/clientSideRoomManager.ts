@@ -56,7 +56,7 @@ export interface langaugeDetectPayload extends langaugeDetectInput {
 
 export interface languageDetectState {
   input: langaugeDetectInput;
-  outputMode: string | null;
+  outputMode?: string;
 }
 
 export type globalAwarenessMap = Map<number, userAwareness>;
@@ -78,7 +78,6 @@ export class ClientSideRoomManager extends RoomManager {
   bindings: Map<string, CodemirrorBinding>;
   currentFile$$: BehaviorSubject<string | null>;
   availableColours$$: BehaviorSubject<string[] | null>;
-
   roomDestroyed$$: Subject<boolean>;
   provisionedTab$$: Subject<{ tabId: string; editorContainer: HTMLElement }>;
   providerSynced: Promise<true>;

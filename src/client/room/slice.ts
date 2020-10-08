@@ -8,9 +8,10 @@ import {
   leaveRoom,
   renameFile,
   roomCreated,
+  roomDeleted,
   roomInitialized,
   roomSliceState,
-  setFileDetailsState as setFileDetailsStates,
+  setFileDetailsState,
   setRoomAwarenessState,
   setRoomData,
   setRoomGistDetails,
@@ -93,6 +94,9 @@ export const roomSlice = createSlice({
         initializingRoom: true,
         hashId: roomHashId,
         loadedTabs: [],
+        roomSharedState: {
+          gistLoaded: false,
+        },
       },
     }));
 
@@ -107,7 +111,7 @@ export const roomSlice = createSlice({
       };
     });
 
-    builder.addCase(setFileDetailsStates, (s, { payload: newFileDetails }) => {
+    builder.addCase(setFileDetailsState, (s, { payload: newFileDetails }) => {
       if (!s?.currentRoom) {
         throw 'current room not set';
       } else if (!s.currentRoom?.hashId) {
@@ -119,13 +123,13 @@ export const roomSlice = createSlice({
       if (newTabIds.length === 0) {
         // leave undefined
       }
-      if (!s.currentRoom.fileDetailsStates || !s.currentRoom.currentTabId) {
+      if (!s.currentRoom.roomSharedState.fileDetailsStates || !s.currentRoom.currentTabId) {
         currentTabId = newTabIds[0];
       } else if (newTabIds.includes(s.currentRoom.currentTabId)) {
         currentTabId = s.currentRoom.currentTabId;
       } else {
         const prevTabId = s.currentRoom.currentTabId || newTabIds[0];
-        const prevTabIds = Object.keys(s.currentRoom.fileDetailsStates);
+        const prevTabIds = Object.keys(s.currentRoom.roomSharedState.fileDetailsStates);
         const prevTabIndex = prevTabIds.indexOf(prevTabId);
         if (prevTabIndex === 0) {
           currentTabId = newTabIds[0];
@@ -145,7 +149,10 @@ export const roomSlice = createSlice({
           ...s.currentRoom,
           loadedTabs,
           currentTabId,
-          fileDetailsStates: newFileDetails,
+          roomSharedState: {
+            ...s.currentRoom.roomSharedState,
+            fileDetailsStates: newFileDetails,
+          },
         },
       };
     });
@@ -175,8 +182,8 @@ export const roomSlice = createSlice({
         loadedTabs: [],
         forkedGistDetails: forkDetails,
         hashId: data.createRoom.hashId,
-        roomDetails: {
-          ...data.createRoom,
+        roomDetails: data.createRoom,
+        roomSharedState: {
           gistLoaded: false,
         },
       },
@@ -187,7 +194,10 @@ export const roomSlice = createSlice({
         throw 'current room not set';
       }
 
-      const { fileDetailsStates, currentTabId } = state.currentRoom;
+      const {
+        roomSharedState: { fileDetailsStates },
+        currentTabId,
+      } = state.currentRoom;
       if (!currentTabId || !fileDetailsStates) {
         throw 'current tab or file details not initialized';
       }

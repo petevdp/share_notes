@@ -1,4 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
+import { roomDeleted } from 'Client/room/types';
 import { rootState } from 'Client/store';
 
 import {
@@ -32,7 +33,13 @@ export const sessionSlice = createSlice({
         anonymousLoginForm: undefined,
         anonymousUser: { username },
       }))
-      .addCase(anonymousLoginActions.cancel, (s) => ({ ...s, anonymousLoginForm: undefined })),
+      .addCase(anonymousLoginActions.cancel, (s) => ({ ...s, anonymousLoginForm: undefined }))
+      .addCase(roomDeleted, (s, { payload: ownedRooms }) => {
+        if (!s.user) {
+          return s;
+        }
+        return { ...s, user: { ...s.user, ownedRooms } };
+      }),
 });
 
 export function isLoggedInWithGithubSelector(s: rootState) {

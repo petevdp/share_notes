@@ -1,3 +1,4 @@
+import { clientSideRoom } from 'Shared/types/roomTypes';
 import { Field, ID, ObjectType } from 'type-graphql';
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
@@ -19,7 +20,7 @@ export class Room {
 }
 
 @ObjectType()
-export class ClientSideRoom {
+export class ClientSideRoom implements clientSideRoom {
   @Field(() => ID)
   id: number;
 

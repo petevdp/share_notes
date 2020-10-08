@@ -1,14 +1,11 @@
 import { createAction } from '@reduxjs/toolkit';
 import { rootState } from 'Client/store';
+import { clientSideRoom } from 'Shared/types/roomTypes';
 
 export interface currentUser {
   githubLogin: string;
   id: string;
-  ownedRooms: {
-    id: string;
-    name: string;
-    hashId: string;
-  }[];
+  ownedRooms: clientSideRoom[];
 }
 
 export interface githubUserDetails {

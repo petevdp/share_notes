@@ -2,7 +2,7 @@ import 'codemirror/lib/codemirror.css';
 import 'codemirror/theme/night.css';
 
 import { request as octokitRequest } from '@octokit/request';
-import { GET_ROOM, getRoomResponse } from 'Client/queries';
+import { DELETE_ROOM, deleteRoomResponse, GET_ROOM, getRoomResponse } from 'Client/queries';
 import { ClientSideRoomManager } from 'Client/services/clientSideRoomManager';
 import { unifiedUser, unifiedUserSelector } from 'Client/session/types';
 import { settingsActions, theme } from 'Client/settings/types';
@@ -26,14 +26,17 @@ import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { GRAPHQL_URL } from 'Shared/environment';
 import { gistDetails } from 'Shared/githubTypes';
 
+import { deleteRoomInput } from '../../shared/types/roomTypes';
 import {
   addNewFile,
+  deleteRoom,
   destroyRoom,
   gistSaved,
   initRoom,
   provisionTab,
   removeFile,
   renameFile,
+  roomDeleted,
   roomInitialized,
   saveBackToGist,
   setFileDetailsState,
@@ -213,7 +216,7 @@ export const saveBackToGistEpic: Epic = (
       }
 
       const originalFileData = rootState.room.currentRoom?.gistDetails?.files;
-      const allFileDetails = rootState.room.currentRoom?.fileDetailsStates;
+      const allFileDetails = rootState.room.currentRoom?.roomSharedState.fileDetailsStates;
       const allFileContents = roomManager.yData.fileContents.toJSON() as { [tabId: string]: string };
       if (!allFileDetails || !allFileContents || !originalFileData) {
         return 'no file details and/or contents';
@@ -270,4 +273,15 @@ export const updateCurrentFileAwarenessEpic: Epic = (
       roomManager.provider.awareness.setLocalStateField('currentTab', tabId);
     }),
     ignoreElements(),
+  );
+
+export const deleteRoomEpic: Epic = (action$) =>
+  action$.pipe(
+    filter(deleteRoom.match),
+    concatMap(async ({ payload: roomId }) => {
+      const response = await gqlRequest<deleteRoomResponse, { data: deleteRoomInput }>(GRAPHQL_URL, DELETE_ROOM, {
+        data: { id: roomId },
+      });
+      return roomDeleted(response.deleteRoom);
+    }),
   );

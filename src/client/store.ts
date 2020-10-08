@@ -7,6 +7,7 @@ import { Subject } from 'rxjs/internal/Subject';
 
 import {
   addNewFileEpic,
+  deleteRoomEpic,
   destroyRoomEpic,
   initRoomEpic,
   provisionTabEpic,
@@ -91,6 +92,7 @@ const epics = [
   updateCurrentFileAwarenessEpic,
   openRoomCreationEpic,
   getGistPreviewEpic,
+  deleteRoomEpic,
 ];
 
 epicMiddleware.run(combineEpics(...epics));

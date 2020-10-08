@@ -34,7 +34,7 @@ type LanguageDetectionOutput {
 
 type Mutation {
   createRoom(data: CreateRoomInput!): ClientSideRoom!
-  deleteRoom(data: DeleteRoomInput!): Boolean!
+  deleteRoom(data: DeleteRoomInput!): [ClientSideRoom!]!
 }
 
 type Query {

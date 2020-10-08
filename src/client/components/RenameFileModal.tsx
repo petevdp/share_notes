@@ -12,15 +12,15 @@ export function RenameFileModal() {
   const dispatch = useDispatch();
   const { fileDetails, otherFilenames, currentRename } = useSelector((rootState: rootState) => {
     const currentRoom = rootState.room.currentRoom;
-    if (!currentRoom?.fileDetailsStates || !currentRoom.currentTabId) {
+    if (!currentRoom?.roomSharedState.fileDetailsStates || !currentRoom.currentTabId) {
       return { fileDetails: undefined, otherFilenames: undefined, currentRename: currentRoom?.currentRename };
     }
-    const otherFilenames = Object.values(currentRoom.fileDetailsStates)
+    const otherFilenames = Object.values(currentRoom.roomSharedState.fileDetailsStates)
       .filter((d) => d.tabId !== currentRoom.currentTabId)
       .map((d) => d.filename);
 
     return {
-      fileDetails: currentRoom.fileDetailsStates[currentRoom.currentTabId],
+      fileDetails: currentRoom.roomSharedState.fileDetailsStates[currentRoom.currentTabId],
       otherFilenames,
       currentRename: currentRoom?.currentRename,
     };

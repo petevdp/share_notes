@@ -3,7 +3,7 @@ import { Value } from 'baseui/select';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';
 import { gistDetails } from 'Shared/githubTypes';
-import { createRoomInput } from 'Shared/inputTypes/roomInputTypes';
+import { createRoomInput } from 'Shared/types/roomTypes';
 
 export interface gistDetailsStore {
   [id: string]: gistDetails | undefined;

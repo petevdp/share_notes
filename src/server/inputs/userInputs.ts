@@ -1,4 +1,4 @@
-import { createUserInput, currentUserInput, userInput } from 'Shared/inputTypes/userInputTypes';
+import { createUserInput, currentUserInput, userInput } from 'Shared/types/userTypes';
 import { Field, ID, InputType } from 'type-graphql';
 
 @InputType()
