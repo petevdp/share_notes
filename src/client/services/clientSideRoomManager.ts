@@ -11,6 +11,7 @@ import { DETECT_LANGUAGES, languageDetectionResponse } from 'Client/queries';
 import { userType } from 'Client/session/types';
 import { clientSettings, getSettingsForEditor, settingsResolvedForEditor } from 'Client/settings/types';
 import { request as gqlRequest } from 'graphql-request';
+import __isEqual from 'lodash/isEqual';
 import { BehaviorSubject } from 'rxjs/internal/BehaviorSubject';
 import { Observable } from 'rxjs/internal/Observable';
 import { ConnectableObservable } from 'rxjs/internal/observable/ConnectableObservable';
@@ -123,6 +124,7 @@ export class ClientSideRoomManager extends RoomManager {
         const editor = CodeMirror.default(editorContainer, {
           mode: { name: 'css' },
           viewportMargin: Infinity,
+          indentWithTabs: false,
           lineWrapping: true,
           theme: themeMap[settings.theme],
         });
@@ -206,7 +208,7 @@ export class ClientSideRoomManager extends RoomManager {
         }
         return globalAwareness;
       }),
-      distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
+      distinctUntilChanged(__isEqual),
       publish(),
     ) as ConnectableObservable<globalAwareness>;
 
@@ -225,6 +227,7 @@ export class ClientSideRoomManager extends RoomManager {
 
     this.availableColours$$ = new BehaviorSubject(null);
 
+    // detect programming languages via file extensions and content with a graphql endpoint and update editors accordingly
     this.fileDetails$
       .pipe(
         map((allDetails) => {
@@ -237,7 +240,8 @@ export class ClientSideRoomManager extends RoomManager {
           }
           return data;
         }),
-        distinctUntilChanged(),
+        distinctUntilChanged(__isEqual),
+        // when an input is added or changes, check with the endpoint to see if the detected language is the same
         mergeScan(async (prevState, newInputs) => {
           const next: { [key: string]: languageDetectState } = {};
           const toDetect: langaugeDetectPayload[] = [];
@@ -277,6 +281,7 @@ export class ClientSideRoomManager extends RoomManager {
         }
       });
 
+    // determine current available colors and pipe into available colors subject
     this.awareness$
       .pipe(
         map((awareness) => {
@@ -381,6 +386,7 @@ export class ClientSideRoomManager extends RoomManager {
           break;
         default:
           (editor.setOption as any)(key, value);
+          break;
       }
     }
   }

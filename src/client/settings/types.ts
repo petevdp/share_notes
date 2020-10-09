@@ -4,27 +4,32 @@ import { rootState } from 'Client/store';
 
 export type theme = 'light' | 'dark';
 export type keyMap = 'sublime' | 'vim' | 'emacs';
-
-export interface individualEditorSettings {
-  indentUnit?: number;
-  smartIndent?: boolean;
+interface individualEditorSettings {
+  indentUnit: number;
+  smartIndent: boolean;
+  indentWithTabs: boolean;
+  tabSize: boolean;
 }
+
+export type individualEditorSettingsPartial = Partial<individualEditorSettings>;
 
 export interface globalEditorSettings {
   indentUnit: number;
   smartIndent: boolean;
   keyMap: keyMap;
   lineWrapping: boolean;
+  indentWithTabs: boolean;
+  tabSize: number;
 }
 
-export type settingsResolvedForEditor = individualEditorSettings & globalEditorSettings;
+export type settingsResolvedForEditor = individualEditorSettingsPartial & globalEditorSettings;
 
 export interface clientSettings {
   theme: theme;
   globalEditor: globalEditorSettings;
   individualEditor: {
     [roomId: string]: {
-      [tabId: string]: individualEditorSettings | undefined;
+      [tabId: string]: individualEditorSettingsPartial | undefined;
     };
   };
 }
@@ -34,15 +39,10 @@ export type globalEditorSetting = {
   value: globalEditorSettings[keyof globalEditorSettings];
 };
 
-export type individualEditorSetting =
-  | {
-      key: 'indentUnit';
-      value: number;
-    }
-  | {
-      key: 'smartIndent';
-      value: boolean;
-    };
+export type individualEditorSetting = {
+  key: keyof globalEditorSettings;
+  value: globalEditorSettings[keyof globalEditorSettings];
+};
 
 export const settingsActions = {
   toggleTheme: createAction('toggleTheme'),

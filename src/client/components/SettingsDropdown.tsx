@@ -3,8 +3,9 @@ import { Button } from 'baseui/button';
 import { ButtonGroup } from 'baseui/button-group';
 import { Checkbox } from 'baseui/checkbox';
 import { ListItem } from 'baseui/list';
-import { ItemT, StatefulMenu } from 'baseui/menu';
+import { ItemT, Menu, StatefulMenu } from 'baseui/menu';
 import { StatefulPopover } from 'baseui/popover';
+import { Select, StatefulSelect } from 'baseui/select';
 import { globalEditorSettings, settingsActions, settingsSelector } from 'Client/settings/types';
 import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
 import React from 'react';
@@ -19,6 +20,10 @@ interface globalSettingsItem<K extends keyof globalEditorSettings> extends ItemT
         options: globalEditorSettings[K][];
       }
     | {
+        typeName: 'numericSelect';
+        options: number[];
+      }
+    | {
         typeName: 'toggle';
       };
 }
@@ -26,35 +31,69 @@ interface globalSettingsItem<K extends keyof globalEditorSettings> extends ItemT
 export function GlobalSettingsDropdown() {
   const dispatch = useDispatch();
   const settings = useSelector(settingsSelector);
-
-  const keymapSettingsItem: globalSettingsItem<'keyMap'> = {
-    label: 'Keybindings',
-    key: 'keyMap',
-    type: {
-      typeName: 'select',
-      options: ['sublime', 'vim', 'emacs'],
-    },
-  };
-
-  const smartIndentSettingsItem: globalSettingsItem<'smartIndent'> = {
-    label: 'Smart Indent',
-    key: 'smartIndent',
-    type: {
-      typeName: 'toggle',
-    },
-  };
-
   const [css, theme] = useStyletron();
 
-  const items = [keymapSettingsItem, smartIndentSettingsItem];
+  const globalSettingItems = (() => {
+    const keymap: globalSettingsItem<'keyMap'> = {
+      label: 'Keybindings',
+      key: 'keyMap',
+      type: {
+        typeName: 'select',
+        options: ['sublime', 'vim', 'emacs'],
+      },
+    };
+    const indentWithTabs: globalSettingsItem<'indentWithTabs'> = {
+      label: 'Indent With Tabs',
+      key: 'indentWithTabs',
+      type: {
+        typeName: 'toggle',
+      },
+    };
+
+    const smartIndent: globalSettingsItem<'smartIndent'> = {
+      label: 'Smart Indent',
+      key: 'smartIndent',
+      type: {
+        typeName: 'toggle',
+      },
+    };
+
+    const lineWrapping: globalSettingsItem<'lineWrapping'> = {
+      label: 'Line Wrap',
+      key: 'lineWrapping',
+      type: {
+        typeName: 'toggle',
+      },
+    };
+
+    const indentUnit: globalSettingsItem<'indentUnit'> = {
+      label: 'Spaces Per Tab',
+      key: 'indentUnit',
+      type: {
+        typeName: 'numericSelect',
+        options: [2, 3, 4, 5],
+      },
+    };
+
+    const tabSize: globalSettingsItem<'tabSize'> = {
+      label: 'Tab Size',
+      key: 'tabSize',
+      type: {
+        typeName: 'numericSelect',
+        options: [2, 3, 4, 5],
+      },
+    };
+
+    return [keymap, lineWrapping, indentWithTabs, smartIndent, tabSize];
+  })();
 
   return (
     <StatefulPopover
       overrides={RoomPopoverZIndexOverride}
       placement="bottom"
       content={() => (
-        <StatefulMenu
-          items={items}
+        <Menu
+          items={globalSettingItems}
           overrides={{
             List: {
               style: {
@@ -62,26 +101,15 @@ export function GlobalSettingsDropdown() {
               },
             },
             Option: {
-              // component: React.forwardRef((props: any, ref) => {
-              //   return
-              // })
               props: {
-                // getChildMenu(item: globalSettingsItem<keyof globalEditorSettings>) {
-                //   switch (item.type.typeName) {
-                //     case 'select':
-                //       const childItems = item.type.options.map((option) => ({ label: option }));
-                //       return <StatefulMenu size="compact" items={childItems}/>
-                //     default:
-                //       return null;
-                //   }
                 overrides: {
                   ListItem: {
-                    component: React.forwardRef((props: any, ref) => {
+                    component: (props: any) => {
+                      const item: globalSettingsItem<keyof globalEditorSettings> = props.item;
+                      const itemState = settings.globalEditor[item.key];
                       let itemContent: React.ReactElement;
-                      switch ((props.item as globalSettingsItem<keyof globalEditorSettings>).key) {
-                        case 'keyMap': {
-                          const itemState = settings.globalEditor.keyMap;
-                          const item: globalSettingsItem<'keyMap'> = props.item;
+                      switch (item.type.typeName) {
+                        case 'select': {
                           if (item.type.typeName !== 'select') {
                             throw 'incorrect item type for setting';
                           }
@@ -97,7 +125,7 @@ export function GlobalSettingsDropdown() {
                                         settingsActions.setGlobalEditorSetting({ key: item.key, value: option }),
                                       );
                                     }}
-                                    key={option}
+                                    key={option as string}
                                   >
                                     {option}
                                   </Button>
@@ -107,23 +135,69 @@ export function GlobalSettingsDropdown() {
                           );
                           break;
                         }
-                        case 'smartIndent': {
-                          const itemState = settings.globalEditor.smartIndent;
-                          const item: globalSettingsItem<'smartIndent'> = props.item;
+                        case 'toggle': {
                           if (item.type.typeName !== 'toggle') {
                             throw 'incorrect item type for setting';
                           }
                           itemContent = (
-                            <Checkbox
-                              checked={itemState}
-                              onChange={() => {
-                                const checked = (event?.target as any).checked as boolean;
-                                dispatch(settingsActions.setGlobalEditorSetting({ key: item.key, value: checked }));
-                              }}
-                              checkmarkType="toggle_round"
-                            >
-                              {item.label}
-                            </Checkbox>
+                            <>
+                              <label>{item.label}</label>
+                              <Checkbox
+                                checked={itemState as boolean}
+                                onChange={() => {
+                                  const checked = (event?.target as any).checked as boolean;
+                                  dispatch(settingsActions.setGlobalEditorSetting({ key: item.key, value: checked }));
+                                }}
+                                checkmarkType="toggle_round"
+                              ></Checkbox>
+                            </>
+                          );
+                          break;
+                        }
+                        case 'numericSelect': {
+                          console.log('item state: ', itemState);
+                          if (item.type.typeName !== 'numericSelect') {
+                            throw 'incorrect item type for setting';
+                          }
+
+                          itemContent = (
+                            <>
+                              <label>{item.label}</label>
+                              <Select
+                                options={item.type.options.map((option) => ({ id: option, label: option }))}
+                                value={[{ id: itemState as string, label: itemState }]}
+                                valueKey="id"
+                                searchable={false}
+                                type="select"
+                                clearable={false}
+                                onChange={({ value }) =>
+                                  dispatch(
+                                    settingsActions.setGlobalEditorSetting({
+                                      key: item.key,
+                                      value: Number(value[0].id),
+                                    }),
+                                  )
+                                }
+                                overrides={{
+                                  Root: {
+                                    style: {
+                                      width: '75px',
+                                    },
+                                  },
+                                  Popover: {
+                                    props: {
+                                      overrides: {
+                                        Body: {
+                                          style: {
+                                            zIndex: 4,
+                                          },
+                                        },
+                                      },
+                                    },
+                                  },
+                                }}
+                              />
+                            </>
                           );
                           break;
                         }
@@ -131,13 +205,8 @@ export function GlobalSettingsDropdown() {
                           throw 'idk';
                         }
                       }
-
-                      return (
-                        <ListItem ref={ref} overrides={{ Root: { style: {} } }}>
-                          {itemContent}
-                        </ListItem>
-                      );
-                    }),
+                      return <ListItem overrides={{ Root: { style: { zIndex: 15 } } }}>{itemContent}</ListItem>;
+                    },
                   },
                 },
               },

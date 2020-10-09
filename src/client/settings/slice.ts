@@ -5,7 +5,7 @@ import { rootState } from 'Client/store';
 import { stat } from 'fs';
 import { StateObservable } from 'redux-observable';
 
-import { clientSettings, individualEditorSettings, settingsActions } from './types';
+import { clientSettings, individualEditorSettingsPartial, settingsActions } from './types';
 
 const initialState: clientSettings = {
   theme: 'light',
@@ -14,6 +14,8 @@ const initialState: clientSettings = {
     indentUnit: 2,
     smartIndent: true,
     lineWrapping: false,
+    indentWithTabs: false,
+    tabSize: 2,
   },
   individualEditor: {},
 };
