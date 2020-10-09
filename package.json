@@ -45,6 +45,7 @@
     "isomorphic-ws": "^4.0.1",
     "language-detect": "^1.1.0",
     "lib0": "^0.2.33",
+    "lodash": "^4.17.20",
     "module-alias": "^2.2.2",
     "node-window-polyfill": "^1.0.0",
     "pg": "^8.3.3",

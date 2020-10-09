@@ -1,12 +1,15 @@
 import 'codemirror/theme/3024-day.css';
 import 'codemirror/theme/3024-night.css';
 import 'codemirror/mode/css/css.js';
+import 'codemirror/keymap/vim.js';
+import 'codemirror/keymap/emacs.js';
+import 'codemirror/keymap/sublime.js';
 
 import { LightTheme } from 'baseui';
 import { DEBUG_FLAGS } from 'Client/debugFlags';
 import { DETECT_LANGUAGES, languageDetectionResponse } from 'Client/queries';
 import { userType } from 'Client/session/types';
-import { theme } from 'Client/settings/types';
+import { clientSettings, getSettingsForEditor, settingsResolvedForEditor } from 'Client/settings/types';
 import { request as gqlRequest } from 'graphql-request';
 import { BehaviorSubject } from 'rxjs/internal/BehaviorSubject';
 import { Observable } from 'rxjs/internal/Observable';
@@ -85,7 +88,7 @@ export class ClientSideRoomManager extends RoomManager {
   roomDetails$: ConnectableObservable<roomDetails>;
   awareness$: ConnectableObservable<globalAwareness>;
 
-  constructor(roomHashId: string, private theme$: Observable<theme>) {
+  constructor(roomHashId: string, private settings$: Observable<clientSettings>) {
     super();
     const CodeMirrorModule = import('codemirror');
     this.roomDestroyed$$ = new Subject<boolean>();
@@ -112,16 +115,20 @@ export class ClientSideRoomManager extends RoomManager {
       dark: '3024-night',
     };
 
+    // initialize provisioned tabs
     this.provisionedTab$$
-      .pipe(withLatestFrom(this.theme$))
-      .subscribe(async ([{ tabId, editorContainer }, currentTheme]) => {
+      .pipe(withLatestFrom(this.settings$))
+      .subscribe(async ([{ tabId, editorContainer }, settings]) => {
         const CodeMirror = await CodeMirrorModule;
         const editor = CodeMirror.default(editorContainer, {
           mode: { name: 'css' },
           viewportMargin: Infinity,
           lineWrapping: true,
-          theme: themeMap[currentTheme],
+          theme: themeMap[settings.theme],
         });
+
+        const settingsForEditor = getSettingsForEditor(settings, roomHashId, tabId);
+        ClientSideRoomManager.setEditorSettings(settingsForEditor, editor);
 
         const content = this.yData.fileContents.get(tabId);
         if (!content) {
@@ -134,9 +141,12 @@ export class ClientSideRoomManager extends RoomManager {
         this.bindings.set(tabId, binding);
       });
 
-    theme$.subscribe((theme) => {
-      for (const binding of this.bindings.values()) {
-        binding.cm.setOption('theme', themeMap[theme]);
+    // listen for and apply settings changes to editors
+    settings$.subscribe((settings) => {
+      for (let [tabId, binding] of this.bindings.entries()) {
+        const settingsForEditor = getSettingsForEditor(settings, roomHashId, tabId);
+        ClientSideRoomManager.setEditorSettings(settingsForEditor, binding.cm);
+        binding.cm.setOption('theme', themeMap[settings.theme]);
       }
     });
 
@@ -359,6 +369,26 @@ export class ClientSideRoomManager extends RoomManager {
 
     for (const binding of this.bindings.values()) {
       binding.destroy();
+    }
+  }
+
+  static setEditorSettings(settings: settingsResolvedForEditor, editor: CodeMirror.Editor) {
+    for (let [key, value] of Object.entries(settings)) {
+      switch (key) {
+        case 'keyMap':
+          const keyMap = value as string | undefined;
+          editor.setOption('keyMap', keyMap);
+          break;
+        default:
+          (editor.setOption as any)(key, value);
+      }
+    }
+  }
+
+  static setAllEditorSettings(settings: clientSettings, roomHashId: string, editors: Map<string, CodeMirror.Editor>) {
+    for (let [tabId, editor] of editors.entries()) {
+      const settingsForTab = getSettingsForEditor(settings, roomHashId, tabId);
+      ClientSideRoomManager.setEditorSettings(settingsForTab, editor);
     }
   }
 }

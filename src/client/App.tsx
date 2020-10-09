@@ -7,7 +7,7 @@ import { Client as Styletron } from 'styletron-engine-atomic';
 import { Provider as StyletronProvider } from 'styletron-react';
 
 import { Root } from './components/Root';
-import { settingsSelector } from './settings/slice';
+import { settingsSelector } from './settings/types';
 
 const engine = new Styletron();
 

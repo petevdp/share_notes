@@ -47,9 +47,7 @@ if given gist, load gist contents into editors
 
 ## nav bar
 
-- we need to redesign the existing base web navbar to have the following properties
-- 30% smaller
-- less aggressive hamburger mode breakpoint
+- make theme more compact for desktop
 - (some percentage of viewheight on desktop)
 
 ## save back to gist
@@ -65,48 +63,48 @@ if gist already created:
 
 ## now
 
-- delete room action
+- editor settings
+  - choose settings to display
 
 ## later
 
 - decent styling for presence indicators
+  - still need to add border for prescence indicators with avatar
+- theming
+  - editor
+  - more compact
+  - nord?
 - add titles for routes
 - add heading to globalheader
-- handle non-gist cases
 - move modal buttons to right
-- presence
-- styling pass - global header
 - style scrollbar
 - move add file button out of tab group
-- get list of gists for user at home DONE
-- rename files DONE
-- new room button DONE
 - fork room
 - allow removing files - true
 - diff viewer
-  - re-add monaco DONE
-  - check diff mode
-- handle tab overflow
-
-## problems to solve later
-
+- saving
+  - add save action persist editor to db on save
+  - file clean/dirty edit state/last saved indicator
+- flesh out dashboard
+  - recently visited rooms
 - form/input validation
 - limit client side routes for non-logged in users
-- tab switching is slow
+- authorization
+  - client-side routes
+  - api
+- set up logging
+  - server
+  - client
+  - api-specific
+  - postgres
+  - redis
 
 ## discovery
 
-- 0auth modal
 - diff viewer
-- transition to frontend-only?
+- gen-env-types
+- dokku
 
 ## questions
 
-- what does TypeGraphql.ID do?
-- how to unset browser session token
-- will the current implementation work with private gists?
 - can I provide an interface for commit messages?
-- multiple editors? how will that work with y-monaco?
-
-gen-env-types
-dokku

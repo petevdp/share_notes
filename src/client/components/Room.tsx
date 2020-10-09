@@ -13,6 +13,7 @@ import { useParams } from 'react-router-dom';
 
 import { AnonymousLoginModal } from './AnonymousLoginModal';
 import { RenameFileModal } from './RenameFileModal';
+import { GlobalSettingsDropdown } from './SettingsDropdown';
 import { TabContent } from './TabContent';
 import { TabList } from './Tabs';
 
@@ -88,7 +89,11 @@ export function Room() {
             <Plus />
           </Button>
         </span>
-        <span>
+        <span
+          className={css({
+            display: 'flex',
+          })}
+        >
           <StatefulPopover
             placement={'bottom'}
             content={() => <StatefulMenu onItemSelect={onActionItemSelect} items={actionItems}></StatefulMenu>}
@@ -98,6 +103,7 @@ export function Room() {
               Actions
             </Button>
           </StatefulPopover>
+          <GlobalSettingsDropdown />
         </span>
       </div>
       <TabContent />

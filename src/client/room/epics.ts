@@ -5,10 +5,11 @@ import { request as octokitRequest } from '@octokit/request';
 import { DELETE_ROOM, deleteRoomResponse, GET_ROOM, getRoomResponse } from 'Client/queries';
 import { ClientSideRoomManager } from 'Client/services/clientSideRoomManager';
 import { unifiedUser, unifiedUserSelector } from 'Client/session/types';
-import { settingsActions, theme } from 'Client/settings/types';
+import { clientSettings, settingsActions, theme } from 'Client/settings/types';
 import { epicDependencies, rootState } from 'Client/store';
 import { octokitRequestWithAuth as getOctokitRequestWIthAuth } from 'Client/utils/utils';
 import { request as gqlRequest } from 'graphql-request';
+import _isEqual from 'lodash/isEqual';
 import { Action } from 'redux';
 import { Epic, StateObservable } from 'redux-observable';
 import { Observable } from 'rxjs/internal/Observable';
@@ -67,17 +68,14 @@ export const initRoomEpic: Epic = (
         //   settings: { theme: startingTheme },
         // },
       ]) => {
-        const {
-          settings: { theme: startingTheme },
-        } = rootState;
-        const theme$: Observable<theme> = action$.pipe(
-          filter(settingsActions.toggleTheme.match),
-          withLatestFrom(state$),
-          map(([, state]) => state.settings.theme),
-          startWith(startingTheme),
+        const { settings: startingSettings } = rootState;
+        const settings$: Observable<clientSettings> = state$.pipe(
+          map((state) => state.settings),
+          distinctUntilChanged(_isEqual),
+          startWith(startingSettings),
         );
 
-        const manager = new ClientSideRoomManager(roomHashId, theme$);
+        const manager = new ClientSideRoomManager(roomHashId, settings$);
 
         const fileDetailsStateUpdateAction$ = manager.fileDetails$.pipe(
           map((fileDetails) => setFileDetailsState(fileDetails)),
