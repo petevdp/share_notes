@@ -1,5 +1,6 @@
 import { gql } from 'graphql-request';
 
+import { roomVisit } from './roomVisitTypes';
 import { user } from './userTypes';
 
 export interface room {
@@ -8,6 +9,7 @@ export interface room {
   gistName: string;
   owner: user;
   createdAt: Date;
+  visits: roomVisit[];
 }
 
 export interface clientSideRoom extends room {

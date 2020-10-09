@@ -1,5 +1,5 @@
 import { roomVisitsInput } from 'Shared/types/roomVisitTypes';
-import { Field, InputType } from 'type-graphql';
+import { Field, ID, InputType, Int } from 'type-graphql';
 
 @InputType()
 export class RoomVisitsInput implements roomVisitsInput {
@@ -9,9 +9,9 @@ export class RoomVisitsInput implements roomVisitsInput {
   dateRangeEnd?: Date;
   @Field(() => [String], { nullable: true })
   roomIds?: string[];
-  @Field(() => [String], { nullable: true })
+  @Field(() => [ID], { nullable: true })
   userIds?: string[];
-  @Field(() => Number, { nullable: true })
+  @Field(() => Int, { nullable: true })
   first?: number;
 
   @Field(() => String, { nullable: true })

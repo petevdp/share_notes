@@ -9,7 +9,7 @@ export async function createDatabaseConnection() {
     password: 'development',
     database: 'development',
     synchronize: true,
-    logging: false,
+    logging: true,
     entities: ['dist/src/server/models/**/*.js'],
     migrations: ['dist/src/server/migration/**/*.js'],
     subscribers: ['dist/src/server/subscriber/**/*.js'],

@@ -4,8 +4,8 @@ body {
   overflow-x: hidden;
 }
 .CodeMirror {
-  /* we need to explicitely set the hight here to avoid issues */
-  height: calc(100vh - (120px)) !important;
+  /* we need to explicitely set the hight here since codemirror relies on this value being static */
+  height: calc(100vh - (124px)) !important;
 }
 
 /* styling for the remote cursors */

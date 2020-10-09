@@ -31,7 +31,6 @@ async function runServer() {
   // build graphql schema, create http server
   const httpServer = await (async () => {
     const app = express();
-    app.use(cookieParser());
     const tedisService = Container.get(TedisService);
     // const userRepository = Container.get()
     const schema = await buildSchema({
@@ -51,16 +50,15 @@ async function runServer() {
 
     const apolloServer = new ApolloServer({
       schema,
-      context: async ({ req }) => {
-        return { githubSessionToken: req.cookies['session-token'] };
-      },
+      context: async ({ req }) => ({ githubSessionToken: req.cookies['session-token'] }),
       plugins: [loggingPlugin],
     });
 
     const userRepository = dbConnection.getRepository(User);
 
-    app.use('/auth', getAuthRouter(tedisService, userRepository));
+    app.use(cookieParser());
     apolloServer.applyMiddleware({ app });
+    app.use('/auth', getAuthRouter(tedisService, userRepository));
     return http.createServer(app);
   })();
 

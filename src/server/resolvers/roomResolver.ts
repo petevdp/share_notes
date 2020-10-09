@@ -1,6 +1,9 @@
+import produce from 'immer';
 import { AuthorizedContext } from 'Server/context';
 import { CreateRoomInput, DeleteRoomInput, RoomInput } from 'Server/inputs/roomInputs';
+import { RoomVisitsInput } from 'Server/inputs/roomVisitInputs';
 import { ClientSideRoom, Room } from 'Server/models/room';
+import { RoomVisit } from 'Server/models/roomVisit';
 import { User } from 'Server/models/user';
 import { ClientSideRoomService } from 'Server/services/clientSideRoomService';
 import { TedisService, USER_ID_BY_SESSION_KEY } from 'Server/services/tedisService';
@@ -36,6 +39,11 @@ export class RoomResolver {
     return owner || null;
   }
 
+  @FieldResolver(() => [RoomVisit])
+  async visits(@Root() room: Room): Promise<RoomVisit[]> {
+    return room.visits;
+  }
+
   @Mutation(() => ClientSideRoom)
   async createRoom(@Arg('data') userData: CreateRoomInput) {
     const owner = await this.userRepository.findOne({ id: parseInt(userData.ownerId) });
@@ -45,7 +53,6 @@ export class RoomResolver {
       createdAt: new Date(),
       owner,
     });
-    console.log('room: ', room);
     await this.roomRepository.save(room);
     const clientSideRoom = this.clientSideRoomService.getClientSideRoom(room);
     return clientSideRoom;
@@ -68,5 +75,62 @@ export class RoomResolver {
     }
 
     return rooms?.map((r) => this.clientSideRoomService.getClientSideRoom(r)) || [];
+  }
+
+  @Query(() => [ClientSideRoom])
+  async roomsByVisits(
+    @Arg('data') input: RoomVisitsInput,
+    @Ctx() context: AuthorizedContext,
+  ): Promise<ClientSideRoom[]> {
+    const conditions: string[] = [];
+    const id = await this.tedisService.getCurrentUserId(context.githubSessionToken);
+    if (!id) {
+      throw 'not logged in';
+    }
+    // make sure records being returned are from this user or from owned rooms
+    conditions.push('user.id = :currentUserId OR roomOwner.id = :currentUserId');
+    const queryParameters: {
+      dateRangeStart?: Date;
+      dateRangeEnd?: Date;
+      roomIds?: string[];
+      userIds?: string[];
+      currentUserId: string;
+    } = { currentUserId: id };
+
+    if (input.dateRangeStart) {
+      conditions.push('roomVisit.createdAt >= :dateRangeStart');
+      queryParameters.dateRangeStart = input.dateRangeStart;
+    }
+
+    if (input.dateRangeEnd) {
+      conditions.push('roomVisit.createdAt < :dateRangeEnd');
+      queryParameters.dateRangeEnd = input.dateRangeEnd;
+    }
+
+    if (input.roomIds) {
+      conditions.push('room.id in (:...roomIds)');
+      queryParameters.roomIds = input.roomIds;
+    }
+
+    if (input.userIds) {
+      conditions.push('user.id in (:...userIds)');
+      queryParameters.userIds = input.userIds;
+    }
+
+    const condition = conditions.map((c) => `(${c})`).join(' AND ');
+
+    const rooms = await this.roomRepository
+      .createQueryBuilder('room')
+      .innerJoinAndSelect('room.visits', 'roomVisit')
+      .innerJoinAndSelect('roomVisit.user', 'user')
+      .innerJoin('room.owner', 'roomOwner')
+      .where(condition, queryParameters)
+      .orderBy('roomVisit.visitTime', input.sort === 'ascending' ? 'ASC' : 'DESC')
+      .limit(input.first)
+      .getMany();
+
+    return rooms
+      .map((r) => ({ ...r, visits: r.visits.slice(0, 1) }))
+      .map((r) => this.clientSideRoomService.getClientSideRoom(r));
   }
 }

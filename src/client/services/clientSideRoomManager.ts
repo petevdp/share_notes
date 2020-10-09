@@ -1,6 +1,7 @@
 import 'codemirror/theme/3024-day.css';
 import 'codemirror/theme/3024-night.css';
 import 'codemirror/mode/css/css.js';
+import './allThemeImports';
 import 'codemirror/keymap/vim.js';
 import 'codemirror/keymap/emacs.js';
 import 'codemirror/keymap/sublime.js';
@@ -112,8 +113,8 @@ export class ClientSideRoomManager extends RoomManager {
       theme: 'ambiance',
     */
     const themeMap = {
-      light: '3024-day',
-      dark: '3024-night',
+      light: 'base16-light',
+      dark: 'base16-dark',
     };
 
     // initialize provisioned tabs

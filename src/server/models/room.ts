@@ -1,3 +1,4 @@
+import { RoomVisitResolver } from 'Server/resolvers/roomVisitResolver';
 import { clientSideRoom, room } from 'Shared/types/roomTypes';
 import { Field, ID, ObjectType } from 'type-graphql';
 import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
@@ -22,7 +23,7 @@ export class Room implements room {
   @ManyToOne(() => User, (user) => user.ownedRooms, { cascade: true })
   owner: User;
 
-  @OneToMany(() => RoomVisit, (visit) => visit.room)
+  @OneToMany(() => RoomVisit, (visit) => visit.room, { cascade: true })
   visits: RoomVisit[];
 }
 
@@ -45,4 +46,7 @@ export class ClientSideRoom implements clientSideRoom {
 
   @Field(() => Number)
   createdAt: Date;
+
+  @Field(() => [RoomVisit])
+  visits: RoomVisit[];
 }

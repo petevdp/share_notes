@@ -1,5 +1,6 @@
 import { useStyletron } from 'baseui';
 import { Button } from 'baseui/button';
+import { Card } from 'baseui/card';
 import { ChevronDown, Plus } from 'baseui/icon';
 import { ItemT, StatefulMenu } from 'baseui/menu';
 import { StatefulPopover } from 'baseui/popover';

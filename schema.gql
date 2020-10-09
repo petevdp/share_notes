@@ -10,6 +10,7 @@ type ClientSideRoom {
   id: ID!
   name: String!
   owner: User!
+  visits: [RoomVisit!]!
 }
 
 input CreateRoomInput {
@@ -48,6 +49,7 @@ type Query {
   detectFiletype(data: [LanguageDetectionInput!]!): [LanguageDetectionOutput!]!
   room(data: RoomInput!): ClientSideRoom!
   rooms: [ClientSideRoom!]!
+  roomsByVisits(data: RoomVisitsInput!): [ClientSideRoom!]!
   roomVisits(data: RoomVisitsInput!): [RoomVisit!]!
   user(data: UserInput!): User!
   users: [User!]!
@@ -68,10 +70,10 @@ type RoomVisit {
 input RoomVisitsInput {
   dateRangeEnd: DateTime
   dateRangeStart: DateTime
-  first: Float
+  first: Int
   roomIds: [String!]
   sort: String
-  userIds: [String!]
+  userIds: [ID!]
 }
 
 type User {

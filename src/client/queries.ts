@@ -201,3 +201,30 @@ export const DETECT_LANGUAGES = gql`
 export interface languageDetectionResponse {
   detectFiletype: languageDetectionOutput[];
 }
+
+export const GET_RECENT_ROOMS_FOR_USER = gql`
+  query getRecentRoomsForUser($userId: ID!, $first: Int) {
+    roomsByVisits(data: { first: $first, sort: "descending", userIds: [$userId] }) {
+      ...RoomDetails
+      visits {
+        id
+        visitTime
+        user {
+          id
+          githubLogin
+        }
+      }
+    }
+  }
+
+  ${ROOM_DETAILS_FRAGMENT}
+`;
+
+export interface getRecentRoomsForUserInput {
+  userId: string;
+  first?: number;
+}
+
+export interface getRecentRoomsForUserResponse {
+  roomsByVisits: clientSideRoom[];
+}

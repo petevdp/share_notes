@@ -1,10 +1,11 @@
 import { AuthorizedContext } from 'Server/context';
 import { RoomVisitsInput } from 'Server/inputs/roomVisitInputs';
-import { ClientSideRoom } from 'Server/models/room';
+import { ClientSideRoom, Room } from 'Server/models/room';
 import { RoomVisit } from 'Server/models/roomVisit';
 import { User } from 'Server/models/user';
 import { ClientSideRoomService } from 'Server/services/clientSideRoomService';
-import { Arg, Authorized, Ctx, Field, FieldResolver, Query, Resolver, Root } from 'type-graphql';
+import { TedisService } from 'Server/services/tedisService';
+import { Arg, Ctx, FieldResolver, Query, Resolver, Root } from 'type-graphql';
 import { Service } from 'typedi';
 import { Repository } from 'typeorm';
 import { InjectRepository } from 'typeorm-typedi-extensions';
@@ -14,7 +15,9 @@ import { InjectRepository } from 'typeorm-typedi-extensions';
 export class RoomVisitResolver {
   constructor(
     private readonly clientSideRoomService: ClientSideRoomService,
+    private readonly tedisService: TedisService,
     @InjectRepository(RoomVisit) private readonly roomVisitRepository: Repository<RoomVisit>,
+    @InjectRepository(Room) private readonly roomRepository: Repository<Room>,
   ) {}
 
   @FieldResolver(() => ClientSideRoom)
@@ -30,7 +33,21 @@ export class RoomVisitResolver {
   @Query(() => [RoomVisit])
   async roomVisits(@Arg('data') input: RoomVisitsInput, @Ctx() context: AuthorizedContext) {
     const conditions: string[] = [];
-    const queryParameters: { dateRangeStart?: Date; dateRangeEnd?: Date; roomIds?: string[]; userIds?: string[] } = {};
+
+    const id = await this.tedisService.getCurrentUserId(context.githubSessionToken);
+
+    if (!id) {
+      return null;
+    }
+    // make sure records being returned are from this user or from owned rooms
+    conditions.push('user.id = :currentUserId OR roomOwner.id = :currentUserId');
+    const queryParameters: {
+      dateRangeStart?: Date;
+      dateRangeEnd?: Date;
+      roomIds?: string[];
+      userIds?: string[];
+      currentUserId: string;
+    } = { currentUserId: id };
 
     if (input.dateRangeStart) {
       conditions.push('roomVisit.createdAt >= :dateRangeStart');
@@ -58,10 +75,11 @@ export class RoomVisitResolver {
       .createQueryBuilder('roomVisit')
       .innerJoinAndSelect('roomVisit.room', 'room')
       .innerJoinAndSelect('roomVisit.user', 'user')
+      .innerJoin('room.owner', 'roomOwner')
       .where(condition, queryParameters)
+      .orderBy('roomVisit.visitTime', input.sort === 'ascending' ? 'ASC' : 'DESC')
+      .limit(input.first)
       .getMany();
-
-    console.log('visits: ', visits);
 
     return visits;
   }

@@ -24,7 +24,7 @@ export class User implements user {
   @JoinColumn()
   ownedRooms: Room[];
 
-  @OneToMany(() => RoomVisit, (visit) => visit.room)
+  @OneToMany(() => RoomVisit, (visit) => visit.room, { cascade: true })
   @JoinColumn()
   visitedRooms: RoomVisit[];
 }

@@ -16,9 +16,9 @@ export class RoomVisit implements roomVisit {
   @Column({ type: 'timestamp' })
   visitTime: Date;
 
-  @ManyToOne(() => Room, (room) => room.visits, { cascade: true })
+  @ManyToOne(() => Room, (room) => room.visits)
   room: Room;
 
-  @ManyToOne(() => User, (user) => user.visitedRooms, { cascade: true })
+  @ManyToOne(() => User, (user) => user.visitedRooms)
   user: User;
 }

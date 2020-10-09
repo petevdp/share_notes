@@ -37,6 +37,7 @@ function EditorTab({ tabId, visible }: { tabId: string; visible: boolean }) {
     <div
       ref={editorContainerRef}
       className={css({
+        margin: '2px',
         height: '100%',
         width: '100%',
         display: visible ? 'block' : 'none',
