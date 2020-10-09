@@ -63,8 +63,9 @@ if gist already created:
 
 ## now
 
-- editor settings
-  - choose settings to display
+- editor settings DONE
+  - choose settings to display DONE
+  - implement DONE
 
 ## later
 

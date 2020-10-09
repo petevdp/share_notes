@@ -2,11 +2,15 @@ import { gql } from 'graphql-request';
 
 import { user } from './userTypes';
 
-export interface clientSideRoom {
+export interface room {
   id: number;
   name: string;
   gistName: string;
   owner: user;
+  createdAt: Date;
+}
+
+export interface clientSideRoom extends room {
   hashId: string;
 }
 

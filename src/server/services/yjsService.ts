@@ -2,6 +2,8 @@ import { request as octokitRequest } from '@octokit/request';
 import { IncomingMessage } from 'http';
 import path from 'path';
 import { Room } from 'Server/models/room';
+import { RoomVisit } from 'Server/models/roomVisit';
+import { User } from 'Server/models/user';
 import { getYjsDocNameForRoom } from 'Shared/environment';
 import { gistDetails } from 'Shared/githubTypes';
 import { roomDetails, RoomManager, startingRoomDetails } from 'Shared/roomManager';
@@ -18,10 +20,13 @@ import { TedisService, TOKEN_BY_USER_ID, USER_ID_BY_SESSION_KEY } from './tedisS
 
 @Service()
 export class YjsService {
-  docs: Map<string, Y.Doc>;
+  readonly docs: Map<string, Y.Doc>;
   constructor(
     private readonly clientSideRoomService: ClientSideRoomService,
     private readonly tedisService: TedisService,
+    @InjectRepository(Room) private readonly roomRepository: Repository<Room>,
+    @InjectRepository(User) private readonly userRepository: Repository<User>,
+    @InjectRepository(RoomVisit) private readonly roomVisitRepository: Repository<RoomVisit>,
   ) {
     this.docs = docs;
   }
@@ -32,12 +37,37 @@ export class YjsService {
     return doc;
   }
 
-  async setupWsConnection(conn: WebSocket, req: IncomingMessage) {
+  async setupWsConnection(conn: WebSocket, req: IncomingMessage, user?: User) {
     const url = req.url as string;
     const roomHashId = path.basename(url.slice(1).split('?')[0]);
     const docName = getYjsDocNameForRoom(roomHashId);
     let newDoc = !this.docs.has(docName);
     setupWSConnection(conn, req, { gc: true, docName: docName });
+
+    (async () => {
+      if (!req.headers.cookie) {
+        return;
+      }
+      const userToken = getCookie('session-token', req.headers.cookie);
+      if (!userToken) {
+        return;
+      }
+      const userId = await this.tedisService.tedis.hget(USER_ID_BY_SESSION_KEY, userToken);
+      if (!userId) {
+        return;
+      }
+      const [user, room]: [User, Room | undefined] = await Promise.all([
+        this.userRepository.findOneOrFail({ id: parseInt(userId) }),
+        this.clientSideRoomService.findRoom({ hashId: roomHashId }),
+      ]);
+
+      if (!room) {
+        throw "couldn't find room";
+      }
+
+      this.roomVisitRepository.insert({ user, room, visitTime: new Date() });
+    })();
+
     const doc = this.docs.get(docName);
     if (!doc) {
       throw 'y no doc';
@@ -94,4 +124,15 @@ export class ServerSideRoomManager extends RoomManager {
     });
     // });
   }
+}
+
+export function getCookie(name: string, cookies: string) {
+  const nameEQ = name + '=';
+  const ca = cookies.split(';');
+  for (let i = 0; i < ca.length; i++) {
+    let c = ca[i];
+    while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+    if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+  }
+  return null;
 }

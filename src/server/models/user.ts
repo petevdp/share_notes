@@ -3,6 +3,7 @@ import { Field, ID, ObjectType } from 'type-graphql';
 import { Column, Entity, JoinColumn, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 import { Room } from './room';
+import { RoomVisit } from './roomVisit';
 
 @ObjectType()
 @Entity()
@@ -22,4 +23,8 @@ export class User implements user {
   @OneToMany(() => Room, (room) => room.owner)
   @JoinColumn()
   ownedRooms: Room[];
+
+  @OneToMany(() => RoomVisit, (visit) => visit.room)
+  @JoinColumn()
+  visitedRooms: RoomVisit[];
 }

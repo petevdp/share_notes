@@ -4,6 +4,7 @@
 # -----------------------------------------------
 
 type ClientSideRoom {
+  createdAt: Float!
   gistName: String
   hashId: String!
   id: ID!
@@ -16,6 +17,11 @@ input CreateRoomInput {
   name: String!
   ownerId: ID!
 }
+
+"""
+The javascript `Date` as string. Type represents date and time as the ISO Date string.
+"""
+scalar DateTime
 
 input DeleteRoomInput {
   id: ID!
@@ -42,6 +48,7 @@ type Query {
   detectFiletype(data: [LanguageDetectionInput!]!): [LanguageDetectionOutput!]!
   room(data: RoomInput!): ClientSideRoom!
   rooms: [ClientSideRoom!]!
+  roomVisits(data: RoomVisitsInput!): [RoomVisit!]!
   user(data: UserInput!): User!
   users: [User!]!
 }
@@ -49,6 +56,22 @@ type Query {
 input RoomInput {
   hashId: String
   id: ID
+}
+
+type RoomVisit {
+  id: ID!
+  room: ClientSideRoom!
+  user: User!
+  visitTime: DateTime!
+}
+
+input RoomVisitsInput {
+  dateRangeEnd: DateTime
+  dateRangeStart: DateTime
+  first: Float
+  roomIds: [String!]
+  sort: String
+  userIds: [String!]
 }
 
 type User {

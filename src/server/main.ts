@@ -18,6 +18,7 @@ import { createDatabaseConnection } from './db';
 import { User } from './models/user';
 import { LanguageDetectionResolver } from './resolvers/languageDetectionResolver';
 import { RoomResolver } from './resolvers/roomResolver';
+import { RoomVisitResolver } from './resolvers/roomVisitResolver';
 import { UserResolver } from './resolvers/userResolver';
 import { TedisService } from './services/tedisService';
 import { YjsService } from './services/yjsService';
@@ -34,7 +35,7 @@ async function runServer() {
     const tedisService = Container.get(TedisService);
     // const userRepository = Container.get()
     const schema = await buildSchema({
-      resolvers: [UserResolver, RoomResolver, LanguageDetectionResolver],
+      resolvers: [UserResolver, RoomResolver, LanguageDetectionResolver, RoomVisitResolver],
       container: Container,
       emitSchemaFile: true,
       authChecker: getAuthChecker(tedisService),
@@ -42,9 +43,9 @@ async function runServer() {
 
     const loggingPlugin: ApolloServerPlugin = {
       requestDidStart: (requestContext) => {
-        console.log(requestContext.request.operationName);
-        console.log(requestContext.request.query);
-        console.log(requestContext.request.variables);
+        // console.log(requestContext.request.operationName);
+        // console.log(requestContext.request.query);
+        // console.log(requestContext.request.variables);
       },
     };
 

@@ -42,9 +42,10 @@ export class RoomResolver {
 
     const room = this.roomRepository.create({
       ...userData,
+      createdAt: new Date(),
       owner,
     });
-
+    console.log('room: ', room);
     await this.roomRepository.save(room);
     const clientSideRoom = this.clientSideRoomService.getClientSideRoom(room);
     return clientSideRoom;

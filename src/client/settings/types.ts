@@ -8,7 +8,7 @@ interface individualEditorSettings {
   indentUnit: number;
   smartIndent: boolean;
   indentWithTabs: boolean;
-  tabSize: boolean;
+  tabSize: number;
 }
 
 export type individualEditorSettingsPartial = Partial<individualEditorSettings>;

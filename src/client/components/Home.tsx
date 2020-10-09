@@ -1,6 +1,7 @@
 import { useStyletron } from 'baseui';
 import { Button } from 'baseui/button';
 import { Card } from 'baseui/card';
+import { Heading, HeadingLevel } from 'baseui/heading';
 import { Delete } from 'baseui/icon';
 import { StyledLink } from 'baseui/link';
 import { ListItem } from 'baseui/list';
@@ -40,12 +41,26 @@ export function Home() {
       className={css({
         width: 'min(100%, 700px)',
         marginTop: '0px',
-        margin: 'auto',
+        marginLeft: 'auto',
+        marginRight: 'auto',
       })}
     >
-      <Card title="Owned Rooms">
-        <ul>{roomElements}</ul>
-      </Card>
+      <HeadingLevel>
+        <Heading>Your Rooms</Heading>
+        <div
+          className={css({
+            display: 'grid',
+            gridGap: '8px',
+          })}
+        >
+          <Card title="Active">
+            <ul>{roomElements}</ul>
+          </Card>
+          <Card title="Recent">
+            <ul>{roomElements}</ul>
+          </Card>
+        </div>
+      </HeadingLevel>
     </div>
   );
 }
