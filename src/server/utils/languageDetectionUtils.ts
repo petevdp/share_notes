@@ -13,11 +13,11 @@ function normalizeDetectedFiletype(filetype: string) {
   return filetype.toLowerCase().split(' ').join('');
 }
 
-export async function detectLanguageMode(filename: string, content: string) {
+export async function detectLanguageMode(filename: string) {
   const mapping = await mappingPromise;
   console.log('filename: ', filename);
   console.log('detected: ', detect.filename(filename));
-  const detectedType = detect.contents(filename, content);
+  const detectedType = detect.filename(filename);
   if (!detectedType || !mapping[normalizeDetectedFiletype(detectedType)]) {
     return undefined;
   }

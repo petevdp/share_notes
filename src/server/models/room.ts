@@ -7,7 +7,7 @@ import { RoomVisit } from './roomVisit';
 import { User } from './user';
 
 @Entity()
-export class Room implements room {
+export class Room {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -20,15 +20,15 @@ export class Room implements room {
   @Column({ type: 'timestamp' })
   createdAt: Date;
 
-  @ManyToOne(() => User, (user) => user.ownedRooms, { cascade: true })
+  @ManyToOne(() => User, (user) => user.ownedRooms)
   owner: User;
 
-  @OneToMany(() => RoomVisit, (visit) => visit.room, { cascade: true })
-  visits: RoomVisit[];
+  @OneToMany(() => RoomVisit, (visit) => visit.room)
+  visits: Promise<RoomVisit[]>;
 }
 
 @ObjectType()
-export class ClientSideRoom implements clientSideRoom {
+export class ClientSideRoom {
   @Field(() => ID)
   id: number;
 
@@ -48,5 +48,5 @@ export class ClientSideRoom implements clientSideRoom {
   createdAt: Date;
 
   @Field(() => [RoomVisit])
-  visits: RoomVisit[];
+  visits: Promise<RoomVisit[]>;
 }

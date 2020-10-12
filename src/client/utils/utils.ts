@@ -1,5 +1,6 @@
 import { request as octokitRequest } from '@octokit/request';
 import { GraphQLClient } from 'graphql-request';
+import { DateTime } from 'luxon';
 import { GITHUB_GRAPHQL_API_URL, SESSION_TOKEN_COOKIE_KEY } from 'Shared/environment';
 
 export function setCookie(name: string, value: string, days = 5) {
@@ -46,4 +47,49 @@ export function octokitRequestWithAuth() {
   } else {
     return octokitRequest.defaults({});
   }
+}
+
+export function formatRoomVisitedTime(visitedDateStr: string) {
+  const visitedDate = new Date(visitedDateStr);
+  console.log('date: ', typeof visitedDate);
+
+  console.log('visited: ', visitedDate);
+
+  // const visitedDate = new Date(visitedDateStr);
+  let user_date = new Date();
+  let diff = Math.floor((Number(user_date) - Number(visitedDate)) / 1000);
+  if (diff <= 1) {
+    return 'just now';
+  }
+  if (diff < 20) {
+    return diff + ' seconds ago';
+  }
+  if (diff < 40) {
+    return 'half a minute ago';
+  }
+  if (diff < 60) {
+    return 'less than a minute ago';
+  }
+  if (diff <= 90) {
+    return 'one minute ago';
+  }
+  if (diff <= 3540) {
+    return Math.round(diff / 60) + ' minutes ago';
+  }
+  if (diff <= 5400) {
+    return '1 hour ago';
+  }
+  if (diff <= 86400) {
+    return Math.round(diff / 3600) + ' hours ago';
+  }
+  if (diff <= 129600) {
+    return '1 day ago';
+  }
+  if (diff < 604800) {
+    return Math.round(diff / 86400) + ' days ago';
+  }
+  if (diff <= 777600) {
+    return '1 week ago';
+  }
+  return 'on ' + DateTime.fromJSDate(visitedDate).toLocaleString(DateTime.DATE_MED);
 }

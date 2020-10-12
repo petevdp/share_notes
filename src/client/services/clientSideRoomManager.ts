@@ -8,11 +8,10 @@ import 'codemirror/keymap/sublime.js';
 
 import { LightTheme } from 'baseui';
 import { DEBUG_FLAGS } from 'Client/debugFlags';
-import { DETECT_LANGUAGES, languageDetectionResponse } from 'Client/queries';
 import { userType } from 'Client/session/types';
 import { clientSettings, getSettingsForEditor, settingsResolvedForEditor } from 'Client/settings/types';
-import { request as gqlRequest } from 'graphql-request';
 import __isEqual from 'lodash/isEqual';
+import * as monaco from 'monaco-editor';
 import { BehaviorSubject } from 'rxjs/internal/BehaviorSubject';
 import { Observable } from 'rxjs/internal/Observable';
 import { ConnectableObservable } from 'rxjs/internal/observable/ConnectableObservable';
@@ -20,14 +19,13 @@ import { distinctUntilChanged } from 'rxjs/internal/operators/distinctUntilChang
 import { filter } from 'rxjs/internal/operators/filter';
 import { first } from 'rxjs/internal/operators/first';
 import { map } from 'rxjs/internal/operators/map';
-import { mergeScan } from 'rxjs/internal/operators/mergeScan';
 import { publish } from 'rxjs/internal/operators/publish';
 import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { Subject } from 'rxjs/internal/Subject';
-import { getYjsDocNameForRoom, GRAPHQL_URL, YJS_WEBSOCKET_URL_WS } from 'Shared/environment';
-import { allFileDetailsStates, fileDetailsState, roomDetails, RoomManager } from 'Shared/roomManager';
+import { getYjsDocNameForRoom, YJS_WEBSOCKET_URL_WS } from 'Shared/environment';
+import { allBaseFileDetailsStates, allComputedFileDetailsStates, roomDetails, RoomManager } from 'Shared/roomManager';
 import { getKeysForMap } from 'Shared/ydocUtils';
-import { CodeMirrorBinding, CodemirrorBinding } from 'y-codemirror';
+import { MonacoBinding } from 'y-monaco';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 
@@ -80,27 +78,18 @@ const allColors = [
 
 export class ClientSideRoomManager extends RoomManager {
   provider: WebsocketProvider;
-  bindings: Map<string, CodemirrorBinding>;
+  bindings: Map<string, any>;
   currentFile$$: BehaviorSubject<string | null>;
   availableColours$$: BehaviorSubject<string[] | null>;
-  roomDestroyed$$: Subject<boolean>;
   provisionedTab$$: Subject<{ tabId: string; editorContainer: HTMLElement }>;
   providerSynced: Promise<true>;
-  fileDetails$: ConnectableObservable<allFileDetailsStates>;
   roomDetails$: ConnectableObservable<roomDetails>;
+  fileDetails$: ConnectableObservable<allBaseFileDetailsStates>;
+  computedFileDetails$: ConnectableObservable<allComputedFileDetailsStates>;
   awareness$: ConnectableObservable<globalAwareness>;
 
   constructor(roomHashId: string, private settings$: Observable<clientSettings>) {
     super();
-    const CodeMirrorModule = import('codemirror');
-    this.roomDestroyed$$ = new Subject<boolean>();
-    this.ydoc = new Y.Doc();
-    this.yData = {
-      fileDetailsState: this.ydoc.getMap(`fileDetails`),
-      fileContents: this.ydoc.getMap(`fileContents`),
-      details: this.ydoc.getMap(`details`),
-    };
-
     this.currentFile$$ = new BehaviorSubject(null);
     this.provisionedTab$$ = new Subject();
     this.bindings = new Map();
@@ -112,44 +101,13 @@ export class ClientSideRoomManager extends RoomManager {
       material-darker
       theme: 'ambiance',
     */
-    const themeMap = {
-      light: 'base16-light',
-      dark: 'base16-dark',
-    };
-
-    // initialize provisioned tabs
-    this.provisionedTab$$
-      .pipe(withLatestFrom(this.settings$))
-      .subscribe(async ([{ tabId, editorContainer }, settings]) => {
-        const CodeMirror = await CodeMirrorModule;
-        const editor = CodeMirror.default(editorContainer, {
-          mode: { name: 'css' },
-          viewportMargin: Infinity,
-          indentWithTabs: false,
-          lineWrapping: true,
-          theme: themeMap[settings.theme],
-        });
-
-        const settingsForEditor = getSettingsForEditor(settings, roomHashId, tabId);
-        ClientSideRoomManager.setEditorSettings(settingsForEditor, editor);
-
-        const content = this.yData.fileContents.get(tabId);
-        if (!content) {
-          throw 'tried to provision nonexistant editor';
-        }
-        const binding = new CodeMirrorBinding(content, editor, this.provider.awareness);
-        if (process.env.NODE_ENV === 'development' && DEBUG_FLAGS.stopRemoveCursorOnBlur) {
-          binding.cm.off('blur', binding._blurListeer);
-        }
-        this.bindings.set(tabId, binding);
-      });
 
     // listen for and apply settings changes to editors
-    settings$.subscribe((settings) => {
-      for (let [tabId, binding] of this.bindings.entries()) {
-        const settingsForEditor = getSettingsForEditor(settings, roomHashId, tabId);
-        ClientSideRoomManager.setEditorSettings(settingsForEditor, binding.cm);
-        binding.cm.setOption('theme', themeMap[settings.theme]);
+    settings$.subscribe(() => {
+      for (let [] of this.bindings.entries()) {
+        // const settingsForEditor = getSettingsForEditor(settings, roomHashId, tabId);
+        // ClientSideRoomManager.setEditorSettings(settingsForEditor, binding.cm);
+        // binding.cm.setOption('theme', themeMap[settings.theme]);
       }
     });
 
@@ -163,22 +121,6 @@ export class ClientSideRoomManager extends RoomManager {
       };
       this.provider.on('sync', listener);
     });
-
-    this.fileDetails$ = new Observable<allFileDetailsStates>((s) => {
-      const fileDetailsListener = () => {
-        const currState = (this.yData.fileDetailsState.toJSON() as allFileDetailsStates) || undefined;
-        currState && s.next(currState);
-      };
-
-      // initial state on sync
-      this.providerSynced.then(() => s.next(this.yData.fileDetailsState.toJSON() as allFileDetailsStates));
-
-      this.yData.fileDetailsState.observeDeep(fileDetailsListener);
-      this.roomDestroyed$$.subscribe(() => {
-        this.yData.fileDetailsState.unobserveDeep(fileDetailsListener);
-        s.complete();
-      });
-    }).pipe(publish()) as ConnectableObservable<allFileDetailsStates>;
 
     this.awareness$ = new Observable<globalAwarenessMap>((s) => {
       this.providerSynced.then(() => {
@@ -213,74 +155,75 @@ export class ClientSideRoomManager extends RoomManager {
       publish(),
     ) as ConnectableObservable<globalAwareness>;
 
-    this.roomDetails$ = new Observable<roomDetails>((s) => {
-      const listener = () => {
-        s.next(this.yData.details.toJSON() as roomDetails);
-      };
-      this.yData.details.observeDeep(listener);
-      // this.providerSynced.then(() => s.next(this.yData.details.toJSON() as sharedRoomDetails));
+    this.roomDetails$ = this.yMapToObservable(this.yData.details, this.roomDestroyed$$).pipe(
+      publish(),
+    ) as ConnectableObservable<roomDetails>;
 
-      this.roomDestroyed$$.subscribe(() => {
-        this.yData.details.unobserveDeep(listener);
-        s.complete();
+    this.fileDetails$ = this.yMapToObservable(this.yData.fileDetailsState, this.roomDestroyed$$).pipe(
+      publish(),
+    ) as ConnectableObservable<allBaseFileDetailsStates>;
+
+    this.computedFileDetails$ = this.yMapToObservable<allComputedFileDetailsStates>(
+      this.yData.computedFileDetails,
+      this.roomDestroyed$$,
+    ).pipe(publish()) as ConnectableObservable<allComputedFileDetailsStates>;
+
+    // initialize provisioned tabs
+    this.provisionedTab$$
+      .pipe(withLatestFrom(this.settings$, this.fileDetails$))
+      .subscribe(async ([{ tabId, editorContainer }, settings, fileDetails]) => {
+        console.log('computed when provisioning ', tabId, ' ', fileDetails);
+
+        const model = monaco.editor.createModel('', undefined, monaco.Uri.file(fileDetails[tabId].filename));
+        const editor = monaco.editor.create(editorContainer, { value: '' });
+        editor.setModel(model);
+        // const CodeMirror = await CodeMirrorModule;
+        // const editor = CodeMirror.default(editorContainer, {
+        //   mode: computedFileDetails[tabId].mode,
+        //   viewportMargin: Infinity,
+        //   indentWithTabs: false,
+        //   lineWrapping: true,
+        //   theme: themeMap[settings.theme],
+        // });
+
+        // ClientSideRoomManager.setEditorSettings(settingsForEditor, editor);
+
+        const content = this.yData.fileContents.get(tabId);
+        if (!content) {
+          throw 'tried to provision nonexistant editor';
+        }
+        const binding = new MonacoBinding(content, editor.getModel(), new Set([editor]), this.provider.awareness);
+        if (process.env.NODE_ENV === 'development' && DEBUG_FLAGS.stopRemoveCursorOnBlur) {
+          binding.cm.off('blur', binding._blurListeer);
+        }
+        this.bindings.set(tabId, binding);
       });
-    }).pipe(publish()) as ConnectableObservable<roomDetails>;
+
+    this.fileDetails$.subscribe((state) => {
+      const languages = monaco.languages.getLanguages();
+
+      for (let [id, { filename }] of Object.entries(state)) {
+        const binding = this.bindings.get(id);
+        if (!binding) {
+          continue;
+        }
+        const editor: monaco.editor.IStandaloneCodeEditor = [...binding.editors.values()][0];
+        console.log('editor: ', editor);
+        const model = editor.getModel();
+
+        if (!model) {
+          continue;
+        }
+        const extension = '.' + filename.split('.').pop();
+
+        const language = languages.find((language) => language.extensions?.includes(extension));
+        if (language) {
+          monaco.editor.setModelLanguage(model, language.id);
+        }
+      }
+    });
 
     this.availableColours$$ = new BehaviorSubject(null);
-
-    // detect programming languages via file extensions and content with a graphql endpoint and update editors accordingly
-    this.fileDetails$
-      .pipe(
-        map((allDetails) => {
-          let data: { [tabId: string]: langaugeDetectInput } = {};
-          for (let [tabId, details] of Object.entries(allDetails)) {
-            data[tabId] = {
-              tabId,
-              filename: details.filename,
-            };
-          }
-          return data;
-        }),
-        distinctUntilChanged(__isEqual),
-        // when an input is added or changes, check with the endpoint to see if the detected language is the same
-        mergeScan(async (prevState, newInputs) => {
-          const next: { [key: string]: languageDetectState } = {};
-          const toDetect: langaugeDetectPayload[] = [];
-          for (let input of Object.values(newInputs)) {
-            if (!prevState[input.tabId] || input !== prevState[input.tabId].input) {
-              toDetect.push({
-                ...input,
-                content: this.yData.fileContents.get(input.tabId)?.toJSON() || ('' as string),
-              });
-            } else {
-              next[input.tabId] = prevState[input.tabId];
-            }
-          }
-
-          const response = await gqlRequest<languageDetectionResponse>(GRAPHQL_URL, DETECT_LANGUAGES, {
-            data: toDetect,
-          });
-          return response.detectFiletype.reduce(
-            (state, output) => ({
-              ...state,
-              [output.tabId]: { input: newInputs[output.tabId], outputMode: output.mode },
-            }),
-            {} as { [tabId: string]: languageDetectState },
-          );
-        }, {} as { [tabId: string]: languageDetectState }),
-      )
-      .subscribe(async (langageDetectionState) => {
-        for (let [tabId, state] of Object.entries(langageDetectionState)) {
-          const binding = this.bindings.get(tabId);
-          if (!binding) {
-            continue;
-          }
-          // right now this imports all files that match the blow pattern for a given template variable (https://webpack.js.org/api/module-methods/#magic-comments), could maybe be improved
-          await import(`codemirror/mode/${state.outputMode}/${state.outputMode}.js`);
-
-          binding.cm.setOption('mode', state.outputMode);
-        }
-      });
 
     // determine current available colors and pipe into available colors subject
     this.awareness$
@@ -300,9 +243,10 @@ export class ClientSideRoomManager extends RoomManager {
   }
 
   connect() {
-    this.fileDetails$.connect();
     this.awareness$.connect();
     this.roomDetails$.connect();
+    this.fileDetails$.connect();
+    this.computedFileDetails$.connect();
     this.provider.connect();
   }
 
@@ -326,29 +270,6 @@ export class ClientSideRoomManager extends RoomManager {
     const binding = this.bindings.get(tabId);
     binding?.destroy();
     this.bindings.delete(tabId);
-  }
-
-  addNewFile(detailsInput?: { filename?: string; content?: string }) {
-    const fileDetails = new Y.Map();
-    const text = new Y.Text();
-    const highestId = getKeysForMap(this.yData.fileDetailsState).reduce(
-      (max, id) => (Number(id) > max ? Number(id) : max),
-      0,
-    );
-
-    const tabId = (Number(highestId) + 1).toString();
-    fileDetails.set('tabId', tabId);
-    fileDetails.set('deleted', false);
-    if (detailsInput) {
-      text.insert(0, detailsInput.content || '');
-      this.yData.fileContents.set(tabId, new Y.Text());
-      fileDetails.set('filename', detailsInput.filename);
-    } else {
-      fileDetails.set('filename', `new-file-${tabId}`);
-    }
-    this.yData.fileDetailsState.set(tabId, fileDetails);
-    this.yData.fileContents.set(tabId, text);
-    return fileDetails.toJSON() as fileDetailsState;
   }
 
   removeFile(tabId: string) {
@@ -397,5 +318,19 @@ export class ClientSideRoomManager extends RoomManager {
       const settingsForTab = getSettingsForEditor(settings, roomHashId, tabId);
       ClientSideRoomManager.setEditorSettings(settingsForTab, editor);
     }
+  }
+
+  yMapToObservable<V>(map: Y.Map<unknown>, roomDestroyed$$: Observable<boolean>) {
+    return new Observable<V>((subscriber) => {
+      const listener = () => {
+        subscriber.next(map.toJSON() as V);
+      };
+      map.observeDeep(listener);
+      this.providerSynced.then(() => subscriber.next(map.toJSON() as V));
+      roomDestroyed$$.subscribe(() => {
+        map.unobserveDeep(listener);
+        subscriber.complete();
+      });
+    });
   }
 }

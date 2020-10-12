@@ -10,7 +10,7 @@ type ClientSideRoom {
   id: ID!
   name: String!
   owner: User!
-  visits: [RoomVisit!]!
+  visits(first: Float, fromCurrentUser: Boolean, userId: String): [RoomVisit!]!
 }
 
 input CreateRoomInput {
@@ -28,17 +28,6 @@ input DeleteRoomInput {
   id: ID!
 }
 
-input LanguageDetectionInput {
-  content: String!
-  filename: String!
-  tabId: String!
-}
-
-type LanguageDetectionOutput {
-  mode: String
-  tabId: String!
-}
-
 type Mutation {
   createRoom(data: CreateRoomInput!): ClientSideRoom!
   deleteRoom(data: DeleteRoomInput!): [ClientSideRoom!]!
@@ -46,10 +35,8 @@ type Mutation {
 
 type Query {
   currentUser: User!
-  detectFiletype(data: [LanguageDetectionInput!]!): [LanguageDetectionOutput!]!
   room(data: RoomInput!): ClientSideRoom!
   rooms: [ClientSideRoom!]!
-  roomsByVisits(data: RoomVisitsInput!): [ClientSideRoom!]!
   roomVisits(data: RoomVisitsInput!): [RoomVisit!]!
   user(data: UserInput!): User!
   users: [User!]!
@@ -67,6 +54,12 @@ type RoomVisit {
   visitTime: DateTime!
 }
 
+input RoomVisitsForUserInput {
+  first: Int!
+  perRoom: Boolean!
+  sort: String!
+}
+
 input RoomVisitsInput {
   dateRangeEnd: DateTime
   dateRangeStart: DateTime
@@ -81,6 +74,7 @@ type User {
   githubLogin: String!
   id: ID!
   ownedRooms: [ClientSideRoom!]!
+  roomVisits(data: RoomVisitsForUserInput!): [RoomVisit!]!
 }
 
 input UserInput {

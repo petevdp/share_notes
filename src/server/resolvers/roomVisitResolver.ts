@@ -22,7 +22,7 @@ export class RoomVisitResolver {
 
   @FieldResolver(() => ClientSideRoom)
   room(@Root() visit: RoomVisit) {
-    return this.clientSideRoomService.getClientSideRoom(visit.room);
+    return visit.room;
   }
 
   @FieldResolver(() => User)

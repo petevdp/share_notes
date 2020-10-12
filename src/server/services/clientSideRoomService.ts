@@ -18,13 +18,18 @@ export class ClientSideRoomService {
     @InjectRepository(Room) private readonly roomRepository: Repository<Room>,
   ) {}
 
+  getIdFromHashId(hashId: string) {
+    const [id] = (this.hashIdService.hashIds.decode(hashId) as unknown) as number[];
+    return id;
+  }
+
   async findRoom(input: RoomInput) {
     const { hashId: _, ...rest } = input;
     let roomPartial: Partial<Room> = rest;
     if (input.id) {
       roomPartial = { id: input.id };
     } else if (input.hashId) {
-      const [id] = (this.hashIdService.hashIds.decode(input.hashId) as unknown) as number[];
+      const id = this.getIdFromHashId(input.hashId);
       if (id) {
         roomPartial = {
           ...roomPartial,

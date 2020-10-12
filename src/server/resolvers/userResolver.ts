@@ -1,7 +1,10 @@
 import { AuthorizedContext } from 'Server/context';
-import { UserInput } from 'Server/inputs/userInputs';
+import { RoomVisitsInput } from 'Server/inputs/roomVisitInputs';
+import { RoomVisitsForUserInput, UserInput } from 'Server/inputs/userInputs';
 import { ClientSideRoom, Room } from 'Server/models/room';
+import { RoomVisit } from 'Server/models/roomVisit';
 import { User } from 'Server/models/user';
+import { ClientSideRoomService } from 'Server/services/clientSideRoomService';
 import { HashIdService } from 'Server/services/hashIdService';
 import { TedisService, USER_ID_BY_SESSION_KEY } from 'Server/services/tedisService';
 import { Arg, Authorized, Ctx, FieldResolver, Query, Resolver, Root } from 'type-graphql';
@@ -14,6 +17,8 @@ import { InjectRepository } from 'typeorm-typedi-extensions';
 export class UserResolver {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
+    @InjectRepository(Room) private readonly roomRepository: Repository<Room>,
+    private readonly clientSideRoomService: ClientSideRoomService,
     private readonly tedisService: TedisService,
     private readonly hashIdService: HashIdService,
   ) {}
@@ -39,11 +44,32 @@ export class UserResolver {
 
   @FieldResolver(() => [ClientSideRoom])
   async ownedRooms(@Root() user: User): Promise<ClientSideRoom[] | null> {
-    const rooms = await this.userRepository
-      .findOne({ id: user.id }, { relations: ['ownedRooms'] })
-      .then((u) => u?.ownedRooms);
+    return user.ownedRooms.then((rooms) => rooms.map((r) => this.getClientSideRoom(r)));
+  }
 
-    return rooms?.map((r) => this.getClientSideRoom(r)) || null;
+  @FieldResolver(() => [RoomVisit])
+  async roomVisits(@Root() user: User, @Arg('data') input: RoomVisitsForUserInput): Promise<RoomVisit[]> {
+    if (input.perRoom) {
+      const out = await this.roomRepository
+        .createQueryBuilder('room')
+        .innerJoinAndSelect('user.roomVisits', 'roomVisits')
+        .innerJoinAndSelect('room.visits', 'roomVisit')
+        .innerJoinAndSelect('roomVisit.user', 'user')
+        .innerJoin('room.owner', 'roomOwner')
+        .orderBy('roomVisits.visitTime', input.sort)
+        .limit(input.first)
+        .getMany();
+
+      return Promise.all(out.map((r) => r.visits.then((v) => v[0])));
+    }
+
+    if (!user.roomVisits) {
+      return this.userRepository
+        .findOneOrFail({ id: user.id }, { relations: ['roomVisits'] })
+        .then((user) => user.roomVisits);
+    }
+
+    return user.roomVisits;
   }
 
   private getClientSideRoom(room: Room) {

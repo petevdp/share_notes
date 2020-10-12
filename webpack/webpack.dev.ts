@@ -16,7 +16,6 @@ const config: Configuration = merge(commonConfig, {
   mode: 'development',
   devtool: 'inline-source-map',
   output: {
-    globalObject: 'self',
     path: CLIENT_BUILD_PATH_DEV,
   },
   plugins: [
@@ -43,12 +42,7 @@ const config: Configuration = merge(commonConfig, {
               projectReferences: true,
             },
           },
-        ].filter(Boolean),
-      },
-      // monaco uses some css and font modules we need to load
-      {
-        test: /\.css$/i,
-        use: ['style-loader', 'css-loader'],
+        ],
       },
       {
         test: /\.(png|jpe?g|gif|svg|eot|ttf|woff|woff2)$/i,

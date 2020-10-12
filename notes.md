@@ -109,3 +109,8 @@ if gist already created:
 ## questions
 
 - can I provide an interface for commit messages?
+
+## debt
+
+- there are some type mismatches for certain gql queries with overly generic response types
+- sometimes we get an error involving setting options on the editors when we create a room

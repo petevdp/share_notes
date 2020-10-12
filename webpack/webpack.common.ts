@@ -1,6 +1,7 @@
 import * as webpack from 'webpack';
 import { CLIENT_ROOT, SHARED_ROOT } from '../src/server/paths';
 import HtmlWebPackPlugin from 'html-webpack-plugin';
+import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin';
 import path from 'path';
 
 const config: webpack.Configuration = {
@@ -14,7 +15,20 @@ const config: webpack.Configuration = {
       Client: CLIENT_ROOT,
     },
   },
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader'],
+      },
+      {
+        test: /\.ttf$/,
+        use: ['file-loader'],
+      },
+    ],
+  },
   plugins: [
+    new MonacoWebpackPlugin(),
     new HtmlWebPackPlugin({
       title: 'Share Notes',
       template: path.join(CLIENT_ROOT, 'index.html'),

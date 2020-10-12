@@ -44,3 +44,11 @@ export const ROOM_DETAILS_FRAGMENT = gql`
     hashId
   }
 `;
+
+const ROOM_DETAILS_FRAGMENT_WITH_VISITS = gql`
+  fragment RoomDetailsWithVisits on ClientSideROom {
+    ...RoomDetails
+  }
+
+  ${ROOM_DETAILS_FRAGMENT}
+`;

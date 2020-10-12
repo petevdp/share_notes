@@ -5,8 +5,8 @@ import { FLUSH, PAUSE, PERSIST, persistReducer, persistStore, PURGE, REGISTER, R
 import storage from 'redux-persist/lib/storage';
 import { Subject } from 'rxjs/internal/Subject';
 
-import { fetchRecentRoomsEpic } from './recentRooms/epics';
-import { recentRoomsSlice } from './recentRooms/slice';
+import { fetchOwnedRoomsEpic } from './ownedRooms/epics';
+import { ownedRoomsSlice } from './ownedRooms/slice';
 import {
   addNewFileEpic,
   deleteRoomEpic,
@@ -60,7 +60,7 @@ const rootReducer = combineReducers({
   room: roomSlice.reducer,
   settings: persistReducer(persistSettingsConfig, settingsSlice.reducer),
   roomCreation: roomCreationSlice.reducer,
-  recentRooms: recentRoomsSlice.reducer,
+  ownedRooms: ownedRoomsSlice.reducer,
 });
 
 export type rootState = ReturnType<typeof rootReducer>;
@@ -96,7 +96,7 @@ const epics = [
   openRoomCreationEpic,
   getGistPreviewEpic,
   deleteRoomEpic,
-  fetchRecentRoomsEpic,
+  fetchOwnedRoomsEpic,
 ];
 
 epicMiddleware.run(combineEpics(...epics));

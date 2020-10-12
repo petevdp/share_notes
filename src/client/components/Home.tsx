@@ -5,62 +5,33 @@ import { Heading, HeadingLevel } from 'baseui/heading';
 import { Delete } from 'baseui/icon';
 import { StyledLink } from 'baseui/link';
 import { ListItem } from 'baseui/list';
-import { recentRoomsActions } from 'Client/recentRooms/types';
+import { ownedRoomsActions } from 'Client/ownedRooms/types';
+import { roomWithVisited } from 'Client/queries';
 import { deleteRoom } from 'Client/room/types';
 import { rootState } from 'Client/store';
+import { formatRoomVisitedTime } from 'Client/utils/utils';
+import { last } from 'lodash';
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
+import { clientSideRoom } from 'Shared/types/roomTypes';
+import { roomVisit } from 'Shared/types/roomVisitTypes';
 
 export function Home() {
   const [css] = useStyletron();
   const dispatch = useDispatch();
-  const ownedRooms = useSelector((s: rootState) => s.session.user?.ownedRooms);
-  const recentRooms = useSelector((s: rootState) => s.recentRooms);
+  const ownedRooms = useSelector((s: rootState) => s.ownedRooms?.allRooms);
+  // const recentRoomVisits = useSelector((s: rootState) => s.ownedRooms?.recentRoomVisits);
   const currentUserId = useSelector((s: rootState) => s.session.user?.id);
 
   useEffect(() => {
     if (!currentUserId) {
       return;
     }
-    dispatch(recentRoomsActions.fetchRecentRooms(currentUserId, 5));
+    dispatch(ownedRoomsActions.fetchOwnedRooms());
   }, [currentUserId]);
 
-  const recentRoomElements =
-    recentRooms &&
-    recentRooms.map((r) => (
-      <ListItem
-        endEnhancer={() => (
-          <Button onClick={() => dispatch(deleteRoom(r.id.toString()))} size="compact" kind="secondary" shape="round">
-            <Delete />
-          </Button>
-        )}
-        key={r.id}
-      >
-        <StyledLink $as={Link} to={`/rooms/${r.hashId}`}>
-          {r.name}
-        </StyledLink>
-      </ListItem>
-    ));
-
-  const roomElements =
-    ownedRooms &&
-    ownedRooms
-      .filter((room) => !recentRooms.map((r) => r.id).includes(room.id))
-      .map((r) => (
-        <ListItem
-          endEnhancer={() => (
-            <Button onClick={() => dispatch(deleteRoom(r.id.toString()))} size="compact" kind="secondary" shape="round">
-              <Delete />
-            </Button>
-          )}
-          key={r.id}
-        >
-          <StyledLink $as={Link} to={`/rooms/${r.hashId}`}>
-            {r.name}
-          </StyledLink>
-        </ListItem>
-      ));
+  const ownedRoomElements = ownedRooms && ownedRooms.map((r) => <RoomListElement key={r.id} room={r} />);
 
   return (
     <div
@@ -79,14 +50,30 @@ export function Home() {
             gridGap: '8px',
           })}
         >
-          <Card title="Recent">
-            <ul>{recentRoomElements}</ul>
-          </Card>
           <Card title="Your Rooms">
-            <ul>{roomElements}</ul>
+            <ul>{ownedRoomElements}</ul>
           </Card>
         </div>
       </HeadingLevel>
     </div>
+  );
+}
+
+function RoomListElement({ room }: { room: roomWithVisited }) {
+  const dispatch = useDispatch();
+  const lastVisit = room.visits[0];
+  return (
+    <ListItem
+      endEnhancer={() => (
+        <Button onClick={() => dispatch(deleteRoom(room.id.toString()))} size="compact" kind="secondary" shape="round">
+          <Delete />
+        </Button>
+      )}
+    >
+      <StyledLink $as={Link} to={`/rooms/${room.hashId}`}>
+        {room.name}
+      </StyledLink>
+      <span>last visted: {lastVisit && formatRoomVisitedTime(lastVisit.visitTime)} </span>
+    </ListItem>
   );
 }

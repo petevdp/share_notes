@@ -1,12 +1,14 @@
 import { request as octokitRequest } from '@octokit/request';
 import { IncomingMessage } from 'http';
 import path from 'path';
+import { Observable } from 'rxjs/internal/Observable';
 import { Room } from 'Server/models/room';
 import { RoomVisit } from 'Server/models/roomVisit';
 import { User } from 'Server/models/user';
+import { detectLanguageMode } from 'Server/utils/languageDetectionUtils';
 import { getYjsDocNameForRoom } from 'Shared/environment';
 import { gistDetails } from 'Shared/githubTypes';
-import { roomDetails, RoomManager, startingRoomDetails } from 'Shared/roomManager';
+import { allBaseFileDetailsStates, roomDetails, RoomManager, startingRoomDetails } from 'Shared/roomManager';
 import { Service } from 'typedi';
 import { Repository } from 'typeorm';
 import { InjectRepository } from 'typeorm-typedi-extensions';
@@ -37,7 +39,7 @@ export class YjsService {
     return doc;
   }
 
-  async setupWsConnection(conn: WebSocket, req: IncomingMessage, user?: User) {
+  async setupWsConnection(conn: WebSocket, req: IncomingMessage) {
     const url = req.url as string;
     const roomHashId = path.basename(url.slice(1).split('?')[0]);
     const docName = getYjsDocNameForRoom(roomHashId);
@@ -58,14 +60,22 @@ export class YjsService {
       }
       const [user, room]: [User, Room | undefined] = await Promise.all([
         this.userRepository.findOneOrFail({ id: parseInt(userId) }),
-        this.clientSideRoomService.findRoom({ hashId: roomHashId }),
+        this.roomRepository.findOne(this.clientSideRoomService.getIdFromHashId(roomHashId)),
       ]);
 
       if (!room) {
         throw "couldn't find room";
       }
 
-      this.roomVisitRepository.insert({ user, room, visitTime: new Date() });
+      console.log('inserting visit');
+      console.log(user);
+      console.log(room);
+
+      const visit = new RoomVisit();
+      visit.visitTime = new Date();
+      visit.user = Promise.resolve(user);
+      visit.room = Promise.resolve(room);
+      this.roomVisitRepository.save(visit);
     })();
 
     const doc = this.docs.get(docName);
@@ -104,9 +114,6 @@ export class YjsService {
 }
 
 export class ServerSideRoomManager extends RoomManager {
-  constructor(yDoc: Y.Doc) {
-    super(yDoc);
-  }
   populate(startingRoomDetails: startingRoomDetails, gistDetails: gistDetails) {
     const details: roomDetails = {
       ...startingRoomDetails,

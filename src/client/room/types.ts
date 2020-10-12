@@ -4,10 +4,9 @@ import { globalAwareness, userAwarenessDetails } from 'Client/services/clientSid
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';
 import { gistDetails } from 'Shared/githubTypes';
-import { allFileDetailsStates, roomDetails } from 'Shared/roomManager';
+import { allBaseFileDetailsStates, allUnifiedFileDetailsStates, roomDetails } from 'Shared/roomManager';
+import { clientSideRoom } from 'Shared/types/roomTypes';
 import * as Y from 'yjs';
-
-import { clientSideRoom } from '../../../dist/src/shared/types/roomTypes';
 
 export type gistDetailKeys = 'description' | 'name' | 'url';
 export const gistDetailKeys: gistDetailKeys[] = ['description', 'name', 'url'];
@@ -32,7 +31,7 @@ export type roomSliceState = {
     roomDetails?: clientSideRoom;
     roomSharedState: {
       gistLoaded: boolean;
-      fileDetailsStates?: allFileDetailsStates;
+      fileDetailsStates?: allBaseFileDetailsStates;
     };
     gistDetails?: gistDetails;
     currentTabId?: string;
@@ -76,9 +75,12 @@ export const setCurrentFile = createAction('setCurrentFile', (id: string | numbe
 export const renameFile = createAction('renameFile', (tabId: string | number, newFilename: string) => ({
   payload: { tabId, newFilename },
 }));
-export const setFileDetailsState = createAction('setFileDetailState', (allFileDetailsState: allFileDetailsStates) => ({
-  payload: allFileDetailsState,
-}));
+export const setFileDetailsState = createAction(
+  'setFileDetailState',
+  (allFileDetailsState: allBaseFileDetailsStates) => ({
+    payload: allFileDetailsState,
+  }),
+);
 export const removeFile = createAction('removeFile', (filename: string) => ({ payload: filename }));
 export const saveBackToGist = createAction('saveBackToGist');
 export const gistSaved = createAction('gistSaved', (updatedDetails: gistDetails) => ({ payload: updatedDetails }));

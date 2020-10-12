@@ -1,16 +1,31 @@
+import { Observable } from 'rxjs/internal/Observable';
+import { ConnectableObservable } from 'rxjs/internal/observable/ConnectableObservable';
+import { publish } from 'rxjs/internal/operators/publish';
 import { Subject } from 'rxjs/internal/Subject';
 import * as Y from 'yjs';
 
 import { getKeysForMap } from './ydocUtils';
 
-export interface fileDetailsState {
+export interface baseFileDetailsState {
   tabId: string;
   filename: string;
   deleted: boolean;
 }
 
-export interface allFileDetailsStates {
-  [id: string]: fileDetailsState;
+export type computedFileDetailsState = null;
+
+export type unifiedFileDetailsState = baseFileDetailsState & computedFileDetailsState;
+
+export interface allBaseFileDetailsStates {
+  [id: string]: baseFileDetailsState;
+}
+
+export interface allComputedFileDetailsStates {
+  [id: string]: computedFileDetailsState;
+}
+
+export interface allUnifiedFileDetailsStates {
+  [id: string]: unifiedFileDetailsState;
 }
 
 export interface roomDetails {
@@ -28,22 +43,23 @@ export interface startingRoomDetails {
   gistName: string;
 }
 
-export class RoomManager {
+export abstract class RoomManager {
   yData: {
     // storing file text and details separately as a performance optimization
     fileDetailsState: Y.Map<Y.Map<any>>;
+    // supplied by server, consumed by clients
+    computedFileDetails: Y.Map<Y.Map<any | undefined>>;
     fileContents: Y.Map<Y.Text>;
     // for now just contains an object with details, there's probably a better way to do this though
     details: Y.Map<any>;
   };
-
   roomDestroyed$$: Subject<boolean>;
-  providerSynced: Promise<true>;
 
   constructor(public ydoc = new Y.Doc()) {
     this.roomDestroyed$$ = new Subject<boolean>();
     this.yData = {
       fileDetailsState: ydoc.getMap(`fileDetails`),
+      computedFileDetails: ydoc.getMap(`computedFileDetails`),
       fileContents: ydoc.getMap(`fileContents`),
       details: ydoc.getMap(`details`),
     };
@@ -69,7 +85,7 @@ export class RoomManager {
     }
     this.yData.fileDetailsState.set(tabId, fileDetails);
     this.yData.fileContents.set(tabId, text);
-    return fileDetails.toJSON() as fileDetailsState;
+    return fileDetails.toJSON() as baseFileDetailsState;
   }
 
   removeFile(tabId: string) {
@@ -83,5 +99,7 @@ export class RoomManager {
 
   destroy() {
     this.ydoc.destroy();
+    this.roomDestroyed$$.next(true);
+    this.roomDestroyed$$.complete();
   }
 }

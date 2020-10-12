@@ -1,6 +1,10 @@
 import { gql } from 'graphql-request';
+import { identity } from 'lodash';
 import { languageDetectionOutput } from 'Shared/types/languageDetectionTypes';
 import { clientSideRoom, ROOM_DETAILS_FRAGMENT } from 'Shared/types/roomTypes';
+
+import { roomDetails } from '../../dist/src/shared/roomManager';
+import { roomVisit } from '../../dist/src/shared/types/roomVisitTypes';
 
 export const GET_ROOM = gql`
   query GetRoom($data: RoomInput!) {
@@ -23,6 +27,8 @@ export const USER_ROOMS = gql`
         id
         name
         hashId
+          }
+        }
       }
     }
   }
@@ -227,4 +233,46 @@ export interface getRecentRoomsForUserInput {
 
 export interface getRecentRoomsForUserResponse {
   roomsByVisits: clientSideRoom[];
+}
+
+export const GET_OWNED_ROOMS_FOR_CURRENT_USER = gql`
+  query getOwnedRoomsForUser {
+    currentUser {
+      ownedRooms {
+        id
+        name
+        gistName
+        hashId
+        owner {
+          id
+          githubLogin
+        }
+        visits(first: 1, fromCurrentUser: true) {
+          id
+          visitTime
+        }
+      }
+    }
+  }
+`;
+
+export interface roomWithVisited {
+  id: string;
+  name: string;
+  gistName: string;
+  hashId: string;
+  owner: {
+    id: string;
+    githubLogin: string;
+  };
+  visits: {
+    id: string;
+    visitTime: string;
+  }[];
+}
+
+export interface getOwnedRoomsForCurrentUserResponse {
+  currentUser: {
+    ownedRooms: roomWithVisited[];
+  };
 }

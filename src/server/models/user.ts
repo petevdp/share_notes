@@ -7,7 +7,7 @@ import { RoomVisit } from './roomVisit';
 
 @ObjectType()
 @Entity()
-export class User implements user {
+export class User {
   @Field(() => ID)
   @PrimaryGeneratedColumn()
   id: number;
@@ -21,10 +21,8 @@ export class User implements user {
   githubLogin: string;
 
   @OneToMany(() => Room, (room) => room.owner)
-  @JoinColumn()
-  ownedRooms: Room[];
+  ownedRooms: Promise<Room[]>;
 
-  @OneToMany(() => RoomVisit, (visit) => visit.room, { cascade: true })
-  @JoinColumn()
-  visitedRooms: RoomVisit[];
+  @OneToMany(() => RoomVisit, (visit) => visit.room)
+  roomVisits: RoomVisit[];
 }
