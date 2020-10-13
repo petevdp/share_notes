@@ -1,14 +1,12 @@
 import { request as octokitRequest } from '@octokit/request';
 import { IncomingMessage } from 'http';
 import path from 'path';
-import { Observable } from 'rxjs/internal/Observable';
 import { Room } from 'Server/models/room';
 import { RoomVisit } from 'Server/models/roomVisit';
 import { User } from 'Server/models/user';
-import { detectLanguageMode } from 'Server/utils/languageDetectionUtils';
 import { getYjsDocNameForRoom } from 'Shared/environment';
 import { gistDetails } from 'Shared/githubTypes';
-import { allBaseFileDetailsStates, roomDetails, RoomManager, startingRoomDetails } from 'Shared/roomManager';
+import { roomDetails, RoomManager, startingRoomDetails } from 'Shared/roomManager';
 import { Service } from 'typedi';
 import { Repository } from 'typeorm';
 import { InjectRepository } from 'typeorm-typedi-extensions';

@@ -3,37 +3,28 @@ body {
   width: 100vw;
   overflow-x: hidden;
 }
-.CodeMirror {
-  /* we need to explicitely set the hight here since codemirror relies on this value being static */
-  height: calc(100vh - (124px)) !important;
-}
 
-/* styling for the remote cursors */
-.remote-caret {
+#monaco-editor {
+  width: 100%;
+  height: 600px;
+  border: 1px solid #ccc;
+}
+.yRemoteSelection {
+  background-color: rgb(250, 129, 0, 0.5);
+}
+.yRemoteSelectionHead {
   position: absolute;
-  border-left: black;
-  border-left-style: solid;
-  border-left-width: 2px;
-  height: 1em;
+  border-left: orange solid 2px;
+  border-top: orange solid 2px;
+  border-bottom: orange solid 2px;
+  height: 100%;
+  box-sizing: border-box;
 }
-.remote-caret > div {
-  position: relative;
-  top: -1.05em;
-  font-size: 13px;
-  /* will be overridden based on a user's assigned color */
-  background-color: rgb(250, 129, 0);
-  font-family: serif;
-  font-style: normal;
-  font-weight: normal;
-  line-height: normal;
-  user-select: none;
-  color: white;
-  padding-left: 2px;
-  padding-right: 2px;
-  z-index: 3;
-}
-
-/* invert when cursor is on first line so we don't clip through the editor */
-.CodeMirror-line:first-child .remote-caret > div {
-  top: 1.05em;
+.yRemoteSelectionHead::after {
+  position: absolute;
+  content: ' ';
+  border: 3px solid orange;
+  border-radius: 4px;
+  left: -4px;
+  top: -5px;
 }

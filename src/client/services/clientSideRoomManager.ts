@@ -25,9 +25,10 @@ import { Subject } from 'rxjs/internal/Subject';
 import { getYjsDocNameForRoom, YJS_WEBSOCKET_URL_WS } from 'Shared/environment';
 import { allBaseFileDetailsStates, allComputedFileDetailsStates, roomDetails, RoomManager } from 'Shared/roomManager';
 import { getKeysForMap } from 'Shared/ydocUtils';
-import { MonacoBinding } from 'y-monaco';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
+
+import { MonacoBinding } from './monacoBinding';
 
 export interface userAwarenessDetailsInput {
   type: userType;
@@ -192,10 +193,7 @@ export class ClientSideRoomManager extends RoomManager {
         if (!content) {
           throw 'tried to provision nonexistant editor';
         }
-        const binding = new MonacoBinding(content, editor.getModel(), new Set([editor]), this.provider.awareness);
-        if (process.env.NODE_ENV === 'development' && DEBUG_FLAGS.stopRemoveCursorOnBlur) {
-          binding.cm.off('blur', binding._blurListeer);
-        }
+        const binding = new MonacoBinding(content, model, new Set([editor]), this.provider.awareness);
         this.bindings.set(tabId, binding);
       });
 

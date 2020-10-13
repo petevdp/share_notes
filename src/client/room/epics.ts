@@ -3,7 +3,6 @@ import 'codemirror/theme/night.css';
 
 import { request as octokitRequest } from '@octokit/request';
 import { DELETE_ROOM, deleteRoomResponse, GET_ROOM, getRoomResponse } from 'Client/queries';
-import { ClientSideRoomManager } from 'Client/services/clientSideRoomManager';
 import { unifiedUser, unifiedUserSelector } from 'Client/session/types';
 import { clientSettings, settingsActions, theme } from 'Client/settings/types';
 import { epicDependencies, rootState } from 'Client/store';
@@ -56,24 +55,26 @@ export const initRoomEpic: Epic = (
   action$.pipe(
     filter(initRoom.match),
     withLatestFrom(state$),
+    concatMap(async (args) => ({
+      ClientSideRoomManager: (await import('Client/services/clientSideRoomManager')).ClientSideRoomManager,
+      action: args[0],
+      state: args[1],
+    })),
     concatMap(
-      ([
-        {
+      ({
+        ClientSideRoomManager,
+        action: {
           payload: { roomHashId },
         },
-        rootState,
-        // {
-        //   session: { token: sessionToken, user: userDetails },
-        //   room: { isCurrentUserCreatingRoom },
-        //   settings: { theme: startingTheme },
-        // },
-      ]) => {
+        state: rootState,
+      }) => {
         const { settings: startingSettings } = rootState;
         const settings$: Observable<clientSettings> = state$.pipe(
           map((state) => state.settings),
           distinctUntilChanged(_isEqual),
           startWith(startingSettings),
         );
+        // const {} = await import('Client/services/clientSideRoomManager');
 
         const manager = new ClientSideRoomManager(roomHashId, settings$);
 
