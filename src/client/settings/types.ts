@@ -1,25 +1,23 @@
 import { createAction } from '@reduxjs/toolkit';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';
+import * as monaco from 'monaco-editor';
 
 export type theme = 'light' | 'dark';
 export type keyMap = 'sublime' | 'vim' | 'emacs';
+
 interface individualEditorSettings {
-  indentUnit: number;
-  smartIndent: boolean;
-  indentWithTabs: boolean;
-  tabSize: number;
+  tabSize: monaco.editor.IGlobalEditorOptions['tabSize'];
+  autoIndent: monaco.editor.IEditorOptions['autoIndent'];
+  detectIndentation: monaco.editor.IGlobalEditorOptions['detectIndentation'];
+  tabCompletion: boolean;
 }
 
 export type individualEditorSettingsPartial = Partial<individualEditorSettings>;
 
-export interface globalEditorSettings {
-  indentUnit: number;
-  smartIndent: boolean;
+export interface globalEditorSettings extends individualEditorSettings {
   keyMap: keyMap;
   lineWrapping: boolean;
-  indentWithTabs: boolean;
-  tabSize: number;
 }
 
 export type settingsResolvedForEditor = individualEditorSettingsPartial & globalEditorSettings;
@@ -40,8 +38,8 @@ export type globalEditorSetting = {
 };
 
 export type individualEditorSetting = {
-  key: keyof globalEditorSettings;
-  value: globalEditorSettings[keyof globalEditorSettings];
+  key: keyof individualEditorSetting;
+  value: individualEditorSettings[keyof individualEditorSettings];
 };
 
 export const settingsActions = {
@@ -66,8 +64,12 @@ export function getSettingsForEditor(
   roomHashId: string,
   tabId: string,
 ): settingsResolvedForEditor {
-  return {
-    ...settings.individualEditor[roomHashId][tabId],
-    ...settings.globalEditor,
-  };
+  if (settings.individualEditor[roomHashId][tabId]) {
+    return {
+      ...settings.individualEditor[roomHashId][tabId],
+      ...settings.globalEditor,
+    };
+  } else {
+    return { ...settings.globalEditor };
+  }
 }

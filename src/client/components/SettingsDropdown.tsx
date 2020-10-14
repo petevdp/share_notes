@@ -6,7 +6,7 @@ import { ListItem } from 'baseui/list';
 import { ItemT, Menu, StatefulMenu } from 'baseui/menu';
 import { StatefulPopover } from 'baseui/popover';
 import { Select, StatefulSelect } from 'baseui/select';
-import { globalEditorSettings, settingsActions, settingsSelector } from 'Client/settings/types';
+import { globalEditorSetting, globalEditorSettings, settingsActions, settingsSelector } from 'Client/settings/types';
 import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -17,7 +17,7 @@ interface globalSettingsItem<K extends keyof globalEditorSettings> extends ItemT
   type:
     | {
         typeName: 'select';
-        options: globalEditorSettings[K][];
+        options: { key: globalEditorSettings[K]; label?: string }[];
       }
     | {
         typeName: 'numericSelect';
@@ -39,20 +39,12 @@ export function GlobalSettingsDropdown() {
       key: 'keyMap',
       type: {
         typeName: 'select',
-        options: ['sublime', 'vim', 'emacs'],
+        options: [{ key: 'sublime' }, { key: 'vim' }, { key: 'emacs' }],
       },
     };
-    const indentWithTabs: globalSettingsItem<'indentWithTabs'> = {
-      label: 'Indent With Tabs',
-      key: 'indentWithTabs',
-      type: {
-        typeName: 'toggle',
-      },
-    };
-
-    const smartIndent: globalSettingsItem<'smartIndent'> = {
-      label: 'Smart Indent',
-      key: 'smartIndent',
+    const smartIndent: globalSettingsItem<'autoIndent'> = {
+      label: 'Auto Indent',
+      key: 'autoIndent',
       type: {
         typeName: 'toggle',
       },
@@ -66,16 +58,7 @@ export function GlobalSettingsDropdown() {
       },
     };
 
-    const indentUnit: globalSettingsItem<'indentUnit'> = {
-      label: 'Spaces Per Tab',
-      key: 'indentUnit',
-      type: {
-        typeName: 'numericSelect',
-        options: [2, 3, 4, 5],
-      },
-    };
-
-    const tabSize: globalSettingsItem<'tabSize'> = {
+    const indentUnit: globalSettingsItem<'tabSize'> = {
       label: 'Tab Size',
       key: 'tabSize',
       type: {
@@ -84,7 +67,16 @@ export function GlobalSettingsDropdown() {
       },
     };
 
-    return [keymap, lineWrapping, indentWithTabs, smartIndent, tabSize];
+    // const tabSize: globalSettingsItem<'tabSize'> = {
+    //   label: 'Tab Size',
+    //   key: 'tabSize',
+    //   type: {
+    //     typeName: 'numericSelect',
+    //     options: [2, 3, 4, 5],
+    //   },
+    // };
+
+    return [keymap, lineWrapping, smartIndent, indentUnit];
   })();
 
   return (
@@ -117,17 +109,24 @@ export function GlobalSettingsDropdown() {
                           itemContent = (
                             <>
                               <label className={css({ marginRight: '5px' })}>{item.label}</label>
-                              <ButtonGroup shape="pill" size="compact" selected={item.type.options.indexOf(itemState)}>
+                              <ButtonGroup
+                                shape="pill"
+                                size="compact"
+                                selected={item.type.options.map((option) => option.key).indexOf(itemState)}
+                              >
                                 {item.type.options.map((option) => (
                                   <Button
                                     onClick={() => {
                                       dispatch(
-                                        settingsActions.setGlobalEditorSetting({ key: item.key, value: option }),
+                                        settingsActions.setGlobalEditorSetting({
+                                          key: item.key,
+                                          value: option.key,
+                                        }),
                                       );
                                     }}
-                                    key={option as string}
+                                    key={option.key as string}
                                   >
-                                    {option}
+                                    {option.label || option.key}
                                   </Button>
                                 ))}
                               </ButtonGroup>
@@ -146,7 +145,12 @@ export function GlobalSettingsDropdown() {
                                 checked={itemState as boolean}
                                 onChange={() => {
                                   const checked = (event?.target as any).checked as boolean;
-                                  dispatch(settingsActions.setGlobalEditorSetting({ key: item.key, value: checked }));
+                                  dispatch(
+                                    settingsActions.setGlobalEditorSetting({
+                                      key: item.key,
+                                      value: checked,
+                                    } as globalEditorSetting),
+                                  );
                                 }}
                                 checkmarkType="toggle_round"
                               ></Checkbox>

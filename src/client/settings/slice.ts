@@ -2,20 +2,18 @@ import { createSlice } from '@reduxjs/toolkit';
 import { initRoom } from 'Client/room/types';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';
-import { stat } from 'fs';
-import { StateObservable } from 'redux-observable';
 
-import { clientSettings, individualEditorSettingsPartial, settingsActions } from './types';
+import { clientSettings, settingsActions } from './types';
 
 const initialState: clientSettings = {
   theme: 'light',
   globalEditor: {
     keyMap: 'vim',
-    indentUnit: 2,
-    smartIndent: true,
-    lineWrapping: false,
-    indentWithTabs: false,
+    detectIndentation: true,
     tabSize: 2,
+    autoIndent: 'advanced',
+    tabCompletion: true,
+    lineWrapping: false,
   },
   individualEditor: {},
 };

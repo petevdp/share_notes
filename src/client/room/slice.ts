@@ -8,7 +8,6 @@ import {
   leaveRoom,
   renameFile,
   roomCreated,
-  roomDeleted,
   roomInitialized,
   roomSliceState,
   setFileDetailsState,

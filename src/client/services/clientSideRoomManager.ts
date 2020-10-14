@@ -112,9 +112,9 @@ export class ClientSideRoomManager extends RoomManager {
 
     // listen for and apply settings changes to editors
     settings$.subscribe((settings) => {
-      for (let [roomHashId, binding] of this.bindings.entries()) {
-        // const settingsForEditor = getSettingsForEditor(settings, roomHashId, tabId);
-        // ClientSideRoomManager.setEditorSettings(settingsForEditor, binding.cm);
+      for (let [tabId, binding] of this.bindings.entries()) {
+        const settingsForEditor = getSettingsForEditor(settings, roomHashId, tabId);
+        ClientSideRoomManager.setEditorSettings(settingsForEditor, binding.getEditor());
         binding.getEditor().updateOptions({ theme: themeMap[settings.theme] });
       }
     });
@@ -185,9 +185,17 @@ export class ClientSideRoomManager extends RoomManager {
         const uri = monaco.Uri.file('-' + this.id + fileDetails[tabId].filename);
         console.log(monaco.editor.getModels());
         const model = monaco.editor.createModel('', undefined, uri);
-        const editor = monaco.editor.create(editorContainer, { value: '', model, theme: themeMap[settings.theme] });
+        const editor = monaco.editor.create(editorContainer, {
+          value: '',
+          model,
+          theme: themeMap[settings.theme],
+          automaticLayout: true,
+        });
+        const settingsForEditor = getSettingsForEditor(settings, roomHashId, tabId);
+        ClientSideRoomManager.setEditorSettings(settingsForEditor, editor);
         console.log('model: ', editor.getModel());
         const content = this.yData.fileContents.get(tabId);
+
         if (!content) {
           throw 'tried to provision nonexistant editor';
         }
@@ -314,25 +322,30 @@ export class ClientSideRoomManager extends RoomManager {
     }
   }
 
-  static setEditorSettings(settings: settingsResolvedForEditor, editor: CodeMirror.Editor) {
-    for (let [key, value] of Object.entries(settings)) {
-      switch (key) {
-        case 'keyMap':
-          const keyMap = value as string | undefined;
-          editor.setOption('keyMap', keyMap);
-          break;
-        default:
-          (editor.setOption as any)(key, value);
-          break;
+  static setEditorSettings(settings: settingsResolvedForEditor, editor: monaco.editor.IStandaloneCodeEditor) {
+    const updates: monaco.editor.IEditorOptions & monaco.editor.IGlobalEditorOptions = {};
+    for (let option of Object.entries(settings)) {
+      const key = option[0] as keyof settingsResolvedForEditor;
+      const value = option[1] as settingsResolvedForEditor[keyof settingsResolvedForEditor];
+      if (key === 'keyMap') {
+      } else if (key === 'lineWrapping') {
+        updates['wordWrap'] = value ? 'on' : 'off';
+      } else if (key === 'autoIndent') {
+        updates['autoIndent'] = value ? 'advanced' : 'none';
+      } else {
+        (updates as any)[key] = value;
       }
     }
+    console.log('updates: ', updates);
+    editor.updateOptions({ ...updates });
   }
 
-  static setAllEditorSettings(settings: clientSettings, roomHashId: string, editors: Map<string, CodeMirror.Editor>) {
-    for (let [tabId, editor] of editors.entries()) {
-      const settingsForTab = getSettingsForEditor(settings, roomHashId, tabId);
-      ClientSideRoomManager.setEditorSettings(settingsForTab, editor);
-    }
+  static setAllEditorSettings(
+    settings: clientSettings,
+    roomHashId: string,
+    editors: Map<string, monaco.editor.IStandaloneCodeEditor>,
+  ) {
+    ClientSideRoomManager.setAllEditorSettings(settings, roomHashId, editors);
   }
 
   yMapToObservable<V>(map: Y.Map<unknown>, roomDestroyed$$: Observable<boolean>) {
