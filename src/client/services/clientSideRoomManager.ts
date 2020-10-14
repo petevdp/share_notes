@@ -28,7 +28,8 @@ import { getKeysForMap } from 'Shared/ydocUtils';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 
-import { MonacoBinding } from './monacoBinding';
+import { allColors } from './awarenessColors';
+import { MonacoBinding, RemoteCursorStyleManager } from './monacoBinding';
 
 export interface userAwarenessDetailsInput {
   type: userType;
@@ -44,6 +45,10 @@ export interface userAwarenessDetails extends userAwarenessDetailsInput {
 
 export interface userAwareness {
   user?: userAwarenessDetails;
+  selection?: {
+    anchor: Y.RelativePosition;
+    head: Y.RelativePosition;
+  };
   currentTab?: string;
 }
 
@@ -70,16 +75,11 @@ export type sharedRoomDetails = {
   assignedColours: { [cliendId: string]: string };
 };
 
-const allColors = [
-  LightTheme.colors.accent,
-  LightTheme.colors.negative,
-  LightTheme.colors.warning,
-  LightTheme.colors.positive,
-];
-
 export class ClientSideRoomManager extends RoomManager {
+  static lastRoomManagerId = 0;
+  id: number;
   provider: WebsocketProvider;
-  bindings: Map<string, any>;
+  bindings: Map<string, MonacoBinding>;
   currentFile$$: BehaviorSubject<string | null>;
   availableColours$$: BehaviorSubject<string[] | null>;
   provisionedTab$$: Subject<{ tabId: string; editorContainer: HTMLElement }>;
@@ -88,9 +88,12 @@ export class ClientSideRoomManager extends RoomManager {
   fileDetails$: ConnectableObservable<allBaseFileDetailsStates>;
   computedFileDetails$: ConnectableObservable<allComputedFileDetailsStates>;
   awareness$: ConnectableObservable<globalAwareness>;
+  remoteCursorStyleManager: RemoteCursorStyleManager;
 
   constructor(roomHashId: string, private settings$: Observable<clientSettings>) {
     super();
+    this.id = ClientSideRoomManager.lastRoomManagerId + 1;
+    ClientSideRoomManager.lastRoomManagerId++;
     this.currentFile$$ = new BehaviorSubject(null);
     this.provisionedTab$$ = new Subject();
     this.bindings = new Map();
@@ -175,9 +178,11 @@ export class ClientSideRoomManager extends RoomManager {
       .subscribe(async ([{ tabId, editorContainer }, settings, fileDetails]) => {
         console.log('computed when provisioning ', tabId, ' ', fileDetails);
 
-        const model = monaco.editor.createModel('', undefined, monaco.Uri.file(fileDetails[tabId].filename));
-        const editor = monaco.editor.create(editorContainer, { value: '' });
-        editor.setModel(model);
+        const uri = monaco.Uri.file(fileDetails[tabId].filename + '-' + this.id);
+        console.log(monaco.editor.getModels());
+        const model = monaco.editor.createModel('', undefined, uri);
+        const editor = monaco.editor.create(editorContainer, { value: '', model });
+        console.log('model: ', editor.getModel());
         // const CodeMirror = await CodeMirrorModule;
         // const editor = CodeMirror.default(editorContainer, {
         //   mode: computedFileDetails[tabId].mode,
@@ -193,7 +198,14 @@ export class ClientSideRoomManager extends RoomManager {
         if (!content) {
           throw 'tried to provision nonexistant editor';
         }
-        const binding = new MonacoBinding(content, model, new Set([editor]), this.provider.awareness);
+        const binding = new MonacoBinding(
+          content,
+          model,
+          new Set([editor]),
+          this.remoteCursorStyleManager,
+          this.provider.awareness,
+          this.awareness$,
+        );
         this.bindings.set(tabId, binding);
       });
 
@@ -233,11 +245,18 @@ export class ClientSideRoomManager extends RoomManager {
           const takenColors = Object.values(awareness)
             .filter((u) => !!u?.user?.color)
             .map((u) => u?.user?.color as string);
-          return allColors.filter((c) => !takenColors.includes(c));
+
+          return allColors.filter((color) => !takenColors.includes(color));
         }),
         distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
       )
       .subscribe(this.availableColours$$);
+
+    this.remoteCursorStyleManager = new RemoteCursorStyleManager(
+      this.provider.awareness,
+      this.awareness$,
+      this.ydoc.clientID,
+    );
   }
 
   connect() {
@@ -260,7 +279,11 @@ export class ClientSideRoomManager extends RoomManager {
         first(),
       )
       .toPromise()) as string[];
-    const userAwareness: userAwarenessDetails = { clientID: this.ydoc.clientID, color: availableColors[0], ...user };
+    const userAwareness: userAwarenessDetails = {
+      clientID: this.ydoc.clientID,
+      color: availableColors[0],
+      ...user,
+    };
     this.provider.awareness.setLocalStateField('user', userAwareness);
   }
 
@@ -291,6 +314,7 @@ export class ClientSideRoomManager extends RoomManager {
     this.roomDestroyed$$.next(true);
     this.roomDestroyed$$.complete();
     this.availableColours$$.complete();
+    this.remoteCursorStyleManager.destroy();
 
     for (const binding of this.bindings.values()) {
       binding.destroy();

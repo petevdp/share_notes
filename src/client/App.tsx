@@ -3,14 +3,13 @@ import { SnackbarProvider } from 'baseui/snackbar';
 import { Theme } from 'baseui/theme';
 import React, { ReactElement } from 'react';
 import { useSelector } from 'react-redux';
-import { Client as Styletron } from 'styletron-engine-atomic';
-import { Provider as StyletronProvider } from 'styletron-react';
+import { DebugEngine, Provider as StyletronProvider } from 'styletron-react';
 
 import { Root } from './components/Root';
 import { settingsSelector } from './settings/types';
+import { styletronEngine } from './styletronEngine';
 
-const engine = new Styletron();
-
+const debug = process.env.NODE_ENV === 'production' ? void 0 : new DebugEngine();
 /**
  * Setup Baseui and styletron
  */
@@ -31,7 +30,7 @@ export function App(): ReactElement {
   }
 
   return (
-    <StyletronProvider value={engine}>
+    <StyletronProvider value={styletronEngine} debug={debug}>
       <BaseProvider theme={theme}>
         <SnackbarProvider>
           <Root />

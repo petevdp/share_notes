@@ -1,8 +1,21 @@
+import { styletronEngine } from 'Client/styletronEngine';
 import * as error from 'lib0/error.js';
 import { createMutex } from 'lib0/mutex.js';
 import * as monaco from 'monaco-editor';
+import { Observable } from 'rxjs/internal/Observable';
+import { fromArray } from 'rxjs/internal/observable/fromArray';
+import { merge } from 'rxjs/internal/observable/merge';
+import { concatMap } from 'rxjs/internal/operators/concatMap';
+import { distinctUntilChanged } from 'rxjs/internal/operators/distinctUntilChanged';
+import { startWith } from 'rxjs/internal/operators/startWith';
+import { Subscription } from 'rxjs/internal/Subscription';
+import { CSSFn } from 'styletron-react';
 import { Awareness } from 'y-protocols/awareness.js'; // eslint-disable-line
 import * as Y from 'yjs';
+import { AbsolutePosition } from 'yjs/dist/src/internals';
+
+import { lighterColors } from './awarenessColors';
+import { globalAwareness, userAwareness } from './clientSideRoomManager';
 
 class RelativeSelection {
   /**
@@ -81,6 +94,7 @@ export class MonacoBinding {
   private _ytextObserver: (event: any) => void;
   private _monacoChangeHandler: monaco.IDisposable;
   awareness: Awareness;
+  awarenessCursorStyles: RemoteCursorStyleManager;
   /**
    * @param {Y.Text} ytext
    * @param {monaco.editor.ITextModel} monacoModel
@@ -90,8 +104,10 @@ export class MonacoBinding {
   constructor(
     private ytext: Y.Text,
     private monacoModel: monaco.editor.ITextModel,
-    private editors: Set<monaco.editor.IStandaloneCodeEditor> = new Set(),
-    awareness: Awareness | null = null,
+    public editors: Set<monaco.editor.IStandaloneCodeEditor> = new Set(),
+    awarenessCursorStyles: RemoteCursorStyleManager,
+    awareness: Awareness,
+    awareness$: Observable<globalAwareness>,
   ) {
     if (!ytext.doc) {
       throw 'no doc set on ytext';
@@ -117,38 +133,52 @@ export class MonacoBinding {
     };
     this.doc.on('beforeAllTransactions', this._beforeTransaction);
     this._decorations = new Map();
+    // this.awarenessCursorStyles = new AwarenessCursorStyleManager(awareness, awareness$, this.doc.clientID);
     this._rerenderDecorations = () => {
       editors.forEach((editor) => {
         if (awareness && editor.getModel() === monacoModel) {
           // render decorations
           const currentDecorations = this._decorations.get(editor) || [];
           const newDecorations: monaco.editor.IModelDeltaDecoration[] = [];
-          awareness.getStates().forEach((state, clientID) => {
+          // const decoration: monaco.editor.IModelDecoration = {options: {}}
+          awareness.getStates().forEach((state: userAwareness, clientID: number) => {
             if (
               clientID !== this.doc.clientID &&
               state.selection != null &&
               state.selection.anchor != null &&
-              state.selection.head != null
+              state.selection.head != null &&
+              state.user
             ) {
               const anchorAbs = Y.createAbsolutePositionFromRelativePosition(state.selection.anchor, this.doc);
               const headAbs = Y.createAbsolutePositionFromRelativePosition(state.selection.head, this.doc);
-              if (anchorAbs !== null && headAbs !== null && anchorAbs.type === ytext && headAbs.type === ytext) {
+              const classNames = awarenessCursorStyles.includedClientStyles.get(clientID);
+              console.log('classnames: ', classNames);
+              console.log('user: ', state.user);
+
+              if (
+                anchorAbs !== null &&
+                headAbs !== null &&
+                anchorAbs.type === ytext &&
+                headAbs.type === ytext &&
+                classNames
+              ) {
                 let start, end, afterContentClassName, beforeContentClassName;
                 if (anchorAbs.index < headAbs.index) {
                   start = monacoModel.getPositionAt(anchorAbs.index);
                   end = monacoModel.getPositionAt(headAbs.index);
-                  afterContentClassName = 'yRemoteSelectionHead';
+                  afterContentClassName = classNames.selectionHead;
                   beforeContentClassName = null;
                 } else {
                   start = monacoModel.getPositionAt(headAbs.index);
                   end = monacoModel.getPositionAt(anchorAbs.index);
                   afterContentClassName = null;
-                  beforeContentClassName = 'yRemoteSelectionHead';
+                  beforeContentClassName = classNames.selectionHead;
                 }
+
                 newDecorations.push({
                   range: new monaco.Range(start.lineNumber, start.column, end.lineNumber, end.column),
                   options: {
-                    className: 'yRemoteSelection',
+                    className: classNames.selectionBody,
                     afterContentClassName,
                     beforeContentClassName,
                   },
@@ -239,11 +269,101 @@ export class MonacoBinding {
   }
 
   destroy() {
+    console.log('disposing binding');
     this._monacoChangeHandler.dispose();
     this.ytext.unobserve(this._ytextObserver);
     this.doc.off('beforeAllTransactions', this._beforeTransaction);
+    this.editors.forEach((editor) => {
+      editor.getModel()?.dispose();
+      editor.dispose();
+    });
     if (this.awareness !== null) {
       this.awareness.off('change', this._rerenderDecorations);
     }
+  }
+}
+
+/**
+ * This exists to style remote cursors/selection with styletroon, as well as manage a dynamic stylesheet for some css properties for the editor that we can't style directly with styletron.
+ */
+export class RemoteCursorStyleManager {
+  element: HTMLStyleElement;
+  stylesheet: CSSStyleSheet;
+  includedClientStyles: Map<number, { selectionHead: string; selectionBody: string }>;
+  awarenessSubscription: Subscription;
+  constructor(awareness: Awareness, awareness$: Observable<globalAwareness>, clientID: number) {
+    this.element = document.createElement('style');
+    this.element.id = 'extra-selection-styles';
+    this.includedClientStyles = new Map();
+    document.head.appendChild(this.element);
+    this.stylesheet = this.element.sheet as CSSStyleSheet;
+    const globalAwareness: globalAwareness = {};
+    for (let [i, v] of awareness.getStates().entries()) {
+      globalAwareness[i.toString()] = {
+        currentTab: v.currentTab,
+        user: v.user,
+      };
+    }
+    this.awarenessSubscription = awareness$
+      .pipe(
+        startWith(globalAwareness),
+        concatMap((globalAwareness) => {
+          const newEntries = Object.entries(globalAwareness)
+            .map(([clientID, userAwareness]): [number, userAwareness] => [parseInt(clientID), userAwareness])
+            .filter(([clientID, userAwareness]) => !this.includedClientStyles.has(clientID) && userAwareness.user);
+          console.log('entries: ', newEntries);
+
+          return fromArray(newEntries);
+        }),
+      )
+      .subscribe((args) => {
+        this.setAwarenessStyle(...args);
+      });
+  }
+  setAwarenessStyle(clientID: number, userAwareness: userAwareness) {
+    console.log('setting awareness style: ', clientID);
+
+    if (this.includedClientStyles.has(clientID) || !userAwareness.user) {
+      return;
+    }
+    const selectionHeadClass = styletronEngine.renderStyle({
+      position: 'absolute',
+      borderLeft: `${userAwareness.user.color} solid 2px`,
+      borderTop: `${userAwareness.user.color} solid 2px`,
+      borderBottom: `${userAwareness.user.color} solid 2px`,
+      height: '100%',
+      boxSizing: 'border-box',
+    });
+    const selectionBodyClass = styletronEngine.renderStyle({
+      backgroundColor: lighterColors[userAwareness.user.color],
+    });
+    const selectionHeadClassForClientID = `selection-head-${clientID}`;
+    const selectionBodyClassForClientID = `selection-body-${clientID}`;
+
+    const style = `
+      .${selectionHeadClassForClientID}:after {
+        position: absolute;
+        height: min-content;
+        width: min-content;
+        background-color: ${userAwareness.user.color};
+        padding: 1px;
+        top: -22px;
+        content: '${userAwareness.user.name}';
+        color: white;
+        font-weight: bold;
+      }
+      `;
+    this.stylesheet.insertRule(style);
+    this.includedClientStyles.set(clientID, {
+      selectionHead: [selectionHeadClass, selectionHeadClassForClientID].join(' '),
+      selectionBody: [selectionBodyClass, selectionBodyClassForClientID].join(' '),
+    });
+
+    return selectionHeadClass;
+  }
+
+  destroy() {
+    this.element.remove();
+    this.awarenessSubscription.unsubscribe();
   }
 }
