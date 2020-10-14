@@ -152,9 +152,6 @@ export class MonacoBinding {
               const anchorAbs = Y.createAbsolutePositionFromRelativePosition(state.selection.anchor, this.doc);
               const headAbs = Y.createAbsolutePositionFromRelativePosition(state.selection.head, this.doc);
               const classNames = awarenessCursorStyles.includedClientStyles.get(clientID);
-              console.log('classnames: ', classNames);
-              console.log('user: ', state.user);
-
               if (
                 anchorAbs !== null &&
                 headAbs !== null &&
@@ -268,8 +265,11 @@ export class MonacoBinding {
     }
   }
 
+  getEditor() {
+    return [...this.editors.values()][0];
+  }
+
   destroy() {
-    console.log('disposing binding');
     this._monacoChangeHandler.dispose();
     this.ytext.unobserve(this._ytextObserver);
     this.doc.off('beforeAllTransactions', this._beforeTransaction);
@@ -311,7 +311,6 @@ export class RemoteCursorStyleManager {
           const newEntries = Object.entries(globalAwareness)
             .map(([clientID, userAwareness]): [number, userAwareness] => [parseInt(clientID), userAwareness])
             .filter(([clientID, userAwareness]) => !this.includedClientStyles.has(clientID) && userAwareness.user);
-          console.log('entries: ', newEntries);
 
           return fromArray(newEntries);
         }),
@@ -321,8 +320,6 @@ export class RemoteCursorStyleManager {
       });
   }
   setAwarenessStyle(clientID: number, userAwareness: userAwareness) {
-    console.log('setting awareness style: ', clientID);
-
     if (this.includedClientStyles.has(clientID) || !userAwareness.user) {
       return;
     }

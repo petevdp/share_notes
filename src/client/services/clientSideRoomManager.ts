@@ -105,13 +105,17 @@ export class ClientSideRoomManager extends RoomManager {
       material-darker
       theme: 'ambiance',
     */
+    const themeMap = {
+      light: 'vs',
+      dark: 'vs-dark',
+    };
 
     // listen for and apply settings changes to editors
-    settings$.subscribe(() => {
-      for (let [] of this.bindings.entries()) {
+    settings$.subscribe((settings) => {
+      for (let [roomHashId, binding] of this.bindings.entries()) {
         // const settingsForEditor = getSettingsForEditor(settings, roomHashId, tabId);
         // ClientSideRoomManager.setEditorSettings(settingsForEditor, binding.cm);
-        // binding.cm.setOption('theme', themeMap[settings.theme]);
+        binding.getEditor().updateOptions({ theme: themeMap[settings.theme] });
       }
     });
 
@@ -178,22 +182,11 @@ export class ClientSideRoomManager extends RoomManager {
       .subscribe(async ([{ tabId, editorContainer }, settings, fileDetails]) => {
         console.log('computed when provisioning ', tabId, ' ', fileDetails);
 
-        const uri = monaco.Uri.file(fileDetails[tabId].filename + '-' + this.id);
+        const uri = monaco.Uri.file('-' + this.id + fileDetails[tabId].filename);
         console.log(monaco.editor.getModels());
         const model = monaco.editor.createModel('', undefined, uri);
-        const editor = monaco.editor.create(editorContainer, { value: '', model });
+        const editor = monaco.editor.create(editorContainer, { value: '', model, theme: themeMap[settings.theme] });
         console.log('model: ', editor.getModel());
-        // const CodeMirror = await CodeMirrorModule;
-        // const editor = CodeMirror.default(editorContainer, {
-        //   mode: computedFileDetails[tabId].mode,
-        //   viewportMargin: Infinity,
-        //   indentWithTabs: false,
-        //   lineWrapping: true,
-        //   theme: themeMap[settings.theme],
-        // });
-
-        // ClientSideRoomManager.setEditorSettings(settingsForEditor, editor);
-
         const content = this.yData.fileContents.get(tabId);
         if (!content) {
           throw 'tried to provision nonexistant editor';
