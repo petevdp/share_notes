@@ -3,6 +3,7 @@ import { Button } from 'baseui/button';
 import { Delete } from 'baseui/icon';
 import { StatefulMenu } from 'baseui/menu';
 import { Popover } from 'baseui/popover';
+import { Skeleton } from 'baseui/skeleton';
 import { fileRenamingActions, removeFile, switchCurrentFile } from 'Client/room/types';
 import { rootState } from 'Client/store';
 import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
@@ -30,17 +31,17 @@ export function TabList() {
       return newOpen;
     });
 
+  const navStyles = css({
+    display: 'flex',
+    overflowX: 'auto',
+  });
+
   if (!currentRoom || !currentRoom.roomSharedState.fileDetailsStates) {
-    return <span>{'..loading'}</span>;
+    return null;
   }
 
   return (
-    <nav
-      className={css({
-        display: 'flex',
-        overflowX: 'auto',
-      })}
-    >
+    <nav className={navStyles}>
       {Object.values(currentRoom.roomSharedState.fileDetailsStates).map((tabState) => {
         const contextMenuItems = [{ label: 'rename file', key: 'renameFile' }];
         const onContextMenuSelect = ({ item: { key } }: { item: { label: string; key: string } }) => {

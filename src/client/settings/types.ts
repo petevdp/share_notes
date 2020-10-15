@@ -11,6 +11,7 @@ interface individualEditorSettings {
   autoIndent: monaco.editor.IEditorOptions['autoIndent'];
   detectIndentation: monaco.editor.IGlobalEditorOptions['detectIndentation'];
   tabCompletion: boolean;
+  minimap: boolean;
 }
 
 export type individualEditorSettingsPartial = Partial<individualEditorSettings>;

@@ -108,6 +108,7 @@ export function GlobalHeader() {
         overrides={{
           Root: {
             style: {
+              backgroundColor: theme.colors.backgroundPrimary,
               paddingTop: '0px',
               paddingBottom: '0px',
               paddingLeft: '8px',

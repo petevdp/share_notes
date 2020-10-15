@@ -332,6 +332,8 @@ export class ClientSideRoomManager extends RoomManager {
         updates['wordWrap'] = value ? 'on' : 'off';
       } else if (key === 'autoIndent') {
         updates['autoIndent'] = value ? 'advanced' : 'none';
+      } else if (key === 'minimap') {
+        updates['minimap'] = { enabled: value as boolean };
       } else {
         (updates as any)[key] = value;
       }

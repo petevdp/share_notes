@@ -8,6 +8,7 @@ import { clientSettings, settingsActions } from './types';
 const initialState: clientSettings = {
   theme: 'light',
   globalEditor: {
+    minimap: true,
     keyMap: 'vim',
     detectIndentation: true,
     tabSize: 2,

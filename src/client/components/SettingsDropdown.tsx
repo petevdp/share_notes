@@ -58,12 +58,20 @@ export function GlobalSettingsDropdown() {
       },
     };
 
-    const indentUnit: globalSettingsItem<'tabSize'> = {
+    const tabSize: globalSettingsItem<'tabSize'> = {
       label: 'Tab Size',
       key: 'tabSize',
       type: {
         typeName: 'numericSelect',
         options: [2, 3, 4, 5],
+      },
+    };
+
+    const minimap: globalSettingsItem<'minimap'> = {
+      label: 'Minimap',
+      key: 'minimap',
+      type: {
+        typeName: 'toggle',
       },
     };
 
@@ -76,7 +84,7 @@ export function GlobalSettingsDropdown() {
     //   },
     // };
 
-    return [keymap, lineWrapping, smartIndent, indentUnit];
+    return [tabSize, keymap, lineWrapping, smartIndent, minimap];
   })();
 
   return (
@@ -219,7 +227,9 @@ export function GlobalSettingsDropdown() {
         />
       )}
     >
-      <Button>Settings</Button>
+      <Button kind="minimal" shape="round" size="compact">
+        <span className="material-icons">settings</span>
+      </Button>
     </StatefulPopover>
   );
 }
