@@ -48,7 +48,7 @@ export class RoomResolver {
     @Arg('first', { nullable: true }) first: number,
     @Ctx() context: AuthorizedContext,
   ): Promise<RoomVisit[]> {
-    if (!first && !userId && !fromCurrentUser && !first) {
+    if (!first && !userId && !fromCurrentUser) {
       return room.visits;
     } else {
       let query = this.roomVisitRepository.createQueryBuilder('roomVisit');
@@ -59,7 +59,7 @@ export class RoomResolver {
         console.log('current: ', currentUserId);
         query = query.innerJoin('roomVisit.user', 'user').where('user.id = :userId', { userId: currentUserId });
       }
-      const visits = await query.limit().getMany();
+      const visits = await query.orderBy('roomVisit.visitTime', 'DESC').limit(first).getMany();
       console.log('visits: ', visits);
       return visits;
     }
