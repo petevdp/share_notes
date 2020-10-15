@@ -4,7 +4,7 @@ import 'codemirror/theme/night.css';
 import { request as octokitRequest } from '@octokit/request';
 import { DELETE_ROOM, deleteRoomResponse, GET_ROOM, getRoomResponse } from 'Client/queries';
 import { unifiedUser, unifiedUserSelector } from 'Client/session/types';
-import { clientSettings, settingsActions, theme } from 'Client/settings/types';
+import { clientSettings } from 'Client/settings/types';
 import { epicDependencies, rootState } from 'Client/store';
 import { octokitRequestWithAuth as getOctokitRequestWIthAuth } from 'Client/utils/utils';
 import { request as gqlRequest } from 'graphql-request';
@@ -18,10 +18,9 @@ import { of } from 'rxjs/internal/observable/of';
 import { concatMap } from 'rxjs/internal/operators/concatMap';
 import { distinctUntilChanged } from 'rxjs/internal/operators/distinctUntilChanged';
 import { filter } from 'rxjs/internal/operators/filter';
-import { first } from 'rxjs/internal/operators/first';
-import { ignoreElements } from 'rxjs/internal/operators/ignoreElements';
 import { map } from 'rxjs/internal/operators/map';
 import { startWith } from 'rxjs/internal/operators/startWith';
+import { takeUntil } from 'rxjs/internal/operators/takeUntil';
 import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { GRAPHQL_URL } from 'Shared/environment';
 import { gistDetails } from 'Shared/githubTypes';
@@ -30,9 +29,9 @@ import { deleteRoomInput } from '../../shared/types/roomTypes';
 import {
   addNewFile,
   deleteRoom,
-  destroyRoom,
   gistSaved,
   initRoom,
+  leaveRoom,
   provisionTab,
   removeFile,
   renameFile,
@@ -98,10 +97,114 @@ export const initRoomEpic: Epic = (
             map(unifiedUserSelector),
             filter((s) => !!s),
             distinctUntilChanged(_isEqual),
+            takeUntil(manager.roomDestroyed$$),
           )
           .subscribe((userDetails) => {
             manager.setAwarenessUserDetails(userDetails as unifiedUser);
           });
+
+        action$
+          .pipe(filter(provisionTab.match), takeUntil(manager.roomDestroyed$$))
+          .subscribe(({ payload: { tabId, containerElement, vimStatusBarRef } }) => {
+            manager.provisionTab(tabId, containerElement, vimStatusBarRef);
+          });
+
+        action$
+          .pipe(filter(unprovisionTab.match), takeUntil(manager.roomDestroyed$$))
+          .subscribe(({ payload: { tabId } }) => manager.unprovisionTab(tabId));
+
+        action$
+          .pipe(filter(renameFile.match), takeUntil(manager.roomDestroyed$$))
+          .subscribe(({ payload: { tabId, newFilename } }) => {
+            const detailsMap = manager.yData.fileDetailsState.get(tabId.toString());
+            if (!detailsMap) {
+              throw 'bad key';
+            }
+            detailsMap.set('filename', newFilename);
+          });
+
+        const leaveRoom$ = action$.pipe(
+          filter(renameFile.match),
+          takeUntil(manager.roomDestroyed$$),
+          map(() => {
+            manager.destroy();
+            return leaveRoom();
+          }),
+        );
+
+        // update awareness for current tab
+        state$
+          .pipe(
+            map((s) => s.room.currentRoom?.currentTabId),
+            distinctUntilChanged(),
+            takeUntil(manager.roomDestroyed$$),
+          )
+          .subscribe((tabId) => {
+            manager.provider.awareness.setLocalStateField('currentTab', tabId);
+          });
+
+        action$
+          .pipe(filter(removeFile.match), takeUntil(manager.roomDestroyed$$))
+          .subscribe(({ payload: tabId }) => manager.removeFile(tabId));
+
+        const switchCurrentFileAfterAdded$ = action$.pipe(
+          filter(addNewFile.match),
+          takeUntil(manager.roomDestroyed$$),
+          map(() => {
+            const fileState = manager.addNewFile();
+            return switchCurrentFile(fileState.tabId);
+          }),
+        );
+
+        const gistSaved$ = action$.pipe(
+          filter(saveBackToGist.match),
+          withLatestFrom(state$),
+          takeUntil(manager.roomDestroyed$$),
+          concatMap(async ([, rootState]) => {
+            const gist = rootState.room?.currentRoom?.gistDetails;
+            const sessionData = rootState.session;
+            const { token } = sessionData;
+            if (!gist) {
+              throw 'no data from github retreived';
+            }
+            if (!token) {
+              throw 'no token set';
+            }
+
+            const originalFileData = rootState.room.currentRoom?.gistDetails?.files;
+            const allFileDetails = rootState.room.currentRoom?.roomSharedState.fileDetailsStates;
+            const allFileContents = manager.getAllFileContents();
+            if (!allFileDetails || !allFileContents || !originalFileData) {
+              throw 'no file details or contents';
+            }
+            const filesForGithub: any = {};
+            for (let key in allFileDetails) {
+              const details = allFileDetails[key];
+              const content = allFileContents[key];
+              filesForGithub[details.filename] = {
+                filename: details.filename,
+                content,
+              };
+            }
+
+            // explicitely set nulls to delete removed files from the gist
+            Object.keys(originalFileData)
+              .filter((k) => !Object.keys(filesForGithub).includes(k))
+              .forEach((k) => {
+                filesForGithub[k] = null;
+              });
+
+            const updatedDetails: gistDetails = await octokitRequest('PATCH /gists/{id}', {
+              id: gist.id,
+              files: filesForGithub,
+              headers: {
+                Authorization: `bearer ${sessionData.token}`,
+              },
+            }).then((res) => res.data);
+
+            return gistSaved(updatedDetails);
+          }),
+        );
 
         roomManager$$.next(manager);
         manager.connect();
@@ -112,165 +215,13 @@ export const initRoomEpic: Epic = (
             gistDataPromise.then(setRoomGistDetails),
             fileDetailsStateUpdateAction$,
             roomAwarenessUpdate$,
+            switchCurrentFileAfterAdded$,
+            // reached end of merge's type signature, have to nest merges now
+            merge(leaveRoom$, gistSaved$),
           ),
         );
       },
     ),
-  );
-
-export const addNewFileEpic: Epic = (action$, state$, { roomManager$$ }: epicDependencies) =>
-  action$.pipe(
-    filter(addNewFile.match),
-    withLatestFrom(roomManager$$),
-    map(([, roomManager]) => {
-      const fileState = roomManager.addNewFile();
-      return switchCurrentFile(fileState.tabId);
-    }),
-  );
-
-export const provisionTabEpic: Epic = (action$, state$, { roomManager$$ }: epicDependencies) =>
-  action$.pipe(
-    filter(provisionTab.match),
-    withLatestFrom(roomManager$$),
-    map(
-      ([
-        {
-          payload: { tabId, containerElement, vimStatusBarRef },
-        },
-        roomManager,
-      ]) => {
-        roomManager.provisionTab(tabId, containerElement, vimStatusBarRef);
-      },
-    ),
-    ignoreElements(),
-  );
-
-export const unprovisionTabEpic: Epic = (action$, state$, { roomManager$$ }: epicDependencies) =>
-  action$.pipe(
-    filter(unprovisionTab.match),
-    withLatestFrom(roomManager$$),
-    map(
-      ([
-        {
-          payload: { tabId },
-        },
-        roomManager,
-      ]) => {
-        roomManager.unprovisionTab(tabId);
-      },
-    ),
-    ignoreElements(),
-  );
-
-export const renameFileEpic: Epic = (action$, state$, { roomManager$$ }: epicDependencies) =>
-  action$.pipe(
-    filter(renameFile.match),
-    withLatestFrom(roomManager$$),
-    map(
-      ([
-        {
-          payload: { tabId, newFilename },
-        },
-        roomManager,
-      ]) => {
-        const detailsMap = roomManager.yData.fileDetailsState.get(tabId.toString());
-        if (!detailsMap) {
-          throw 'bad key';
-        }
-
-        detailsMap.set('filename', newFilename);
-      },
-    ),
-    ignoreElements(),
-  );
-
-export const removeFileEpic: Epic = (action$, state$, { roomManager$$ }: epicDependencies) =>
-  action$.pipe(
-    filter(removeFile.match),
-    withLatestFrom(roomManager$$),
-    map(([{ payload: tabId }, roomManager]) => {
-      roomManager.removeFile(tabId);
-    }),
-    ignoreElements(),
-  );
-
-export const saveBackToGistEpic: Epic = (
-  action$,
-  state$: StateObservable<rootState>,
-  { roomManager$$ }: epicDependencies,
-) =>
-  action$.pipe(
-    filter(saveBackToGist.match),
-    withLatestFrom(state$, roomManager$$),
-    concatMap(async ([, rootState, roomManager]) => {
-      const gist = rootState.room?.currentRoom?.gistDetails;
-      const sessionData = rootState.session;
-      const { token } = sessionData;
-      if (!gist) {
-        throw 'no data from github retreived';
-      }
-      if (!token) {
-        throw 'no token set';
-      }
-
-      const originalFileData = rootState.room.currentRoom?.gistDetails?.files;
-      const allFileDetails = rootState.room.currentRoom?.roomSharedState.fileDetailsStates;
-      const allFileContents = roomManager.yData.fileContents.toJSON() as { [tabId: string]: string };
-      if (!allFileDetails || !allFileContents || !originalFileData) {
-        return 'no file details and/or contents';
-      }
-      const filesForGithub: any = {};
-      for (let key in allFileDetails) {
-        const details = allFileDetails[key];
-        const content = allFileContents[key];
-        filesForGithub[details.filename] = {
-          filename: details.filename,
-          content,
-        };
-      }
-
-      // explicitely set nulls to delete removed files from the gist
-      Object.keys(originalFileData)
-        .filter((k) => !Object.keys(filesForGithub).includes(k))
-        .forEach((k) => {
-          filesForGithub[k] = null;
-        });
-
-      const updatedDetails: gistDetails = await octokitRequest('PATCH /gists/{id}', {
-        id: gist.id,
-        files: filesForGithub,
-        headers: {
-          Authorization: `bearer ${sessionData.token}`,
-        },
-      }).then((res) => res.data);
-
-      return gistSaved(updatedDetails);
-    }),
-  );
-
-export const destroyRoomEpic: Epic = (action$, state$, { roomManager$$ }: epicDependencies) =>
-  action$.pipe(
-    filter(destroyRoom.match),
-    withLatestFrom(roomManager$$),
-    map(([, roomManager]) => {
-      roomManager.destroy();
-    }),
-    ignoreElements(),
-  );
-
-export const updateCurrentFileAwarenessEpic: Epic = (
-  action$,
-  state$: StateObservable<rootState>,
-  { roomManager$$ }: epicDependencies,
-) =>
-  state$.pipe(
-    map((s) => s.room.currentRoom?.currentTabId),
-    distinctUntilChanged(),
-    withLatestFrom(roomManager$$),
-    map(([tabId, roomManager]) => {
-      roomManager.provider.awareness.setLocalStateField('currentTab', tabId);
-    }),
-    ignoreElements(),
   );
 
 export const deleteRoomEpic: Epic = (action$) =>

@@ -7,18 +7,7 @@ import { Subject } from 'rxjs/internal/Subject';
 
 import { fetchOwnedRoomsEpic } from './ownedRooms/epics';
 import { ownedRoomsSlice } from './ownedRooms/slice';
-import {
-  addNewFileEpic,
-  deleteRoomEpic,
-  destroyRoomEpic,
-  initRoomEpic,
-  provisionTabEpic,
-  removeFileEpic,
-  renameFileEpic,
-  saveBackToGistEpic,
-  unprovisionTabEpic,
-  updateCurrentFileAwarenessEpic,
-} from './room/epics';
+import { deleteRoomEpic, initRoomEpic } from './room/epics';
 import { roomSlice } from './room/slice';
 import { initRoom, provisionTab } from './room/types';
 import {
@@ -84,15 +73,7 @@ const epics = [
   logOutEpic,
   createRoomEpic,
   initRoomEpic,
-  provisionTabEpic,
-  unprovisionTabEpic,
-  addNewFileEpic,
-  renameFileEpic,
-  removeFileEpic,
-  saveBackToGistEpic,
-  destroyRoomEpic,
   loginAnonymouslyEpic,
-  updateCurrentFileAwarenessEpic,
   openRoomCreationEpic,
   getGistPreviewEpic,
   deleteRoomEpic,

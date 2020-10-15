@@ -1,7 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 import {
-  destroyRoom,
   fileRenamingActions,
   gistSaved,
   initRoom,
@@ -22,29 +21,7 @@ export const roomSlice = createSlice({
   initialState: { isCurrentUserCreatingRoom: false } as roomSliceState,
   reducers: {},
   extraReducers: (builder) => {
-    builder.addCase(leaveRoom, (s) => {
-      if (!s.currentRoom) {
-        return {};
-      }
-      return {
-        ...s,
-        currentRoom: {
-          ...s.currentRoom,
-        },
-      };
-    });
-
-    builder.addCase(destroyRoom, (s) => {
-      if (!s.currentRoom) {
-        return {};
-      }
-      return {
-        ...s,
-        currentRoom: {
-          ...s.currentRoom,
-        },
-      };
-    });
+    builder.addCase(leaveRoom, (s) => ({}));
 
     builder.addCase(setRoomGistDetails, (s, { payload: details }) => {
       if (!s?.currentRoom) {

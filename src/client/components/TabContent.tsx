@@ -31,7 +31,6 @@ function EditorTab({ tabId, visible }: { tabId: string; visible: boolean }) {
       dispatch(provisionTab(tabId, editorContainerRef.current, vimStatusBarRef.current));
     }
     return () => {
-      console.log('unprovisioning');
       dispatch(unprovisionTab(tabId));
     };
   }, [tabId, editorContainerRef, fileDetailsPresent]);

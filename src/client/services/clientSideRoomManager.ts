@@ -13,6 +13,7 @@ import { filter } from 'rxjs/internal/operators/filter';
 import { first } from 'rxjs/internal/operators/first';
 import { map } from 'rxjs/internal/operators/map';
 import { publish } from 'rxjs/internal/operators/publish';
+import { takeUntil } from 'rxjs/internal/operators/takeUntil';
 import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { Subject } from 'rxjs/internal/Subject';
 import { getYjsDocNameForRoom, YJS_WEBSOCKET_URL_WS } from 'Shared/environment';
@@ -152,7 +153,7 @@ export class ClientSideRoomManager extends RoomManager {
     };
 
     // listen for and apply settings changes to editors
-    settings$.subscribe((settings) => {
+    settings$.pipe(takeUntil(this.roomDestroyed$$)).subscribe((settings) => {
       for (let [tabId, binding] of this.bindings.entries()) {
         const settingsForEditor = getSettingsForEditor(settings, roomHashId, tabId);
         this.setEditorSettings(tabId, settingsForEditor, binding.getEditor());
@@ -167,6 +168,7 @@ export class ClientSideRoomManager extends RoomManager {
       const listener = () => {
         resolve(true);
         roomDestroyedSubscription.unsubscribe();
+        this.provider.off('sync', listener);
       };
       this.provider.on('sync', listener);
     });
@@ -341,13 +343,6 @@ export class ClientSideRoomManager extends RoomManager {
     if (ids.length === 1) {
       throw 'handle no files left case better';
     }
-    const binding = this.bindings.get(tabId);
-    console.log('binding: ', binding);
-    if (binding) {
-      binding.monacoModel.dispose();
-      binding.destroy();
-    }
-    this.bindings.delete(tabId);
     this.yData.fileDetailsState.delete(tabId);
     this.yData.fileContents.delete(tabId);
   }
@@ -396,6 +391,10 @@ export class ClientSideRoomManager extends RoomManager {
       }
     }
     editor.updateOptions({ ...updates });
+  }
+
+  getAllFileContents() {
+    return this.yData.fileContents.toJSON() as { [tabId: string]: string };
   }
 
   static setAllEditorSettings(
