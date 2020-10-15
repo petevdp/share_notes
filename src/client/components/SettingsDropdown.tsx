@@ -83,6 +83,14 @@ export function GlobalSettingsDropdown() {
       },
     };
 
+    const lineNumbers: globalSettingsItem<'lineNumbers'> = {
+      label: 'Line Numbers',
+      key: 'lineNumbers',
+      type: {
+        typeName: 'select',
+        options: [{ key: 'on' }, { key: 'off' }, { key: 'relative' }],
+      },
+    };
     // const tabSize: globalSettingsItem<'tabSize'> = {
     //   label: 'Tab Size',
     //   key: 'tabSize',
@@ -92,7 +100,7 @@ export function GlobalSettingsDropdown() {
     //   },
     // };
 
-    return [tabSize, keymap, lineWrapping, smartIndent, minimap, intellisense];
+    return [tabSize, keymap, lineWrapping, smartIndent, minimap, intellisense, lineNumbers];
   })();
 
   return (

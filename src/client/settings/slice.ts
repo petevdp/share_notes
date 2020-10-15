@@ -10,6 +10,7 @@ const initialState: clientSettings = {
   globalEditor: {
     minimap: true,
     intellisense: true,
+    lineNumbers: 'on',
     keyMap: 'regular',
     detectIndentation: true,
     tabSize: 2,

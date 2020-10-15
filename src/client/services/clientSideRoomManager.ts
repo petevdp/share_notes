@@ -77,6 +77,43 @@ interface vimBindingState {
   statusElement: HTMLElement;
 }
 
+// export class AwarenessManager {
+//   constructor() {
+//     this.awareness$ = new Observable<globalAwarenessMap>((s) => {
+//       this.providerSynced.then(() => {
+//         const state = this.provider.awareness.getStates() as globalAwarenessMap;
+//         s.next(state);
+//       });
+
+//       const awarenessListener = () => {
+//         const state = this.provider.awareness.getStates() as globalAwarenessMap;
+//         s.next(state);
+//       };
+
+//       // change doesn't catch all changes to local state fields it seems
+//       this.provider.awareness.on('update', awarenessListener);
+
+//       this.roomDestroyed$$.subscribe(() => {
+//         this.provider.awareness.off('update', awarenessListener);
+//         s.complete();
+//       });
+//     }).pipe(
+//       map((globalAwarenessMap) => {
+//         const globalAwareness: globalAwareness = {};
+//         for (let [i, v] of globalAwarenessMap.entries()) {
+//           globalAwareness[i.toString()] = {
+//             currentTab: v.currentTab,
+//             user: v.user,
+//           };
+//         }
+//         return globalAwareness;
+//       }),
+//       distinctUntilChanged(__isEqual),
+//       publish(),
+//     ) as ConnectableObservable<globalAwareness>;
+//   }
+// }
+
 export class ClientSideRoomManager extends RoomManager {
   static lastRoomManagerId = 0;
   id: number;
@@ -133,38 +170,40 @@ export class ClientSideRoomManager extends RoomManager {
       this.provider.on('sync', listener);
     });
 
-    this.awareness$ = new Observable<globalAwarenessMap>((s) => {
-      this.providerSynced.then(() => {
-        const state = this.provider.awareness.getStates() as globalAwarenessMap;
-        s.next(state);
-      });
+    this.awareness$ = (() => {
+      return new Observable<globalAwarenessMap>((s) => {
+        this.providerSynced.then(() => {
+          const state = this.provider.awareness.getStates() as globalAwarenessMap;
+          s.next(state);
+        });
 
-      const awarenessListener = () => {
-        const state = this.provider.awareness.getStates() as globalAwarenessMap;
-        s.next(state);
-      };
+        const awarenessListener = () => {
+          const state = this.provider.awareness.getStates() as globalAwarenessMap;
+          s.next(state);
+        };
 
-      // change doesn't catch all changes to local state fields it seems
-      this.provider.awareness.on('update', awarenessListener);
+        // change doesn't catch all changes to local state fields it seems
+        this.provider.awareness.on('update', awarenessListener);
 
-      this.roomDestroyed$$.subscribe(() => {
-        this.provider.awareness.off('update', awarenessListener);
-        s.complete();
-      });
-    }).pipe(
-      map((globalAwarenessMap) => {
-        const globalAwareness: globalAwareness = {};
-        for (let [i, v] of globalAwarenessMap.entries()) {
-          globalAwareness[i.toString()] = {
-            currentTab: v.currentTab,
-            user: v.user,
-          };
-        }
-        return globalAwareness;
-      }),
-      distinctUntilChanged(__isEqual),
-      publish(),
-    ) as ConnectableObservable<globalAwareness>;
+        this.roomDestroyed$$.subscribe(() => {
+          this.provider.awareness.off('update', awarenessListener);
+          s.complete();
+        });
+      }).pipe(
+        map((globalAwarenessMap) => {
+          const globalAwareness: globalAwareness = {};
+          for (let [i, v] of globalAwarenessMap.entries()) {
+            globalAwareness[i.toString()] = {
+              currentTab: v.currentTab,
+              user: v.user,
+            };
+          }
+          return globalAwareness;
+        }),
+        distinctUntilChanged(__isEqual),
+        publish(),
+      ) as ConnectableObservable<globalAwareness>;
+    })();
 
     this.roomDetails$ = this.yMapToObservable(this.yData.details, this.roomDestroyed$$).pipe(
       publish(),

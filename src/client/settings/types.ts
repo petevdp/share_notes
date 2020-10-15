@@ -12,7 +12,6 @@ interface individualEditorSettings {
   autoIndent: monaco.editor.IEditorOptions['autoIndent'];
   detectIndentation: monaco.editor.IGlobalEditorOptions['detectIndentation'];
   tabCompletion: boolean;
-  minimap: boolean;
 }
 
 export type individualEditorSettingsPartial = Partial<individualEditorSettings>;
@@ -20,6 +19,8 @@ export type individualEditorSettingsPartial = Partial<individualEditorSettings>;
 export interface globalEditorSettings extends individualEditorSettings {
   keyMap: keyMap;
   lineWrapping: boolean;
+  minimap: boolean;
+  lineNumbers: monaco.editor.IEditorOptions['lineNumbers'];
 }
 
 export type settingsResolvedForEditor = individualEditorSettingsPartial & globalEditorSettings;
