@@ -75,6 +75,14 @@ export function GlobalSettingsDropdown() {
       },
     };
 
+    const intellisense: globalSettingsItem<'intellisense'> = {
+      label: 'Auto Suggestions',
+      key: 'intellisense',
+      type: {
+        typeName: 'toggle',
+      },
+    };
+
     // const tabSize: globalSettingsItem<'tabSize'> = {
     //   label: 'Tab Size',
     //   key: 'tabSize',
@@ -84,7 +92,7 @@ export function GlobalSettingsDropdown() {
     //   },
     // };
 
-    return [tabSize, keymap, lineWrapping, smartIndent, minimap];
+    return [tabSize, keymap, lineWrapping, smartIndent, minimap, intellisense];
   })();
 
   return (

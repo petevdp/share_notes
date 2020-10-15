@@ -9,6 +9,7 @@ const initialState: clientSettings = {
   theme: 'light',
   globalEditor: {
     minimap: true,
+    intellisense: true,
     keyMap: 'vim',
     detectIndentation: true,
     tabSize: 2,

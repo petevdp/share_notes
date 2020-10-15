@@ -8,6 +8,7 @@ export type keyMap = 'sublime' | 'vim' | 'emacs';
 
 interface individualEditorSettings {
   tabSize: monaco.editor.IGlobalEditorOptions['tabSize'];
+  intellisense: boolean;
   autoIndent: monaco.editor.IEditorOptions['autoIndent'];
   detectIndentation: monaco.editor.IGlobalEditorOptions['detectIndentation'];
   tabCompletion: boolean;
