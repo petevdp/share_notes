@@ -333,6 +333,8 @@ export class ClientSideRoomManager extends RoomManager {
   }
 
   unprovisionTab(tabId: string) {
+    console.log('unprovisioning ', tabId);
+
     const binding = this.bindings.get(tabId);
     binding?.destroy();
     this.bindings.delete(tabId);
@@ -348,6 +350,7 @@ export class ClientSideRoomManager extends RoomManager {
   }
 
   destroy() {
+    console.log('destroying roomManager');
     super.destroy();
     this.provider.destroy();
     this.currentFile$$.complete();

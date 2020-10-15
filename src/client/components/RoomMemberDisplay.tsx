@@ -113,7 +113,6 @@ export function RoomMemberDisplay() {
         }}
       >
         {usersAwareness.map((u) => {
-          console.log('u: ', u);
           return (
             <Avatar
               size={theme.sizing.scale800}

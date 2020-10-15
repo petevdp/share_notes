@@ -117,14 +117,13 @@ export const initRoomEpic: Epic = (
           .pipe(filter(renameFile.match), takeUntil(manager.roomDestroyed$$))
           .subscribe(({ payload: { tabId, newFilename } }) => {
             const detailsMap = manager.yData.fileDetailsState.get(tabId.toString());
-            if (!detailsMap) {
-              throw 'bad key';
+            if (detailsMap) {
+              detailsMap.set('filename', newFilename);
             }
-            detailsMap.set('filename', newFilename);
           });
 
         const leaveRoom$ = action$.pipe(
-          filter(renameFile.match),
+          filter(leaveRoom.match),
           takeUntil(manager.roomDestroyed$$),
           map(() => {
             manager.destroy();
