@@ -90,6 +90,7 @@ export const gistSaved = createAction('gistSaved', (updatedDetails: gistDetails)
 
 export const fileRenamingActions = {
   startRenameCurrentFile: createAction('startRenameCurrentFile'),
+  startFileRename: createAction('startFileRename', (tabId: string) => ({ payload: tabId })),
   close: createAction('closeRenameFileModal'),
   setNewFileName: createAction('setNewFileName', (filename: string) => ({ payload: filename })),
 };

@@ -214,6 +214,23 @@ export const roomSlice = createSlice({
       };
     });
 
+    builder.addCase(fileRenamingActions.startFileRename, (state, { payload: tabId }) => {
+      if (!state.currentRoom) {
+        throw 'current room not set';
+      }
+      const {
+        roomSharedState: { fileDetailsStates },
+      } = state.currentRoom;
+      if (!fileDetailsStates) {
+        throw 'current tab or file details not initialized';
+      }
+      state.currentRoom.currentRename = {
+        tabIdToRename: tabId,
+        newFilename: fileDetailsStates[tabId].filename,
+        userChangedNewFilename: false,
+      };
+    });
+
     builder.addCase(fileRenamingActions.setNewFileName, (state, { payload: newFilename }) => {
       if (!state.currentRoom) {
         throw 'current room not set';

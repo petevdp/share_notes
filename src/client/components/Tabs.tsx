@@ -47,7 +47,7 @@ export function TabList() {
         const onContextMenuSelect = ({ item: { key } }: { item: { label: string; key: string } }) => {
           switch (key) {
             case 'renameFile':
-              dispatch(fileRenamingActions.startRenameCurrentFile());
+              dispatch(fileRenamingActions.startFileRename(tabState.tabId));
               break;
           }
           closeTabContextMenu(tabState.tabId);
