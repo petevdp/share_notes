@@ -10,7 +10,7 @@ const initialState: clientSettings = {
   globalEditor: {
     minimap: true,
     intellisense: true,
-    keyMap: 'vim',
+    keyMap: 'regular',
     detectIndentation: true,
     tabSize: 2,
     autoIndent: 'advanced',

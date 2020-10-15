@@ -350,7 +350,14 @@ export class RemoteCursorStyleManager {
         font-weight: bold;
       }
       `;
+    // put the tag on the bottom on the first line
+    const firstChildStyle = `
+      .view-line[style*='top:0px'] .${selectionHeadClassForClientID}:after {
+        top: 22px;
+      }
+    `;
     this.stylesheet.insertRule(style);
+    this.stylesheet.insertRule(firstChildStyle);
     this.includedClientStyles.set(clientID, {
       selectionHead: [selectionHeadClass, selectionHeadClassForClientID].join(' '),
       selectionBody: [selectionBodyClass, selectionBodyClassForClientID].join(' '),

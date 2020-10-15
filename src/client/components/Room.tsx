@@ -74,8 +74,11 @@ export function Room() {
         className={css({
           display: 'flex',
           justifyContent: 'space-between',
-          paddingLeft: '2em',
-          paddingRight: '2em',
+          alignContent: 'center',
+          paddingLeft: '1em',
+          paddingRight: '1em',
+          paddingTop: '.25em',
+          paddingBottom: '.25em',
         })}
       >
         <span
@@ -99,7 +102,12 @@ export function Room() {
             content={() => <StatefulMenu onItemSelect={onActionItemSelect} items={actionItems}></StatefulMenu>}
             overrides={RoomPopoverZIndexOverride}
           >
-            <Button kind="secondary" shape="pill" endEnhancer={() => <ChevronDown />}>
+            <Button
+              overrides={{ Root: { style: { marginRight: '4px' } } }}
+              kind="secondary"
+              shape="pill"
+              endEnhancer={() => <ChevronDown />}
+            >
               Actions
             </Button>
           </StatefulPopover>

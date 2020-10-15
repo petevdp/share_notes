@@ -1,7 +1,7 @@
-import { BaseProvider, DarkTheme, LightTheme } from 'baseui';
+import { BaseProvider, createTheme, DarkTheme, LightTheme, lightThemePrimitives } from 'baseui';
 import { SnackbarProvider } from 'baseui/snackbar';
-import { Theme } from 'baseui/theme';
-import React, { ReactElement } from 'react';
+import { Sizing, Theme } from 'baseui/theme';
+import React, { ReactElement, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { DebugEngine, Provider as StyletronProvider } from 'styletron-react';
 
@@ -16,10 +16,18 @@ const debug = process.env.NODE_ENV === 'production' ? void 0 : new DebugEngine()
 export function App(): ReactElement {
   const settings = useSelector(settingsSelector);
 
+  const lightTheme = useMemo(() => {
+    const sizing: Sizing = {
+      ...LightTheme.sizing,
+      scale2400: '1px',
+    };
+    return createTheme({}, { sizing });
+  }, []);
+
   let theme: Theme;
   switch (settings.theme) {
     case 'light':
-      theme = LightTheme;
+      theme = lightTheme;
       break;
     case 'dark':
       theme = DarkTheme;

@@ -20,28 +20,32 @@ export function TabContent() {
 
 function EditorTab({ tabId, visible }: { tabId: string; visible: boolean }) {
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
+  const vimStatusBarRef = useRef<HTMLDivElement | null>(null);
   const [css] = useStyletron();
   const dispatch = useDispatch();
   const fileDetailsPresent = useSelector(
     (state: rootState) => !!state.room.currentRoom?.roomSharedState.fileDetailsStates,
   );
   useEffect(() => {
-    if (editorContainerRef.current) {
-      dispatch(provisionTab(tabId, editorContainerRef.current));
+    if (editorContainerRef.current && vimStatusBarRef.current) {
+      dispatch(provisionTab(tabId, editorContainerRef.current, vimStatusBarRef.current));
     }
     return () => {
       unprovisionTab(tabId);
     };
   }, [tabId, editorContainerRef, fileDetailsPresent]);
   return (
-    <div
-      ref={editorContainerRef}
-      className={css({
-        margin: '2px',
-        height: 'calc(100vh - (150px)) !important',
-        width: '100%',
-        display: visible ? 'block' : 'none',
-      })}
-    />
+    <div className={css({ display: visible ? 'block' : 'none' })}>
+      <div
+        ref={editorContainerRef}
+        className={css({
+          margin: '2px',
+          height: 'calc(100vh - (160px)) !important',
+          width: '100%',
+          display: visible ? 'block' : 'none',
+        })}
+      />
+      <div ref={vimStatusBarRef}></div>
+    </div>
   );
 }

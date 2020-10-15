@@ -39,7 +39,7 @@ export function GlobalSettingsDropdown() {
       key: 'keyMap',
       type: {
         typeName: 'select',
-        options: [{ key: 'sublime' }, { key: 'vim' }, { key: 'emacs' }],
+        options: [{ key: 'regular' }, { key: 'vim' }],
       },
     };
     const smartIndent: globalSettingsItem<'autoIndent'> = {

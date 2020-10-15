@@ -50,9 +50,12 @@ export const switchToRoom = createAction('switchToRoom', (hashId: string) => ({
   payload: hashId,
 }));
 
-export const provisionTab = createAction('provisionTab', (tabId: string, containerElement: HTMLElement) => ({
-  payload: { tabId, containerElement },
-}));
+export const provisionTab = createAction(
+  'provisionTab',
+  (tabId: string, containerElement: HTMLElement, vimStatusBarRef: HTMLElement) => ({
+    payload: { tabId, containerElement, vimStatusBarRef },
+  }),
+);
 export const unprovisionTab = createAction('unprovisionTab', (tabId: string) => ({
   payload: { tabId },
 }));

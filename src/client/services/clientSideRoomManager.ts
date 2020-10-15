@@ -1,17 +1,10 @@
-import 'codemirror/theme/3024-day.css';
-import 'codemirror/theme/3024-night.css';
-import 'codemirror/mode/css/css.js';
-import './allThemeImports';
-import 'codemirror/keymap/vim.js';
-import 'codemirror/keymap/emacs.js';
-import 'codemirror/keymap/sublime.js';
-
-import { LightTheme } from 'baseui';
 import { DEBUG_FLAGS } from 'Client/debugFlags';
 import { userType } from 'Client/session/types';
 import { clientSettings, getSettingsForEditor, settingsResolvedForEditor } from 'Client/settings/types';
+import { stat } from 'fs';
 import __isEqual from 'lodash/isEqual';
 import * as monaco from 'monaco-editor';
+import { initVimMode } from 'monaco-vim';
 import { BehaviorSubject } from 'rxjs/internal/BehaviorSubject';
 import { Observable } from 'rxjs/internal/Observable';
 import { ConnectableObservable } from 'rxjs/internal/observable/ConnectableObservable';
@@ -75,14 +68,24 @@ export type sharedRoomDetails = {
   assignedColours: { [cliendId: string]: string };
 };
 
+interface vimMode {
+  dispose(): boolean;
+}
+
+interface vimBindingState {
+  vimMode?: vimMode;
+  statusElement: HTMLElement;
+}
+
 export class ClientSideRoomManager extends RoomManager {
   static lastRoomManagerId = 0;
   id: number;
   provider: WebsocketProvider;
   bindings: Map<string, MonacoBinding>;
+  vimBindings: Map<string, vimBindingState>;
   currentFile$$: BehaviorSubject<string | null>;
   availableColours$$: BehaviorSubject<string[] | null>;
-  provisionedTab$$: Subject<{ tabId: string; editorContainer: HTMLElement }>;
+  tabsToProvision$$: Subject<{ tabId: string; editorContainer: HTMLElement; vimStatusBarContainer: HTMLElement }>;
   providerSynced: Promise<true>;
   roomDetails$: ConnectableObservable<roomDetails>;
   fileDetails$: ConnectableObservable<allBaseFileDetailsStates>;
@@ -95,9 +98,9 @@ export class ClientSideRoomManager extends RoomManager {
     this.id = ClientSideRoomManager.lastRoomManagerId + 1;
     ClientSideRoomManager.lastRoomManagerId++;
     this.currentFile$$ = new BehaviorSubject(null);
-    this.provisionedTab$$ = new Subject();
+    this.tabsToProvision$$ = new Subject();
     this.bindings = new Map();
-
+    this.vimBindings = new Map();
     this.provider = new WebsocketProvider(YJS_WEBSOCKET_URL_WS, getYjsDocNameForRoom(roomHashId), this.ydoc);
 
     /*
@@ -114,7 +117,7 @@ export class ClientSideRoomManager extends RoomManager {
     settings$.subscribe((settings) => {
       for (let [tabId, binding] of this.bindings.entries()) {
         const settingsForEditor = getSettingsForEditor(settings, roomHashId, tabId);
-        ClientSideRoomManager.setEditorSettings(settingsForEditor, binding.getEditor());
+        this.setEditorSettings(tabId, settingsForEditor, binding.getEditor());
         binding.getEditor().updateOptions({ theme: themeMap[settings.theme] });
       }
     });
@@ -177,10 +180,11 @@ export class ClientSideRoomManager extends RoomManager {
     ).pipe(publish()) as ConnectableObservable<allComputedFileDetailsStates>;
 
     // initialize provisioned tabs
-    this.provisionedTab$$
+    this.tabsToProvision$$
       .pipe(withLatestFrom(this.settings$, this.fileDetails$))
-      .subscribe(async ([{ tabId, editorContainer }, settings, fileDetails]) => {
-        console.log('computed when provisioning ', tabId, ' ', fileDetails);
+      .subscribe(async ([{ tabId, editorContainer, vimStatusBarContainer }, settings, fileDetails]) => {
+        console.log('computed when provisioning ', tabId, ' ', { ...fileDetails[tabId] });
+        this.vimBindings.set(tabId, { statusElement: vimStatusBarContainer });
 
         const uri = monaco.Uri.file('-' + this.id + fileDetails[tabId].filename);
         console.log(monaco.editor.getModels());
@@ -192,7 +196,7 @@ export class ClientSideRoomManager extends RoomManager {
           automaticLayout: true,
         });
         const settingsForEditor = getSettingsForEditor(settings, roomHashId, tabId);
-        ClientSideRoomManager.setEditorSettings(settingsForEditor, editor);
+        this.setEditorSettings(tabId, settingsForEditor, editor);
         console.log('model: ', editor.getModel());
         const content = this.yData.fileContents.get(tabId);
 
@@ -268,9 +272,9 @@ export class ClientSideRoomManager extends RoomManager {
     this.provider.connect();
   }
 
-  async provisionTab(tabId: string, editorContainer: HTMLElement) {
+  async provisionTab(tabId: string, editorContainer: HTMLElement, vimStatusBarContainer: HTMLElement) {
     await this.providerSynced;
-    this.provisionedTab$$.next({ tabId, editorContainer });
+    this.tabsToProvision$$.next({ tabId, editorContainer, vimStatusBarContainer });
   }
 
   async setAwarenessUserDetails(user: userAwarenessDetailsInput) {
@@ -322,12 +326,20 @@ export class ClientSideRoomManager extends RoomManager {
     }
   }
 
-  static setEditorSettings(settings: settingsResolvedForEditor, editor: monaco.editor.IStandaloneCodeEditor) {
+  setEditorSettings(tabId: string, settings: settingsResolvedForEditor, editor: monaco.editor.IStandaloneCodeEditor) {
     const updates: monaco.editor.IEditorOptions & monaco.editor.IGlobalEditorOptions = {};
+    const vimBindingState = this.vimBindings.get(tabId) as vimBindingState;
     for (let option of Object.entries(settings)) {
       const key = option[0] as keyof settingsResolvedForEditor;
       const value = option[1] as settingsResolvedForEditor[keyof settingsResolvedForEditor];
       if (key === 'keyMap') {
+        if (value === 'vim' && !vimBindingState.vimMode) {
+          const vimMode = initVimMode(editor, vimBindingState.statusElement);
+          this.vimBindings.set(tabId, { ...vimBindingState, vimMode });
+        } else if (value === 'regular' && vimBindingState.vimMode) {
+          vimBindingState.vimMode.dispose();
+          delete vimBindingState.vimMode;
+        }
       } else if (key === 'lineWrapping') {
         updates['wordWrap'] = value ? 'on' : 'off';
       } else if (key === 'autoIndent') {

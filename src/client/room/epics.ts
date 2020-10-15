@@ -136,11 +136,11 @@ export const provisionTabEpic: Epic = (action$, state$, { roomManager$$ }: epicD
     map(
       ([
         {
-          payload: { tabId, containerElement },
+          payload: { tabId, containerElement, vimStatusBarRef },
         },
         roomManager,
       ]) => {
-        roomManager.provisionTab(tabId, containerElement);
+        roomManager.provisionTab(tabId, containerElement, vimStatusBarRef);
       },
     ),
     ignoreElements(),

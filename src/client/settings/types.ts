@@ -4,7 +4,7 @@ import { rootState } from 'Client/store';
 import * as monaco from 'monaco-editor';
 
 export type theme = 'light' | 'dark';
-export type keyMap = 'sublime' | 'vim' | 'emacs';
+export type keyMap = 'regular' | 'vim';
 
 interface individualEditorSettings {
   tabSize: monaco.editor.IGlobalEditorOptions['tabSize'];
