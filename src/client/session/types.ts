@@ -10,6 +10,7 @@ export interface currentUser {
 
 export interface githubUserDetails {
   avatarUrl: string;
+  url: string;
 }
 
 export interface sessionSliceState {
@@ -51,6 +52,7 @@ export interface unifiedUser {
   name: string;
   userId?: string;
   avatarUrl?: string;
+  profileUrl?: string;
 }
 
 export function unifiedUserSelector(s: rootState): unifiedUser | undefined {
@@ -63,6 +65,7 @@ export function unifiedUserSelector(s: rootState): unifiedUser | undefined {
     };
     if (s.session.githubUserDetails) {
       user.avatarUrl = s.session.githubUserDetails.avatarUrl;
+      user.profileUrl = s.session.githubUserDetails.url;
     }
 
     return user;

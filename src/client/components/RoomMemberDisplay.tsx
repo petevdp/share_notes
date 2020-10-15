@@ -1,10 +1,13 @@
-import { useStyletron } from 'baseui';
+import { styled, useStyletron } from 'baseui';
 import { Avatar } from 'baseui/avatar';
 import { Button } from 'baseui/button';
-import { ChevronDown } from 'baseui/icon';
+import { ChevronDown, Icon } from 'baseui/icon';
+import { ListItem, ListItemLabel } from 'baseui/list';
 import { OptionProfile, StatefulMenu } from 'baseui/menu';
 import { StatefulPopover } from 'baseui/popover';
+import { expandBorderStyles } from 'baseui/styles';
 import { roomUsersAwarenessDetailsSelector } from 'Client/room/types';
+import { lighterColors } from 'Client/services/awarenessColors';
 import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
 import React from 'react';
 import { useSelector } from 'react-redux';
@@ -14,7 +17,21 @@ interface profileItem {
   subtitle?: string;
   body?: string;
   imgUrl?: string;
+  profileUrl?: string;
+  color: string;
 }
+
+const ColorSwatch = styled('div', (props: any) => {
+  return {
+    width: props.$theme.sizing.scale300,
+    height: props.$theme.sizing.scale300,
+    marginRight: props.$theme.sizing.scale200,
+    display: 'inline-block',
+    backgroundColor: props.$color,
+    verticalAlign: 'baseline',
+    ...expandBorderStyles(props.$theme.borders.border400),
+  };
+});
 
 export function RoomMemberDisplay() {
   const [css, theme] = useStyletron();
@@ -27,8 +44,10 @@ export function RoomMemberDisplay() {
     title: u.name,
     key: u.clientID,
     color: u.color,
+    profileUrl: u.profileUrl,
     imgUrl: u.avatarUrl,
     name: u.name,
+    body: "hi I'm the body",
   }));
   return (
     <StatefulPopover
@@ -45,7 +64,19 @@ export function RoomMemberDisplay() {
             },
             Option: {
               component: React.forwardRef(function RoomMembmerDisplayMenuOptionProfile(props, ref) {
-                return <OptionProfile {...props} />;
+                const item: profileItem = props.item;
+                return (
+                  <ListItem endEnhancer={() => <ColorSwatch $color={item.color} />}>
+                    {item.profileUrl ? (
+                      <a href={item.profileUrl} target="_blank" rel="noreferrer">
+                        <Avatar src={item.imgUrl} name={item.title} />
+                      </a>
+                    ) : (
+                      <Avatar src={item.imgUrl} name={item.title} />
+                    )}
+                    <ListItemLabel>{item.title}</ListItemLabel>
+                  </ListItem>
+                );
               }),
               props: {
                 getProfileItemLabels: ({ title, subtitle, body }: profileItem) => ({
@@ -82,13 +113,14 @@ export function RoomMemberDisplay() {
         }}
       >
         {usersAwareness.map((u) => {
+          console.log('u: ', u);
           return (
             <Avatar
               size={theme.sizing.scale800}
               key={u.clientID}
               name={u.name}
               src={u.avatarUrl}
-              overrides={{ Root: { style: { backgroundColor: u.color } } }}
+              overrides={{ Root: { style: { padding: '1px' } } }}
             />
           );
         })}

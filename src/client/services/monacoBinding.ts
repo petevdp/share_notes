@@ -93,6 +93,7 @@ export class MonacoBinding {
   private _rerenderDecorations: () => void;
   private _ytextObserver: (event: any) => void;
   private _monacoChangeHandler: monaco.IDisposable;
+  private isDestroyed = false;
   awareness: Awareness;
   awarenessCursorStyles: RemoteCursorStyleManager;
   /**
@@ -103,7 +104,7 @@ export class MonacoBinding {
    */
   constructor(
     private ytext: Y.Text,
-    private monacoModel: monaco.editor.ITextModel,
+    public monacoModel: monaco.editor.ITextModel,
     public editors: Set<monaco.editor.IStandaloneCodeEditor> = new Set(),
     awarenessCursorStyles: RemoteCursorStyleManager,
     awareness: Awareness,
@@ -237,7 +238,9 @@ export class MonacoBinding {
       });
     });
     monacoModel.onWillDispose(() => {
-      this.destroy();
+      if (!this.isDestroyed) {
+        this.destroy();
+      }
     });
     if (awareness) {
       editors.forEach((editor) => {
@@ -275,12 +278,12 @@ export class MonacoBinding {
     this.ytext.unobserve(this._ytextObserver);
     this.doc.off('beforeAllTransactions', this._beforeTransaction);
     this.editors.forEach((editor) => {
-      editor.getModel()?.dispose();
       editor.dispose();
     });
     if (this.awareness !== null) {
       this.awareness.off('change', this._rerenderDecorations);
     }
+    this.isDestroyed = true;
   }
 }
 

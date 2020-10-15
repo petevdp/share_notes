@@ -92,14 +92,17 @@ export interface getCurrentUserResult {
 export const GET_VIEWER_GITHUB_DETAILS = gql`
   query github__getUserDetails {
     viewer {
-      avatarUrl
       id
+      url
+      avatarUrl
     }
   }
 `;
 
 export interface getCurrentUserGithubDetailsResponse {
   viewer: {
+    id: string;
+    url: string;
     avatarUrl: string;
   };
 }

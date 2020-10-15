@@ -29,6 +29,7 @@ export interface userAwarenessDetailsInput {
   name: string;
   userId?: string;
   avatarUrl?: string;
+  profileUrl?: string;
 }
 
 export interface userAwarenessDetails extends userAwarenessDetailsInput {
@@ -219,14 +220,15 @@ export class ClientSideRoomManager extends RoomManager {
     ).pipe(publish()) as ConnectableObservable<allComputedFileDetailsStates>;
 
     // initialize provisioned tabs
+    let tabOrdinal = 1;
     this.tabsToProvision$$
       .pipe(withLatestFrom(this.settings$, this.fileDetails$))
       .subscribe(async ([{ tabId, editorContainer, vimStatusBarContainer }, settings, fileDetails]) => {
-        console.log('computed when provisioning ', tabId, ' ', { ...fileDetails[tabId] });
         this.vimBindings.set(tabId, { statusElement: vimStatusBarContainer });
 
-        const uri = monaco.Uri.file('-' + this.id + fileDetails[tabId].filename);
-        console.log(monaco.editor.getModels());
+        const uri = monaco.Uri.file(this.id + '-' + tabOrdinal + '-' + fileDetails[tabId].filename);
+        tabOrdinal++;
+        console.log('uri: ', uri);
         const model = monaco.editor.createModel('', undefined, uri);
         const editor = monaco.editor.create(editorContainer, {
           value: '',
@@ -254,53 +256,50 @@ export class ClientSideRoomManager extends RoomManager {
       });
 
     this.fileDetails$.subscribe((state) => {
-      const languages = monaco.languages.getLanguages();
-
       for (let [id, { filename }] of Object.entries(state)) {
         const binding = this.bindings.get(id);
         if (!binding) {
           continue;
         }
         const editor: monaco.editor.IStandaloneCodeEditor = [...binding.editors.values()][0];
-        console.log('editor: ', editor);
         const model = editor.getModel();
 
         if (!model) {
           continue;
         }
-        const extension = '.' + filename.split('.').pop();
-
-        const language = languages.find((language) => language.extensions?.includes(extension));
+        const language = determineLanguage(filename);
         if (language) {
           monaco.editor.setModelLanguage(model, language.id);
         }
       }
     });
 
-    this.availableColours$$ = new BehaviorSubject(null);
-
     // determine current available colors and pipe into available colors subject
-    this.awareness$
-      .pipe(
-        map((awareness) => {
-          if (Object.keys(awareness).length === 0) {
-            return allColors;
-          }
-          const takenColors = Object.values(awareness)
-            .filter((u) => !!u?.user?.color)
-            .map((u) => u?.user?.color as string);
+    this.availableColours$$ = (() => {
+      const subject: BehaviorSubject<null | string[]> = new BehaviorSubject(null);
+      this.awareness$
+        .pipe(
+          map((awareness) => {
+            if (Object.keys(awareness).length === 0) {
+              return allColors;
+            }
+            const takenColors = Object.values(awareness)
+              .filter((u) => !!u?.user?.color)
+              .map((u) => u?.user?.color as string);
 
-          return allColors.filter((color) => !takenColors.includes(color));
-        }),
-        distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
-      )
-      .subscribe(this.availableColours$$);
+            return allColors.filter((color) => !takenColors.includes(color));
+          }),
+          distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
+        )
+        .subscribe(subject);
 
-    this.remoteCursorStyleManager = new RemoteCursorStyleManager(
-      this.provider.awareness,
-      this.awareness$,
-      this.ydoc.clientID,
-    );
+      this.remoteCursorStyleManager = new RemoteCursorStyleManager(
+        this.provider.awareness,
+        this.awareness$,
+        this.ydoc.clientID,
+      );
+      return subject;
+    })();
   }
 
   connect() {
@@ -343,7 +342,9 @@ export class ClientSideRoomManager extends RoomManager {
       throw 'handle no files left case better';
     }
     const binding = this.bindings.get(tabId);
+    console.log('binding: ', binding);
     if (binding) {
+      binding.monacoModel.dispose();
       binding.destroy();
     }
     this.bindings.delete(tabId);
@@ -361,8 +362,11 @@ export class ClientSideRoomManager extends RoomManager {
     this.remoteCursorStyleManager.destroy();
 
     for (const binding of this.bindings.values()) {
+      // disposing the model will also dispose the binding
+      binding.monacoModel.dispose();
       binding.destroy();
     }
+    this.bindings = new Map();
   }
 
   setEditorSettings(tabId: string, settings: settingsResolvedForEditor, editor: monaco.editor.IStandaloneCodeEditor) {
@@ -391,7 +395,6 @@ export class ClientSideRoomManager extends RoomManager {
         (updates as any)[key] = value;
       }
     }
-    console.log('updates: ', updates);
     editor.updateOptions({ ...updates });
   }
 
@@ -416,4 +419,9 @@ export class ClientSideRoomManager extends RoomManager {
       });
     });
   }
+}
+
+function determineLanguage(filename: string) {
+  const extension = '.' + filename.split('.').pop();
+  return monaco.languages.getLanguages().find((language) => language.extensions?.includes(extension));
 }

@@ -93,19 +93,18 @@ export const initRoomEpic: Epic = (
         });
 
         const roomAwarenessUpdate$ = manager.awareness$.pipe(map((s) => setRoomAwarenessState(s)));
-        manager.connect();
         state$
-          .pipe(map(unifiedUserSelector), filter(Boolean), first<unifiedUser, unifiedUser>())
+          .pipe(
+            map(unifiedUserSelector),
+            filter((s) => !!s),
+            distinctUntilChanged(_isEqual),
+          )
           .subscribe((userDetails) => {
-            manager.setAwarenessUserDetails(userDetails);
+            manager.setAwarenessUserDetails(userDetails as unifiedUser);
           });
-        const unifiedUserDetails = unifiedUserSelector(rootState);
-        if (unifiedUserDetails) {
-          manager.setAwarenessUserDetails(unifiedUserDetails);
-        }
 
         roomManager$$.next(manager);
-
+        manager.connect();
         return concat(
           of(roomInitialized(manager.provider.doc.clientID)),
           merge(

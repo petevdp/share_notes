@@ -119,14 +119,14 @@ export const roomSlice = createSlice({
       const newTabIds = Object.keys(newFileDetails);
 
       let currentTabId: string;
-      if (newTabIds.length === 0) {
-        // leave undefined
-      }
       if (!s.currentRoom.roomSharedState.fileDetailsStates || !s.currentRoom.currentTabId) {
+        // if there wasn't any existing file details or no current tab, select the first tab
         currentTabId = newTabIds[0];
       } else if (newTabIds.includes(s.currentRoom.currentTabId)) {
+        // if the current tab is still there, use it
         currentTabId = s.currentRoom.currentTabId;
       } else {
+        // if the current tab was deleted, then select this tab's left neighbor, or the new first tab if the current tab is the first tab
         const prevTabId = s.currentRoom.currentTabId || newTabIds[0];
         const prevTabIds = Object.keys(s.currentRoom.roomSharedState.fileDetailsStates);
         const prevTabIndex = prevTabIds.indexOf(prevTabId);
@@ -138,22 +138,17 @@ export const roomSlice = createSlice({
       }
 
       let loadedTabs = s.currentRoom.loadedTabs;
+      // load new selected tab if it wasn't already
       if (currentTabId && !loadedTabs.includes(currentTabId)) {
         loadedTabs = [...loadedTabs, currentTabId];
       }
 
-      return {
-        ...s,
-        currentRoom: {
-          ...s.currentRoom,
-          loadedTabs,
-          currentTabId,
-          roomSharedState: {
-            ...s.currentRoom.roomSharedState,
-            fileDetailsStates: newFileDetails,
-          },
-        },
-      };
+      // filter out deleted tabs
+      loadedTabs = loadedTabs.filter((tabId) => Object.keys(newFileDetails).includes(tabId));
+
+      s.currentRoom.loadedTabs = loadedTabs;
+      s.currentRoom.currentTabId = currentTabId;
+      s.currentRoom.roomSharedState.fileDetailsStates = newFileDetails;
     });
 
     builder.addCase(switchCurrentFile, (s, { payload: tabId }) => {
@@ -277,13 +272,7 @@ export const roomSlice = createSlice({
         throw 'current room not set';
       }
 
-      return {
-        ...state,
-        currentRoom: {
-          ...state.currentRoom,
-          awareness: globalAwareness,
-        },
-      };
+      state.currentRoom.awareness = globalAwareness;
     });
   },
 });
