@@ -554,6 +554,15 @@
     },
     {
       "options": {
+        "cache": true,
+        "inject": true,
+        "favicons": {},
+        "prefix": "assets/",
+        "logo": "./src/client/assets/logo.svg"
+      }
+    },
+    {
+      "options": {
         "template": "/home/pete/projects/share_notes/src/client/index.html",
         "templateContent": false,
         "filename": "index.html",

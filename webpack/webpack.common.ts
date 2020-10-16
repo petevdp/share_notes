@@ -1,6 +1,7 @@
 import * as webpack from 'webpack';
 import { CLIENT_ROOT, SHARED_ROOT } from '../src/server/paths';
 import HtmlWebPackPlugin from 'html-webpack-plugin';
+import FaviconsWebpackPlugin from 'favicons-webpack-plugin';
 import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin';
 import path from 'path';
 
@@ -36,6 +37,7 @@ const config: webpack.Configuration = {
   },
   plugins: [
     new MonacoWebpackPlugin(),
+    new FaviconsWebpackPlugin({ logo: './src/client/assets/logo.svg' }),
     new HtmlWebPackPlugin({
       title: 'Share Notes',
       template: path.join(CLIENT_ROOT, 'index.html'),

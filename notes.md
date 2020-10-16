@@ -63,25 +63,21 @@ if gist already created:
 
 ## now
 
-- editor settings DONE
-  - choose settings to display DONE
-  - implement DONE
+- landing page
+- reconfigure routing
 
 ## later
 
-- decent styling for presence indicators
-  - still need to add border for prescence indicators with avatar
-- theming
-  - editor
-  - more compact
-  - nord?
+- automatic sign-in
+- restyle create new room button
+- focus editor on tab switch
+- landing page
+- unescapable anonymous login modal
+- come up with better name
+- copy link to room button
 - add titles for routes
-- add heading to globalheader
-- move modal buttons to right
 - style scrollbar
-- move add file button out of tab group
-- fork room
-- allow removing files - true
+- create new gist
 - diff viewer
 - saving
   - add save action persist editor to db on save
@@ -99,6 +95,7 @@ if gist already created:
   - api-specific
   - postgres
   - redis
+- use redis for doc caching
 
 ## discovery
 

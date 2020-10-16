@@ -1,6 +1,7 @@
 import { styled, useStyletron, withStyle } from 'baseui';
 import { UserNavItemT } from 'baseui/app-nav-bar';
 import { Avatar } from 'baseui/avatar';
+import { Breadcrumbs } from 'baseui/breadcrumbs';
 import { Button } from 'baseui/button';
 import { ALIGN, HeaderNavigation, StyledNavigationItem, StyledNavigationList } from 'baseui/header-navigation';
 import { ChevronDown, Icon } from 'baseui/icon';
@@ -16,7 +17,7 @@ import { rootState } from 'Client/store';
 import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { AUTH_REDIRECT_URL, GITHUB_0AUTH_URL, GITHUB_CLIENT_ID } from 'Shared/environment';
 
 import { RoomMemberDisplay } from './RoomMemberDisplay';
@@ -25,6 +26,10 @@ export const StyledUserMenuListItem = withStyle(StyledListItem, {
   paddingTop: '0',
   paddingBottom: '0',
   paddingRight: '0',
+});
+
+export const BrandLink = withStyle(StyledLink, {
+  fontWeight: 'bold',
 });
 
 export const StyledUserProfileTileContainer = styled('div', ({ $theme }) => {
@@ -64,6 +69,7 @@ function loginWithGithub() {
 
 export function GlobalHeader() {
   const [css, theme] = useStyletron();
+  const location = useLocation();
   const session = useSelector((state: rootState) => state.session);
   const currentRoomDetails = useSelector((state: rootState) => state.room.currentRoom?.roomDetails);
   const roomAwareness = useSelector((state: rootState) => state.room.currentRoom?.awareness);
@@ -118,11 +124,36 @@ export function GlobalHeader() {
           },
         }}
       >
-        <StyledNavigationList $align={ALIGN.left}>
-          <StyledLink $as={Link} to="/" overrides={{ Root: { style: { textDecoration: 'none' } } }}>
-            <h1>Share Notes</h1>
-          </StyledLink>
-        </StyledNavigationList>
+        <Breadcrumbs
+          overrides={{
+            Root: {
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+              },
+            },
+            List: {
+              style: {
+                display: 'flex',
+                flexWrap: 'nowrap',
+                alignItems: 'center',
+              },
+            },
+            ListItem: {
+              style: {
+                display: 'flex',
+                flexWrap: 'nowrap',
+                alignItems: 'center',
+              },
+            },
+          }}
+        >
+          <BrandLink $as={Link} to="/">
+            Share Notes
+          </BrandLink>
+          {currentRoomDetails && <span>{currentRoomDetails.name}</span>}
+          {location.pathname === '/rooms/new' && <span>New Room</span>}
+        </Breadcrumbs>
         <StyledNavigationList $align={ALIGN.center}>
           {roomAwareness && (
             <StyledNavigationItem>
@@ -134,7 +165,7 @@ export function GlobalHeader() {
           {isLoggedIn ? (
             <>
               <StyledNavigationItem>
-                <StyledLink $as={Link} to="/rooms/create">
+                <StyledLink $as={Link} to="/rooms/new">
                   Create New Room
                 </StyledLink>
               </StyledNavigationItem>
