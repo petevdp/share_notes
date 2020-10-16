@@ -3,11 +3,12 @@ import { UserNavItemT } from 'baseui/app-nav-bar';
 import { Avatar } from 'baseui/avatar';
 import { Button } from 'baseui/button';
 import { ALIGN, HeaderNavigation, StyledNavigationItem, StyledNavigationList } from 'baseui/header-navigation';
-import { ChevronDown } from 'baseui/icon';
+import { ChevronDown, Icon } from 'baseui/icon';
 import { StyledLink } from 'baseui/link';
 import { ItemT, StatefulMenu, StyledList, StyledListItem } from 'baseui/menu';
 import { StatefulPopover } from 'baseui/popover';
 import { LabelMedium } from 'baseui/typography';
+import SvgGithub from 'Client/generatedSvgComponents/Github';
 import { roomCreationActions } from 'Client/roomCreation/types';
 import { logOut } from 'Client/session/types';
 import { settingsActions } from 'Client/settings/types';
@@ -191,7 +192,12 @@ export function GlobalHeader() {
             </>
           ) : (
             <StyledNavigationItem>
-              <Button shape="pill" onClick={() => loginWithGithub()}>
+              <Button
+                shape="pill"
+                kind="tertiary"
+                onClick={() => loginWithGithub()}
+                startEnhancer={<SvgGithub height="20" color="blue" />}
+              >
                 Log In
               </Button>
             </StyledNavigationItem>

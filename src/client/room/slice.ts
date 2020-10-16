@@ -21,8 +21,7 @@ export const roomSlice = createSlice({
   initialState: { isCurrentUserCreatingRoom: false } as roomSliceState,
   reducers: {},
   extraReducers: (builder) => {
-    builder.addCase(leaveRoom, (s) => ({}));
-
+    builder.addCase(leaveRoom, () => ({}));
     builder.addCase(setRoomGistDetails, (s, { payload: details }) => {
       if (!s?.currentRoom) {
         throw 'current room not set';

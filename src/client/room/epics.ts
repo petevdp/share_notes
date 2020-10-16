@@ -18,6 +18,7 @@ import { of } from 'rxjs/internal/observable/of';
 import { concatMap } from 'rxjs/internal/operators/concatMap';
 import { distinctUntilChanged } from 'rxjs/internal/operators/distinctUntilChanged';
 import { filter } from 'rxjs/internal/operators/filter';
+import { first } from 'rxjs/internal/operators/first';
 import { map } from 'rxjs/internal/operators/map';
 import { startWith } from 'rxjs/internal/operators/startWith';
 import { takeUntil } from 'rxjs/internal/operators/takeUntil';
@@ -29,6 +30,7 @@ import { deleteRoomInput } from '../../shared/types/roomTypes';
 import {
   addNewFile,
   deleteRoom,
+  destroyRoom,
   gistSaved,
   initRoom,
   leaveRoom,
@@ -123,8 +125,8 @@ export const initRoomEpic: Epic = (
           });
 
         const leaveRoom$ = action$.pipe(
-          filter(leaveRoom.match),
-          takeUntil(manager.roomDestroyed$$),
+          filter(destroyRoom.match),
+          first(),
           map(() => {
             manager.destroy();
             return leaveRoom();

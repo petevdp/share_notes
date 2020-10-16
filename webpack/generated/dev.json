@@ -30,6 +30,13 @@
       },
       {
         "test": {},
+        "loader": "url-loader",
+        "options": {
+          "limit": 8192
+        }
+      },
+      {
+        "test": {},
         "include": [
           "/home/pete/projects/share_notes/src/client",
           "/home/pete/projects/share_notes/src/shared"
@@ -51,13 +58,6 @@
             }
           }
         ]
-      },
-      {
-        "test": {},
-        "loader": "url-loader",
-        "options": {
-          "limit": 8192
-        }
       }
     ]
   },
