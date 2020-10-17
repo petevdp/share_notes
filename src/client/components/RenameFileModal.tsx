@@ -2,7 +2,7 @@ import { Button } from 'baseui/button';
 import { FormControl } from 'baseui/form-control';
 import { Input } from 'baseui/input';
 import { Modal, ModalBody, ModalHeader } from 'baseui/modal';
-import { fileRenamingActions, renameFile } from 'Client/room/types';
+import { fileRenamingActions, renameFile } from 'Client/slices/room/types';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';
 import { RoomModalZIndexOverride } from 'Client/utils/basewebUtils';

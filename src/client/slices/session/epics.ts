@@ -3,7 +3,7 @@ import {
   GET_VIEWER_GITHUB_DETAILS,
   getCurrentUserGithubDetailsResponse,
   getCurrentUserResult,
-} from 'Client/queries';
+} from 'Client/utils/queries';
 import { eraseCookie, getCookie, getGithubGraphqlClient } from 'Client/utils/utils';
 import { request as gqlRequest } from 'graphql-request';
 import { Epic } from 'redux-observable';

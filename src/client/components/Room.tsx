@@ -4,7 +4,7 @@ import { ChevronDown, Plus } from 'baseui/icon';
 import { ItemT, StatefulMenu } from 'baseui/menu';
 import { StatefulPopover } from 'baseui/popover';
 import { useSnackbar } from 'baseui/snackbar';
-import { addNewFile, destroyRoom, fileRenamingActions, initRoom, saveBackToGist } from 'Client/room/types';
+import { addNewFile, destroyRoom, fileRenamingActions, initRoom, saveBackToGist } from 'Client/slices/room/types';
 import { rootState } from 'Client/store';
 import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
 import React, { useEffect } from 'react';

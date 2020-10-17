@@ -1,7 +1,7 @@
-import { CREATE_ROOM, createRoomResponse } from 'Client/queries';
-import { roomCreated } from 'Client/room/types';
-import { setCurrentUserData } from 'Client/session/types';
+import { roomCreated } from 'Client/slices/room/types';
+import { setCurrentUserData } from 'Client/slices/session/types';
 import { rootState } from 'Client/store';
+import { CREATE_ROOM, createRoomResponse } from 'Client/utils/queries';
 import { octokitRequestWithAuth } from 'Client/utils/utils';
 import { request as gqlRequest } from 'graphql-request';
 import { Epic, StateObservable } from 'redux-observable';

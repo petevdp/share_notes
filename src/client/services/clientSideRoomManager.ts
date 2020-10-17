@@ -1,5 +1,5 @@
-import { DEBUG_FLAGS } from 'Client/debugFlags';
-import { clientSettings, getSettingsForEditor, settingsResolvedForEditor } from 'Client/settings/types';
+import { clientSettings, getSettingsForEditor, settingsResolvedForEditor } from 'Client/slices/settings/types';
+import { DEBUG_FLAGS } from 'Client/utils/debugFlags';
 import __isEqual from 'lodash/isEqual';
 import * as monaco from 'monaco-editor';
 import { initVimMode } from 'monaco-vim';

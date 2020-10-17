@@ -12,7 +12,7 @@ import {
   computedRoomCreationSliceStateSelector,
   GistUrlInputStatus,
   roomCreationActions,
-} from 'Client/roomCreation/types';
+} from 'Client/slices/roomCreation/types';
 import { rootState } from 'Client/store';
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';

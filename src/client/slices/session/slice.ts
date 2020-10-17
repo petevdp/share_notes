@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { roomDeleted } from 'Client/room/types';
+import { roomDeleted } from 'Client/slices/room/types';
 import { rootState } from 'Client/store';
 
 import {

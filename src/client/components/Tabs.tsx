@@ -3,7 +3,7 @@ import { Button } from 'baseui/button';
 import { Delete } from 'baseui/icon';
 import { StatefulMenu } from 'baseui/menu';
 import { Popover } from 'baseui/popover';
-import { fileRenamingActions, removeFile, switchCurrentFile } from 'Client/room/types';
+import { fileRenamingActions, removeFile, switchCurrentFile } from 'Client/slices/room/types';
 import { rootState } from 'Client/store';
 import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
 import React, { useState } from 'react';

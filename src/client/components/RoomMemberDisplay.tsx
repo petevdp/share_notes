@@ -6,7 +6,7 @@ import { ListItem, ListItemLabel } from 'baseui/list';
 import { StatefulMenu } from 'baseui/menu';
 import { StatefulPopover } from 'baseui/popover';
 import { expandBorderStyles } from 'baseui/styles';
-import { roomUsersAwarenessDetailsSelector } from 'Client/room/types';
+import { roomUsersAwarenessDetailsSelector } from 'Client/slices/room/types';
 import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
 import React from 'react';
 import { useSelector } from 'react-redux';

@@ -6,3 +6,8 @@ declare module 'codemirror/keymap/vim.js';
 declare module 'codemirror/keymap/sublime.js';
 declare module 'y-monaco';
 declare module 'monaco-vim';
+declare global {
+  interface Window {
+    ResizeObserver: any;
+  }
+}

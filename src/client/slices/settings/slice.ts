@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { initRoom } from 'Client/room/types';
+import { initRoom } from 'Client/slices/room/types';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';
 

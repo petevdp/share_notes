@@ -2,10 +2,10 @@ import 'codemirror/lib/codemirror.css';
 import 'codemirror/theme/night.css';
 
 import { request as octokitRequest } from '@octokit/request';
-import { DELETE_ROOM, deleteRoomResponse, GET_ROOM, getRoomResponse } from 'Client/queries';
-import { anonymousLoginActions, roomMemberInputSelector } from 'Client/session/types';
-import { clientSettings } from 'Client/settings/types';
+import { anonymousLoginActions, roomMemberInputSelector } from 'Client/slices/session/types';
+import { clientSettings } from 'Client/slices/settings/types';
 import { rootState } from 'Client/store';
+import { DELETE_ROOM, deleteRoomResponse, GET_ROOM, getRoomResponse } from 'Client/utils/queries';
 import { octokitRequestWithAuth as getOctokitRequestWIthAuth } from 'Client/utils/utils';
 import { request as gqlRequest } from 'graphql-request';
 import _isEqual from 'lodash/isEqual';
@@ -26,8 +26,8 @@ import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { GRAPHQL_URL } from 'Shared/environment';
 import { gistDetails } from 'Shared/githubTypes';
 
-import { roomMemberInput } from '../../../dist/src/shared/types/roomMemberAwarenessTypes';
-import { deleteRoomInput } from '../../shared/types/roomTypes';
+import { roomMemberInput } from '../../../../dist/src/shared/types/roomMemberAwarenessTypes';
+import { deleteRoomInput } from '../../../shared/types/roomTypes';
 import {
   addNewFile,
   deleteRoom,

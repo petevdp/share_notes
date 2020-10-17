@@ -1,8 +1,8 @@
 import { createAction } from '@reduxjs/toolkit';
-import { createRoomResponse } from 'Client/queries';
 import { globalAwareness } from 'Client/services/clientSideRoomManager';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';
+import { createRoomResponse } from 'Client/utils/queries';
 import { gistDetails } from 'Shared/githubTypes';
 import { allBaseFileDetailsStates } from 'Shared/roomManager';
 import { roomMember } from 'Shared/types/roomMemberAwarenessTypes';

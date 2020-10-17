@@ -6,7 +6,12 @@ import { ListItem } from 'baseui/list';
 import { ItemT, Menu, StatefulMenu } from 'baseui/menu';
 import { StatefulPopover } from 'baseui/popover';
 import { Select, StatefulSelect } from 'baseui/select';
-import { globalEditorSetting, globalEditorSettings, settingsActions, settingsSelector } from 'Client/settings/types';
+import {
+  globalEditorSetting,
+  globalEditorSettings,
+  settingsActions,
+  settingsSelector,
+} from 'Client/slices/settings/types';
 import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';

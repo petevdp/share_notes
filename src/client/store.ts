@@ -5,21 +5,21 @@ import { FLUSH, PAUSE, PERSIST, persistReducer, persistStore, PURGE, REGISTER, R
 import storage from 'redux-persist/lib/storage';
 import { Subject } from 'rxjs/internal/Subject';
 
-import { fetchOwnedRoomsEpic } from './ownedRooms/epics';
-import { ownedRoomsSlice } from './ownedRooms/slice';
-import { deleteRoomEpic, initRoomEpic } from './room/epics';
-import { roomSlice } from './room/slice';
-import { initRoom, provisionTab } from './room/types';
+import { fetchOwnedRoomsEpic } from './slices/ownedRooms/epics';
+import { ownedRoomsSlice } from './slices/ownedRooms/slice';
+import { deleteRoomEpic, initRoomEpic } from './slices/room/epics';
+import { roomSlice } from './slices/room/slice';
+import { initRoom, provisionTab } from './slices/room/types';
 import {
   createRoomEpic,
   getGistPreviewEpic,
   initializeRoomCreationEpic,
   openRoomCreationEpic,
-} from './roomCreation/epics';
-import { roomCreationSlice } from './roomCreation/slice';
-import { fetchCurrentUserDataOnSetSessionTokenEpic, logOutEpic, setSessionTokenEpic } from './session/epics';
-import { sessionSlice } from './session/slice';
-import { settingsSlice } from './settings/slice';
+} from './slices/roomCreation/epics';
+import { roomCreationSlice } from './slices/roomCreation/slice';
+import { fetchCurrentUserDataOnSetSessionTokenEpic, logOutEpic, setSessionTokenEpic } from './slices/session/epics';
+import { sessionSlice } from './slices/session/slice';
+import { settingsSlice } from './slices/settings/slice';
 
 const epicMiddleware = createEpicMiddleware();
 
