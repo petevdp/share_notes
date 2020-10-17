@@ -1,9 +1,10 @@
 import { roomCreated } from 'Client/slices/room/types';
-import { setCurrentUserData } from 'Client/slices/session/types';
 import { rootState } from 'Client/store';
 import { CREATE_ROOM, createRoomResponse } from 'Client/utils/queries';
 import { octokitRequestWithAuth } from 'Client/utils/utils';
 import { request as gqlRequest } from 'graphql-request';
+import __isEmpty from 'lodash/isEmpty';
+import __isEqual from 'lodash/isEqual';
 import { Epic, StateObservable } from 'redux-observable';
 import { auditTime } from 'rxjs/internal/operators/auditTime';
 import { concatMap } from 'rxjs/internal/operators/concatMap';
@@ -14,6 +15,7 @@ import { GRAPHQL_URL } from 'Shared/environment';
 import { gistDetails } from 'Shared/githubTypes';
 import { createRoomInput } from 'Shared/types/roomTypes';
 
+import { setCurrentUserDetails } from '../currentUserDetails/types';
 import {
   computedRoomCreationSliceStateSelector,
   gistDetailsStore,
@@ -23,7 +25,7 @@ import {
 
 export const initializeRoomCreationEpic: Epic = (action$) =>
   action$.pipe(
-    filter(setCurrentUserData.match),
+    filter(setCurrentUserDetails.match),
     map(({ payload: data }) => roomCreationActions.initialize(data.githubLogin)),
   );
 
@@ -38,7 +40,7 @@ export const createRoomEpic: Epic = (action$, state$: StateObservable<rootState>
         },
         rootState,
       ]) => {
-        if (!rootState.session.user?.githubLogin) {
+        if (!rootState.session.token) {
           throw 'not logged in';
         }
         const roomCreationState = computedRoomCreationSliceStateSelector(rootState);

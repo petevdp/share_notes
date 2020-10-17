@@ -10,7 +10,7 @@ import { ItemT, StatefulMenu, StyledList, StyledListItem } from 'baseui/menu';
 import { StatefulPopover } from 'baseui/popover';
 import { LabelMedium } from 'baseui/typography';
 import SvgGithub from 'Client/generatedSvgComponents/Github';
-import { logOut } from 'Client/slices/session/types';
+import { loggedInStatusSelector, LoginStatus, logOut } from 'Client/slices/session/types';
 import { settingsActions } from 'Client/slices/settings/types';
 import { rootState } from 'Client/store';
 import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
@@ -69,17 +69,17 @@ function loginWithGithub() {
 export function GlobalHeader() {
   const [css, theme] = useStyletron();
   const location = useLocation();
-  const session = useSelector((state: rootState) => state.session);
   const currentRoomDetails = useSelector((state: rootState) => state.room.currentRoom?.roomDetails);
   const roomAwareness = useSelector((state: rootState) => state.room.currentRoom?.awareness);
-  // const =
-  const isLoggedIn = !!session.user;
+  const currentUser = useSelector((state: rootState) => state.currentUserDetails);
+  const loginStatus = useSelector(loggedInStatusSelector);
+
   const dispatch = useDispatch();
   const [] = useState(false);
   const [] = useState(undefined as undefined | UserNavItemT);
 
-  const githubLogin = session.user?.githubLogin;
-  const avatarUrl = session.githubUserDetails?.avatarUrl;
+  const githubLogin = currentUser.userDetails?.githubLogin;
+  const avatarUrl = currentUser.githubUserDetails?.avatarUrl;
 
   let userNav: ItemT[] = [
     { label: 'Log Out', key: 'logOut' },
@@ -161,7 +161,7 @@ export function GlobalHeader() {
           )}
         </StyledNavigationList>
         <StyledNavigationList $align={ALIGN.right}>
-          {isLoggedIn ? (
+          {loginStatus === LoginStatus.LoggedIn ? (
             <>
               <StyledNavigationItem>
                 <StyledLink $as={Link} to="/rooms/new">

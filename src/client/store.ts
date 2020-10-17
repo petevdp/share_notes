@@ -5,6 +5,7 @@ import { FLUSH, PAUSE, PERSIST, persistReducer, persistStore, PURGE, REGISTER, R
 import storage from 'redux-persist/lib/storage';
 import { Subject } from 'rxjs/internal/Subject';
 
+import { currentUserDetailsSlice } from './slices/currentUserDetails/slice';
 import { fetchOwnedRoomsEpic } from './slices/ownedRooms/epics';
 import { ownedRoomsSlice } from './slices/ownedRooms/slice';
 import { deleteRoomEpic, initRoomEpic } from './slices/room/epics';
@@ -17,7 +18,7 @@ import {
   openRoomCreationEpic,
 } from './slices/roomCreation/epics';
 import { roomCreationSlice } from './slices/roomCreation/slice';
-import { fetchCurrentUserDataOnSetSessionTokenEpic, logOutEpic, setSessionTokenEpic } from './slices/session/epics';
+import { logOutEpic, retreiveSessionTokenEpic } from './slices/session/epics';
 import { sessionSlice } from './slices/session/slice';
 import { settingsSlice } from './slices/settings/slice';
 
@@ -29,16 +30,11 @@ const persistSettingsConfig = {
   storage,
 };
 
-// const persistSessionConfig = {
-//   key: 'session',
-//   version: 1,
-//   storage,
-// };
-
 const rootReducer = combineReducers({
   session: sessionSlice.reducer,
   room: roomSlice.reducer,
   settings: persistReducer(persistSettingsConfig, settingsSlice.reducer),
+  currentUserDetails: currentUserDetailsSlice.reducer,
   roomCreation: roomCreationSlice.reducer,
   ownedRooms: ownedRoomsSlice.reducer,
 });
@@ -58,8 +54,8 @@ export const store = configureStore({
 export const persistor = persistStore(store);
 
 const epics = [
-  setSessionTokenEpic,
-  fetchCurrentUserDataOnSetSessionTokenEpic,
+  // it's important that we set the session token first
+  retreiveSessionTokenEpic,
   initializeRoomCreationEpic,
   logOutEpic,
   createRoomEpic,

@@ -101,7 +101,7 @@ export const setRoomAwarenessState = createAction('setRoomAwarenessState', (awar
 }));
 
 export const deleteRoom = createAction('deleteRoom', (roomId: string) => ({ payload: roomId }));
-export const roomDeleted = createAction('roomDeleted', (roomsLeft: clientSideRoom[]) => ({ payload: roomsLeft }));
+export const roomDeleted = createAction('roomDeleted', (roomId: string) => ({ payload: roomId }));
 
 export function isLoggedInForRoomSelector(rootState: rootState) {
   return !!(rootState.session.token || rootState.session.anonymousUser);

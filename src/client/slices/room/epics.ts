@@ -239,6 +239,6 @@ export const deleteRoomEpic: Epic = (action$) =>
       const response = await gqlRequest<deleteRoomResponse, { data: deleteRoomInput }>(GRAPHQL_URL, DELETE_ROOM, {
         data: { id: roomId },
       });
-      return roomDeleted(response.deleteRoom);
+      return roomDeleted(roomId);
     }),
   );

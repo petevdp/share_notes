@@ -13,7 +13,7 @@ export function setCookie(name: string, value: string, days = 5) {
   document.cookie = name + '=' + (value || '') + expires + '; path=/';
 }
 
-export function getCookie(name: string) {
+export function getCookie(name: string): string | undefined {
   const nameEQ = name + '=';
   const ca = document.cookie.split(';');
   for (let i = 0; i < ca.length; i++) {
@@ -21,7 +21,6 @@ export function getCookie(name: string) {
     while (c.charAt(0) == ' ') c = c.substring(1, c.length);
     if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
   }
-  return null;
 }
 
 export function eraseCookie(name: string) {

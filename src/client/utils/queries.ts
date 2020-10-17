@@ -56,15 +56,12 @@ export type createRoomResponse = {
 
 export const DELETE_ROOM = gql`
   mutation DeleteRoom($data: DeleteRoomInput!) {
-    deleteRoom(data: $data) {
-      ...RoomDetails
-    }
+    deleteRoom(data: $data)
   }
-  ${ROOM_DETAILS_FRAGMENT}
 `;
 
 export interface deleteRoomResponse {
-  deleteRoom: clientSideRoom[];
+  deleteRoom: boolean;
 }
 
 export const GET_CURRENT_USER = gql`

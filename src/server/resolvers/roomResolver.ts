@@ -101,6 +101,6 @@ export class RoomResolver {
       throw "got through authorization but session wasn't set for currentUser query";
     }
 
-    return rooms?.map((r) => this.clientSideRoomService.getClientSideRoom(r)) || [];
+    return true;
   }
 }

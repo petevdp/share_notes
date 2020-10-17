@@ -23,7 +23,7 @@ import { createRoomInput } from 'Shared/types/roomTypes';
 export function CreateRoom() {
   const dispatch = useDispatch();
   const { roomHashId, currentUser, initializingRoom } = useSelector((s: rootState) => ({
-    currentUser: s.session.user,
+    currentUser: s.currentUserDetails.userDetails,
     roomHashId: s.room.currentRoom?.roomDetails?.hashId,
     initializingRoom: s.room.currentRoom?.initializingRoom,
   }));

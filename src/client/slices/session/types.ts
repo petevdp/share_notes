@@ -3,19 +3,8 @@ import { rootState } from 'Client/store';
 import { roomMemberInput, roomMemberType } from 'Shared/types/roomMemberAwarenessTypes';
 import { clientSideRoom } from 'Shared/types/roomTypes';
 
-export interface currentUser {
-  githubLogin: string;
-  id: string;
-  ownedRooms: clientSideRoom[];
-}
-
-export interface githubUserDetails {
-  avatarUrl: string;
-  url: string;
-}
-
 export interface sessionSliceState {
-  token?: string;
+  token?: string | null;
   tokenPresenceChecked: boolean;
   anonymousLoginForm?: {
     username: string;
@@ -23,19 +12,15 @@ export interface sessionSliceState {
   anonymousUser?: {
     username: string;
   };
-  user?: currentUser;
-  githubUserDetails?: githubUserDetails;
 }
 
-export const setSessionToken = createAction('setSessionToken', (token: string | undefined) => ({ payload: token }));
+export const tokenRetrievalAttempted = createAction('tokenRetrievalAttempted', (token: string | null = null) => ({
+  payload: token,
+}));
 
-export const setCurrentUserData = createAction('setUserData', (data: currentUser) => ({ payload: data }));
 export const fetchCurrentUserData = createAction('fetchCurrentUserData');
 
 export const fetchSessionGithubDetails = createAction('fetchSessionGithubDetails');
-export const setSessionGithubDetails = createAction('setSessionGithubDetails', (details: githubUserDetails) => ({
-  payload: details,
-}));
 export const logOut = createAction('logOut');
 export const clearSessionData = createAction('clearSessionData');
 
@@ -46,19 +31,37 @@ export const anonymousLoginActions = {
   cancel: createAction('cancelAnonymousLogin'),
 };
 
+export enum LoginStatus {
+  LoggedIn,
+  NotLoggedIn,
+  Unchecked,
+}
+
+export function loggedInStatusSelector(state: rootState) {
+  if (state.session.token) {
+    return LoginStatus.LoggedIn;
+  } else if (state.session.tokenPresenceChecked) {
+    return LoginStatus.NotLoggedIn;
+  } else {
+    return LoginStatus.Unchecked;
+  }
+}
+
 export function roomMemberInputSelector(s: rootState): roomMemberInput | undefined {
   let user: roomMemberInput;
 
-  if (s.session.user) {
+  const currentUser = s.currentUserDetails;
+
+  if (currentUser.userDetails) {
     user = {
       type: 'github',
-      name: s.session.user.githubLogin,
-      userIdOrAnonID: s.session.user.id,
+      name: currentUser.userDetails.githubLogin,
+      userIdOrAnonID: currentUser.userDetails.id,
     };
-    if (s.session.githubUserDetails) {
-      console.log('setting github details: ', s.session.githubUserDetails);
-      user.avatarUrl = s.session.githubUserDetails.avatarUrl;
-      user.profileUrl = s.session.githubUserDetails.url;
+    if (currentUser.githubUserDetails) {
+      console.log('setting github details: ', currentUser.githubUserDetails);
+      user.avatarUrl = currentUser.githubUserDetails.avatarUrl;
+      user.profileUrl = currentUser.githubUserDetails.url;
     }
 
     return user;

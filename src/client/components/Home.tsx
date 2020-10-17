@@ -21,9 +21,8 @@ import { roomVisit } from 'Shared/types/roomVisitTypes';
 export function Home() {
   const [css] = useStyletron();
   const dispatch = useDispatch();
-  const ownedRooms = useSelector((s: rootState) => s.ownedRooms?.allRooms);
-  // const recentRoomVisits = useSelector((s: rootState) => s.ownedRooms?.recentRoomVisits);
-  const currentUserId = useSelector((s: rootState) => s.session.user?.id);
+  const currentUser = useSelector((state: rootState) => state.currentUserDetails);
+  const ownedRooms = useSelector((state: rootState) => state.ownedRooms?.allRooms);
 
   // const [recentRooms, setRecentRooms] = useState<clientSideRoom[] | null>(null);
   // useEffect(() => {
@@ -31,11 +30,11 @@ export function Home() {
   // }, []);
 
   useEffect(() => {
-    if (!currentUserId) {
+    if (!currentUser.userDetails?.id) {
       return;
     }
     dispatch(ownedRoomsActions.fetchOwnedRooms());
-  }, [currentUserId]);
+  }, [currentUser.userDetails?.id]);
 
   const ownedRoomElements = ownedRooms && ownedRooms.map((r) => <RoomListElement key={r.id} room={r} />);
 

@@ -19,8 +19,6 @@ import { settingsSelector } from './slices/settings/types';
 import { persistor, store } from './store';
 import { styletronEngine } from './styletronEngine';
 
-const debug = process.env.NODE_ENV === 'production' ? void 0 : new DebugEngine();
-
 export function App(): ReactElement {
   return (
     <StoreProvider>
@@ -36,6 +34,7 @@ export function App(): ReactElement {
   );
 }
 
+const debug = process.env.NODE_ENV === 'development' ? new DebugEngine() : void 0;
 /**
  * Setup Redux store and persistor
  */
