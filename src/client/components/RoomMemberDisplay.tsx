@@ -43,8 +43,8 @@ export function RoomMemberDisplay() {
     title: u.name,
     key: u.userIdOrAnonID,
     color: u.color,
-    profileUrl: u.profileUrl,
-    imgUrl: u.avatarUrl,
+    profileUrl: u.type === 'github' && u.profileUrl,
+    imgUrl: u.type === 'github' && u.avatarUrl,
     name: u.name,
     body: "hi I'm the body",
   }));
@@ -117,7 +117,7 @@ export function RoomMemberDisplay() {
               size={theme.sizing.scale800}
               key={u.userIdOrAnonID}
               name={u.name}
-              src={u.avatarUrl}
+              src={u.type === 'github' ? u.avatarUrl : undefined}
               overrides={{ Root: { style: { padding: '1px' } } }}
             />
           );

@@ -141,8 +141,8 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
 
         action$
           .pipe(filter(anonymousLoginActions.logInAnonymously.match), takeUntil(manager.roomDestroyed$$))
-          .subscribe(({ payload: username }) => {
-            manager.setAwarenessUserDetails({ name: username, type: 'anonymous' });
+          .subscribe(({ payload: input }) => {
+            manager.setAwarenessUserDetails(input);
           });
 
         const leaveRoom$ = action$.pipe(

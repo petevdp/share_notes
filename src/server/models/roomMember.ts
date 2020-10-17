@@ -1,10 +1,15 @@
-import { clientAwareness, roomMember, roomMemberType } from 'Shared/types/roomMemberAwarenessTypes.ts';
+import {
+  clientAwareness,
+  roomMember,
+  roomMemberType,
+  roomMemberWithColor,
+} from 'Shared/types/roomMemberAwarenessTypes.ts';
 import { Field, Int, ObjectType } from 'type-graphql';
 
 import { User } from './user';
 
 @ObjectType()
-export class RoomMember implements roomMember {
+export class RoomMember {
   @Field(() => String)
   type: roomMemberType;
 

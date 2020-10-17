@@ -7,7 +7,7 @@ import { User } from 'Server/models/user';
 import { getYjsDocNameForRoom } from 'Shared/environment';
 import { gistDetails } from 'Shared/githubTypes';
 import { roomDetails, RoomManager, startingRoomDetails } from 'Shared/roomManager';
-import { clientAwareness, roomMember } from 'Shared/types/roomMemberAwarenessTypes';
+import { clientAwareness, roomMember, roomMemberWithColor } from 'Shared/types/roomMemberAwarenessTypes';
 import { Service } from 'typedi';
 import { Repository } from 'typeorm';
 import { InjectRepository } from 'typeorm-typedi-extensions';
@@ -48,7 +48,7 @@ export class YjsService {
     }
     return ([...doc.awareness.getStates().values()] as clientAwareness[])
       .map((memberAwareness) => memberAwareness.roomMemberDetails)
-      .filter(Boolean) as roomMember[];
+      .filter(Boolean) as roomMemberWithColor[];
   }
 
   async setupWsConnection(conn: WebSocket, req: IncomingMessage) {

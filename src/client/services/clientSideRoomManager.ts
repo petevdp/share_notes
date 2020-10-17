@@ -16,9 +16,8 @@ import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { Subject } from 'rxjs/internal/Subject';
 import { getYjsDocNameForRoom, YJS_WEBSOCKET_URL_WS } from 'Shared/environment';
 import { allBaseFileDetailsStates, allComputedFileDetailsStates, roomDetails, RoomManager } from 'Shared/roomManager';
-import { clientAwareness, roomMember, roomMemberInput } from 'Shared/types/roomMemberAwarenessTypes';
+import { clientAwareness, roomMemberInput, roomMemberWithColor } from 'Shared/types/roomMemberAwarenessTypes';
 import { getKeysForMap } from 'Shared/ydocUtils';
-import { v4 as uuidv4 } from 'uuid';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 
@@ -315,9 +314,8 @@ export class ClientSideRoomManager extends RoomManager {
         first(),
       )
       .toPromise()) as string[];
-    const userAwareness: roomMember = {
+    const userAwareness: roomMemberWithColor = {
       color: availableColors[0],
-      userIdOrAnonID: input.userIdOrAnonID || uuidv4(),
       ...input,
     };
     console.log('setting local state for user: ', userAwareness);

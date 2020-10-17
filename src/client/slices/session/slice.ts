@@ -23,10 +23,10 @@ export const sessionSlice = createSlice({
         ...s,
         anonymousLoginForm: { username },
       }))
-      .addCase(anonymousLoginActions.logInAnonymously, (s, { payload: username }) => ({
+      .addCase(anonymousLoginActions.logInAnonymously, (s, { payload: input }) => ({
         ...s,
         anonymousLoginForm: undefined,
-        anonymousUser: { username },
+        anonymousRoomMember: input,
       }))
       .addCase(anonymousLoginActions.cancel, (s) => ({ ...s, anonymousLoginForm: undefined })),
 });

@@ -5,7 +5,7 @@ import { rootState } from 'Client/store';
 import { createRoomResponse } from 'Client/utils/queries';
 import { gistDetails } from 'Shared/githubTypes';
 import { allBaseFileDetailsStates } from 'Shared/roomManager';
-import { roomMember } from 'Shared/types/roomMemberAwarenessTypes';
+import { roomMember, roomMemberWithColor } from 'Shared/types/roomMemberAwarenessTypes';
 import { clientSideRoom } from 'Shared/types/roomTypes';
 import * as Y from 'yjs';
 
@@ -104,7 +104,7 @@ export const deleteRoom = createAction('deleteRoom', (roomId: string) => ({ payl
 export const roomDeleted = createAction('roomDeleted', (roomId: string) => ({ payload: roomId }));
 
 export function isLoggedInForRoomSelector(rootState: rootState) {
-  return !!(rootState.session.token || rootState.session.anonymousUser);
+  return !!(rootState.session.token || rootState.session.anonymousRoomMember);
 }
 
 export function currentFileRenameWithErrorsSelector(rootState: rootState) {
@@ -114,14 +114,14 @@ export function currentFileRenameWithErrorsSelector(rootState: rootState) {
   }
 }
 
-export function roomUsersAwarenessDetailsSelector(rootState: rootState): roomMember[] | undefined {
+export function roomUsersAwarenessDetailsSelector(rootState: rootState): roomMemberWithColor[] | undefined {
   const awareness = rootState.room.currentRoom?.awareness;
 
   if (awareness) {
     return [
       ...Object.values(awareness)
         .filter((a) => !!a.roomMemberDetails)
-        .map((s) => s.roomMemberDetails as roomMember),
+        .map((s) => s.roomMemberDetails as roomMemberWithColor),
     ];
   }
 }

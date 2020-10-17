@@ -1,55 +1,3 @@
-# authentication
-
-- anonymous users for room participants
-- optionally sign in to github to create rooms
-- when the user logs in from github, we'll create an entry in the users database
-
-# data model
-
-<!--  -->
-
-- anyone can create a room
-- if you create a room
-
-- if you have a link you can join a room
-
-- store recently visited rooms and settings:
-
-  - server side if signed in
-  - client side if not
-
-* id
-* github_id
-* ownedRooms
-
-## room creation
-
-when you create a room,
-provide room name
-provide gist
-
-if given gist, load gist contents into editors
-(make request to github, and load contents into ydoc on the server side)
-
-### ui description
-
-- Click create room button
-- open modal
-- link input
-  - green when valid url? try
-- incremental search select through current users's owned gists
-- card with selected gist details
-- on select, populate url into url input
-- display gist details
-- if gist not owned, show additional dialogue option asking if user wants to automatically fork the gist
-
-# Styling Notes
-
-## nav bar
-
-- make theme more compact for desktop
-- (some percentage of viewheight on desktop)
-
 ## save back to gist
 
 if gist already created:
@@ -63,8 +11,9 @@ if gist already created:
 
 ## now
 
+- make sure current user details are populated into awareness properly
+- add create new gist option
 - landing page
-- reconfigure routing
 
 ## later
 

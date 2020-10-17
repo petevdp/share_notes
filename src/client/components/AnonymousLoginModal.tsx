@@ -8,6 +8,7 @@ import { rootState } from 'Client/store';
 import { RoomModalZIndexOverride } from 'Client/utils/basewebUtils';
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { v4 as uuidv4 } from 'uuid';
 
 export function AnonymousLoginModal() {
   const formData = useSelector((state: rootState) => state.session.anonymousLoginForm);
@@ -36,7 +37,7 @@ export function AnonymousLoginModal() {
           onSubmit={(e) => {
             e.preventDefault();
             if (!error && formData) {
-              dispatch(anonymousLoginActions.logInAnonymously(formData.username));
+              dispatch(anonymousLoginActions.logInAnonymously(formData.username, uuidv4()));
             }
           }}
         >
