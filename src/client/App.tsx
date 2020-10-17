@@ -7,10 +7,11 @@ import { rootState } from 'Client/store';
 import React, { ReactElement, useEffect, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { Provider as ReduxProvider } from 'react-redux';
-import { BrowserRouter as Router, Route, Switch, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Redirect, Route, Switch, useLocation } from 'react-router-dom';
 import { PersistGate } from 'redux-persist/integration/react';
 import { DebugEngine, Provider as StyletronProvider } from 'styletron-react';
 
+import { AuthGuardedRoute } from './components/AuthGuard';
 import { CreateRoom } from './components/CreateRoom';
 import { GlobalHeader } from './components/GlobalHeader';
 import { Home } from './components/Home';
@@ -96,15 +97,18 @@ function Routes() {
       document.title = 'Share Notes';
     }
   }, [history, currentRoomName]);
+
   return (
     <Switch>
       <Route exact path="/">
         <Home />
       </Route>
-      <Route exact path="/rooms"></Route>
-      <Route exact path="/rooms/new">
-        <CreateRoom />
+      <Route exact path="/rooms">
+        <Redirect to="/"></Redirect>
       </Route>
+      <AuthGuardedRoute exact path="/rooms/new">
+        <CreateRoom />
+      </AuthGuardedRoute>
       <Route path="/rooms/:roomHashId">
         <Room />
       </Route>

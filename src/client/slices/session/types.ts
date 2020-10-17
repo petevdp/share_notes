@@ -1,7 +1,6 @@
 import { createAction } from '@reduxjs/toolkit';
 import { rootState } from 'Client/store';
-import { roomMemberInput, roomMemberType } from 'Shared/types/roomMemberAwarenessTypes';
-import { clientSideRoom } from 'Shared/types/roomTypes';
+import { roomMemberInput } from 'Shared/types/roomMemberAwarenessTypes';
 
 export interface sessionSliceState {
   token?: string | null;

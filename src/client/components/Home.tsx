@@ -48,14 +48,14 @@ export function Home() {
       })}
     >
       <HeadingLevel>
-        <Heading>Your Rooms</Heading>
+        <Heading>Rooms</Heading>
         <div
           className={css({
             display: 'grid',
             gridGap: '8px',
           })}
         >
-          <Card title="Your Rooms">
+          <Card>
             <ul>{ownedRoomElements}</ul>
           </Card>
         </div>

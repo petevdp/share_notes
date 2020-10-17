@@ -24,16 +24,24 @@ import { settingsSlice } from './slices/settings/slice';
 
 const epicMiddleware = createEpicMiddleware();
 
-const persistSettingsConfig = {
-  key: 'settings',
-  version: 1,
-  storage,
-};
-
 const rootReducer = combineReducers({
-  session: sessionSlice.reducer,
+  session: persistReducer(
+    {
+      key: 'session',
+      version: 1,
+      storage,
+    },
+    sessionSlice.reducer,
+  ),
   room: roomSlice.reducer,
-  settings: persistReducer(persistSettingsConfig, settingsSlice.reducer),
+  settings: persistReducer(
+    {
+      key: 'settings',
+      version: 1,
+      storage,
+    },
+    settingsSlice.reducer,
+  ),
   currentUserDetails: currentUserDetailsSlice.reducer,
   roomCreation: roomCreationSlice.reducer,
   ownedRooms: ownedRoomsSlice.reducer,
@@ -54,7 +62,7 @@ export const store = configureStore({
 export const persistor = persistStore(store);
 
 const epics = [
-  // it's important that we set the session token first
+  // it's important that we set the session token first so it's always set before other async actions
   retreiveSessionTokenEpic,
   initializeRoomCreationEpic,
   logOutEpic,

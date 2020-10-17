@@ -9,7 +9,7 @@ export const currentUserDetailsSlice = createSlice({
   initialState,
   reducers: {},
   extraReducers: (builder) => {
-    builder.addCase(setCurrentUserDetails, (state, action) => ({ ...state, currentUserDetails: action.payload }));
+    builder.addCase(setCurrentUserDetails, (state, action) => ({ ...state, userDetails: action.payload }));
     builder.addCase(setGithubUserDetails, (state, action) => ({ ...state, githubUserDetails: action.payload }));
   },
 });

@@ -161,7 +161,7 @@ export function GlobalHeader() {
           )}
         </StyledNavigationList>
         <StyledNavigationList $align={ALIGN.right}>
-          {loginStatus === LoginStatus.LoggedIn ? (
+          {loginStatus === LoginStatus.LoggedIn && currentUser.userDetails ? (
             <>
               <StyledNavigationItem>
                 <StyledLink $as={Link} to="/rooms/new">
@@ -215,7 +215,7 @@ export function GlobalHeader() {
                       },
                     }}
                   >
-                    <Avatar name={'Current User Github Profile'} src={avatarUrl} />
+                    <Avatar name={githubLogin || ''} src={avatarUrl} />
                   </Button>
                 </StatefulPopover>
               </StyledNavigationItem>
@@ -226,7 +226,7 @@ export function GlobalHeader() {
                 shape="pill"
                 kind="tertiary"
                 onClick={() => loginWithGithub()}
-                startEnhancer={<SvgGithub height="20" color="blue" />}
+                startEnhancer={<SvgGithub height="20" />}
               >
                 Log In
               </Button>
