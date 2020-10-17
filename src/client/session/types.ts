@@ -1,5 +1,6 @@
 import { createAction } from '@reduxjs/toolkit';
 import { rootState } from 'Client/store';
+import { roomMemberInput, roomMemberType } from 'Shared/types/roomMemberAwarenessTypes';
 import { clientSideRoom } from 'Shared/types/roomTypes';
 
 export interface currentUser {
@@ -45,25 +46,17 @@ export const anonymousLoginActions = {
   cancel: createAction('cancelAnonymousLogin'),
 };
 
-export type userType = 'github' | 'anonymous';
-
-export interface unifiedUser {
-  type: userType;
-  name: string;
-  userId?: string;
-  avatarUrl?: string;
-  profileUrl?: string;
-}
-
-export function unifiedUserSelector(s: rootState): unifiedUser | undefined {
-  let user: unifiedUser;
+export function roomMemberInputSelector(s: rootState): roomMemberInput | undefined {
+  let user: roomMemberInput;
 
   if (s.session.user) {
     user = {
       type: 'github',
       name: s.session.user.githubLogin,
+      userIdOrAnonID: s.session.user.id,
     };
     if (s.session.githubUserDetails) {
+      console.log('setting github details: ', s.session.githubUserDetails);
       user.avatarUrl = s.session.githubUserDetails.avatarUrl;
       user.profileUrl = s.session.githubUserDetails.url;
     }

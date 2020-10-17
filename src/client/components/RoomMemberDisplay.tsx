@@ -1,13 +1,12 @@
 import { styled, useStyletron } from 'baseui';
 import { Avatar } from 'baseui/avatar';
 import { Button } from 'baseui/button';
-import { ChevronDown, Icon } from 'baseui/icon';
+import { ChevronDown } from 'baseui/icon';
 import { ListItem, ListItemLabel } from 'baseui/list';
-import { OptionProfile, StatefulMenu } from 'baseui/menu';
+import { StatefulMenu } from 'baseui/menu';
 import { StatefulPopover } from 'baseui/popover';
 import { expandBorderStyles } from 'baseui/styles';
 import { roomUsersAwarenessDetailsSelector } from 'Client/room/types';
-import { lighterColors } from 'Client/services/awarenessColors';
 import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
 import React from 'react';
 import { useSelector } from 'react-redux';
@@ -34,7 +33,7 @@ const ColorSwatch = styled('div', (props: any) => {
 });
 
 export function RoomMemberDisplay() {
-  const [css, theme] = useStyletron();
+  const [, theme] = useStyletron();
   const usersAwareness = useSelector(roomUsersAwarenessDetailsSelector);
 
   if (!usersAwareness) {
@@ -42,7 +41,7 @@ export function RoomMemberDisplay() {
   }
   const items = usersAwareness.map((u) => ({
     title: u.name,
-    key: u.clientID,
+    key: u.userIdOrAnonID,
     color: u.color,
     profileUrl: u.profileUrl,
     imgUrl: u.avatarUrl,
@@ -63,7 +62,7 @@ export function RoomMemberDisplay() {
               },
             },
             Option: {
-              component: React.forwardRef(function RoomMembmerDisplayMenuOptionProfile(props, ref) {
+              component: React.forwardRef(function RoomMembmerDisplayMenuOptionProfile(props) {
                 const item: profileItem = props.item;
                 return (
                   <ListItem endEnhancer={() => <ColorSwatch $color={item.color} />}>
@@ -116,7 +115,7 @@ export function RoomMemberDisplay() {
           return (
             <Avatar
               size={theme.sizing.scale800}
-              key={u.clientID}
+              key={u.userIdOrAnonID}
               name={u.name}
               src={u.avatarUrl}
               overrides={{ Root: { style: { padding: '1px' } } }}

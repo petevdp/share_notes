@@ -1,12 +1,12 @@
-import produce from 'immer';
 import { AuthorizedContext } from 'Server/context';
 import { CreateRoomInput, DeleteRoomInput, RoomInput } from 'Server/inputs/roomInputs';
-import { RoomVisitsInput } from 'Server/inputs/roomVisitInputs';
 import { ClientSideRoom, Room } from 'Server/models/room';
+import { RoomMember } from 'Server/models/roomMember';
 import { RoomVisit } from 'Server/models/roomVisit';
 import { User } from 'Server/models/user';
 import { ClientSideRoomService } from 'Server/services/clientSideRoomService';
 import { TedisService, USER_ID_BY_SESSION_KEY } from 'Server/services/tedisService';
+import { YjsService } from 'Server/services/yjsService';
 import { Arg, Authorized, Ctx, FieldResolver, Mutation, Query, Resolver, Root } from 'type-graphql';
 import { Service } from 'typedi';
 import { Repository } from 'typeorm';
@@ -21,9 +21,10 @@ export class RoomResolver {
     @InjectRepository(RoomVisit) private readonly roomVisitRepository: Repository<RoomVisit>,
     private readonly clientSideRoomService: ClientSideRoomService,
     private readonly tedisService: TedisService,
+    private readonly yjsService: YjsService,
   ) {}
 
-  @Query(() => ClientSideRoom)
+  @Query(() => ClientSideRoom, { nullable: true })
   async room(@Arg('data') roomInput: RoomInput) {
     return this.clientSideRoomService.findRoom(roomInput);
   }
@@ -38,6 +39,11 @@ export class RoomResolver {
   async owner(@Root() room: ClientSideRoom): Promise<User | null> {
     const owner = await this.roomRepository.findOne({ id: room.id }, { relations: ['owner'] }).then((r) => r?.owner);
     return owner || null;
+  }
+
+  @FieldResolver(() => [RoomMember])
+  async activeRoomMembers(@Root() room: ClientSideRoom): Promise<RoomMember[]> {
+    return this.yjsService.activeRoomMembers(room.hashId);
   }
 
   @FieldResolver(() => [RoomVisit])
@@ -56,26 +62,26 @@ export class RoomResolver {
         query = query.innerJoin('roomVisit.user', 'user').where('user.id = :userId', { userId });
       } else if (userId) {
         const currentUserId = (await this.tedisService.getCurrentUserId(context.githubSessionToken)) as string;
-        console.log('current: ', currentUserId);
         query = query.innerJoin('roomVisit.user', 'user').where('user.id = :userId', { userId: currentUserId });
+      } else {
+        /// don't know how to handle this case, but not needed;
       }
       const visits = await query.orderBy('roomVisit.visitTime', 'DESC').limit(first).getMany();
-      console.log('visits: ', visits);
       return visits;
     }
   }
 
   @Mutation(() => ClientSideRoom)
   async createRoom(@Arg('data') userData: CreateRoomInput) {
-    const owner = await this.userRepository.findOne({ id: parseInt(userData.ownerId) });
+    const owner = await this.userRepository.findOneOrFail({ id: parseInt(userData.ownerId) });
 
-    const room = this.roomRepository.create({
-      ...userData,
-      createdAt: new Date(),
-      owner,
-    });
-    await this.roomRepository.save(room);
-    const clientSideRoom = this.clientSideRoomService.getClientSideRoom(room);
+    const room = new Room();
+    room.createdAt = new Date();
+    room.name = userData.name;
+    room.owner = Promise.resolve(owner);
+    room.gistName = userData.gistName;
+    const savedRoom = await this.roomRepository.save(room);
+    const clientSideRoom = this.clientSideRoomService.getClientSideRoom(savedRoom);
     return clientSideRoom;
   }
 
@@ -97,61 +103,4 @@ export class RoomResolver {
 
     return rooms?.map((r) => this.clientSideRoomService.getClientSideRoom(r)) || [];
   }
-
-  // @Query(() => [ClientSideRoom])
-  // async roomsByVisits(
-  //   @Arg('data') input: RoomVisitsInput,
-  //   @Ctx() context: AuthorizedContext,
-  // ): Promise<ClientSideRoom[]> {
-  //   const conditions: string[] = [];
-  //   const id = await this.tedisService.getCurrentUserId(context.githubSessionToken);
-  //   if (!id) {
-  //     throw 'not logged in';
-  //   }
-  //   // make sure records being returned are from this user or from owned rooms
-  //   conditions.push('user.id = :currentUserId OR roomOwner.id = :currentUserId');
-  //   const queryParameters: {
-  //     dateRangeStart?: Date;
-  //     dateRangeEnd?: Date;
-  //     roomIds?: string[];
-  //     userIds?: string[];
-  //     currentUserId: string;
-  //   } = { currentUserId: id };
-
-  //   if (input.dateRangeStart) {
-  //     conditions.push('roomVisit.createdAt >= :dateRangeStart');
-  //     queryParameters.dateRangeStart = input.dateRangeStart;
-  //   }
-
-  //   if (input.dateRangeEnd) {
-  //     conditions.push('roomVisit.createdAt < :dateRangeEnd');
-  //     queryParameters.dateRangeEnd = input.dateRangeEnd;
-  //   }
-
-  //   if (input.roomIds) {
-  //     conditions.push('room.id in (:...roomIds)');
-  //     queryParameters.roomIds = input.roomIds;
-  //   }
-
-  //   if (input.userIds) {
-  //     conditions.push('user.id in (:...userIds)');
-  //     queryParameters.userIds = input.userIds;
-  //   }
-
-  //   const condition = conditions.map((c) => `(${c})`).join(' AND ');
-
-  //   const rooms = await this.roomRepository
-  //     .createQueryBuilder('room')
-  //     .innerJoinAndSelect('room.visits', 'roomVisit')
-  //     .innerJoinAndSelect('roomVisit.user', 'user')
-  //     .innerJoin('room.owner', 'roomOwner')
-  //     .where(condition, queryParameters)
-  //     .orderBy('roomVisit.visitTime', input.sort === 'ascending' ? 'ASC' : 'DESC')
-  //     .limit(input.first)
-  //     .getMany();
-
-  //   return rooms
-  //     .map((r) => ({ ...r, visits: r.visits.slice(0, 1) }))
-  //     .map((r) => this.clientSideRoomService.getClientSideRoom(r));
-  // }
 }

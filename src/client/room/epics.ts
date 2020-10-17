@@ -3,9 +3,9 @@ import 'codemirror/theme/night.css';
 
 import { request as octokitRequest } from '@octokit/request';
 import { DELETE_ROOM, deleteRoomResponse, GET_ROOM, getRoomResponse } from 'Client/queries';
-import { unifiedUser, unifiedUserSelector } from 'Client/session/types';
+import { anonymousLoginActions, roomMemberInputSelector } from 'Client/session/types';
 import { clientSettings } from 'Client/settings/types';
-import { epicDependencies, rootState } from 'Client/store';
+import { rootState } from 'Client/store';
 import { octokitRequestWithAuth as getOctokitRequestWIthAuth } from 'Client/utils/utils';
 import { request as gqlRequest } from 'graphql-request';
 import _isEqual from 'lodash/isEqual';
@@ -26,6 +26,7 @@ import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { GRAPHQL_URL } from 'Shared/environment';
 import { gistDetails } from 'Shared/githubTypes';
 
+import { roomMemberInput } from '../../../dist/src/shared/types/roomMemberAwarenessTypes';
 import { deleteRoomInput } from '../../shared/types/roomTypes';
 import {
   addNewFile,
@@ -48,11 +49,7 @@ import {
   unprovisionTab,
 } from './types';
 
-export const initRoomEpic: Epic = (
-  action$,
-  state$: StateObservable<rootState>,
-  { roomManager$$ }: epicDependencies,
-): Observable<Action> =>
+export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>): Observable<Action> =>
   action$.pipe(
     filter(initRoom.match),
     withLatestFrom(state$),
@@ -70,12 +67,12 @@ export const initRoomEpic: Epic = (
         state: rootState,
       }) => {
         const { settings: startingSettings } = rootState;
-        const settings$: Observable<clientSettings> = state$.pipe(
+
+        const settings$ = state$.pipe(
           map((state) => state.settings),
           distinctUntilChanged(_isEqual),
           startWith(startingSettings),
         );
-        // const {} = await import('Client/services/clientSideRoomManager');
 
         const manager = new ClientSideRoomManager(roomHashId, settings$);
 
@@ -88,21 +85,24 @@ export const initRoomEpic: Epic = (
         }).then((res) => res.room);
 
         const gistDataPromise = roomDataPromise.then((r) => {
+          if (!r) {
+            throw 'room not found';
+          }
           return getOctokitRequestWIthAuth()('GET /gists/{gist_id}', {
             gist_id: r.gistName,
           }).then((r) => r.data as gistDetails);
         });
 
-        const roomAwarenessUpdate$ = manager.awareness$.pipe(map((s) => setRoomAwarenessState(s)));
         state$
           .pipe(
-            map(unifiedUserSelector),
+            map(roomMemberInputSelector),
             filter((s) => !!s),
             distinctUntilChanged(_isEqual),
             takeUntil(manager.roomDestroyed$$),
           )
           .subscribe((userDetails) => {
-            manager.setAwarenessUserDetails(userDetails as unifiedUser);
+            console.log('user details emitted: ', userDetails);
+            manager.setAwarenessUserDetails(userDetails as roomMemberInput);
           });
 
         action$
@@ -124,15 +124,6 @@ export const initRoomEpic: Epic = (
             }
           });
 
-        const leaveRoom$ = action$.pipe(
-          filter(destroyRoom.match),
-          first(),
-          map(() => {
-            manager.destroy();
-            return leaveRoom();
-          }),
-        );
-
         // update awareness for current tab
         state$
           .pipe(
@@ -148,6 +139,21 @@ export const initRoomEpic: Epic = (
           .pipe(filter(removeFile.match), takeUntil(manager.roomDestroyed$$))
           .subscribe(({ payload: tabId }) => manager.removeFile(tabId));
 
+        action$
+          .pipe(filter(anonymousLoginActions.logInAnonymously.match), takeUntil(manager.roomDestroyed$$))
+          .subscribe(({ payload: username }) => {
+            manager.setAwarenessUserDetails({ name: username, type: 'anonymous' });
+          });
+
+        const leaveRoom$ = action$.pipe(
+          filter(destroyRoom.match),
+          first(),
+          map(() => {
+            manager.destroy();
+            return leaveRoom();
+          }),
+        );
+
         const switchCurrentFileAfterAdded$ = action$.pipe(
           filter(addNewFile.match),
           takeUntil(manager.roomDestroyed$$),
@@ -156,6 +162,8 @@ export const initRoomEpic: Epic = (
             return switchCurrentFile(fileState.tabId);
           }),
         );
+
+        const roomAwarenessUpdate$ = manager.awareness$.pipe(map((s) => setRoomAwarenessState(s)));
 
         const gistSaved$ = action$.pipe(
           filter(saveBackToGist.match),
@@ -207,7 +215,6 @@ export const initRoomEpic: Epic = (
           }),
         );
 
-        roomManager$$.next(manager);
         manager.connect();
         return concat(
           of(roomInitialized(manager.provider.doc.clientID)),

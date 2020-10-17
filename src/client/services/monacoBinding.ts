@@ -4,18 +4,15 @@ import { createMutex } from 'lib0/mutex.js';
 import * as monaco from 'monaco-editor';
 import { Observable } from 'rxjs/internal/Observable';
 import { fromArray } from 'rxjs/internal/observable/fromArray';
-import { merge } from 'rxjs/internal/observable/merge';
 import { concatMap } from 'rxjs/internal/operators/concatMap';
-import { distinctUntilChanged } from 'rxjs/internal/operators/distinctUntilChanged';
 import { startWith } from 'rxjs/internal/operators/startWith';
 import { Subscription } from 'rxjs/internal/Subscription';
-import { CSSFn } from 'styletron-react';
-import { Awareness } from 'y-protocols/awareness.js'; // eslint-disable-line
+import { clientAwareness } from 'Shared/types/roomMemberAwarenessTypes';
+import { Awareness } from 'y-protocols/awareness.js';
 import * as Y from 'yjs';
-import { AbsolutePosition } from 'yjs/dist/src/internals';
 
 import { lighterColors } from './awarenessColors';
-import { globalAwareness, userAwareness } from './clientSideRoomManager';
+import { globalAwareness } from './clientSideRoomManager';
 
 class RelativeSelection {
   /**
@@ -142,13 +139,13 @@ export class MonacoBinding {
           const currentDecorations = this._decorations.get(editor) || [];
           const newDecorations: monaco.editor.IModelDeltaDecoration[] = [];
           // const decoration: monaco.editor.IModelDecoration = {options: {}}
-          awareness.getStates().forEach((state: userAwareness, clientID: number) => {
+          awareness.getStates().forEach((state: clientAwareness, clientID: number) => {
             if (
               clientID !== this.doc.clientID &&
               state.selection != null &&
               state.selection.anchor != null &&
               state.selection.head != null &&
-              state.user
+              state.roomMemberDetails
             ) {
               const anchorAbs = Y.createAbsolutePositionFromRelativePosition(state.selection.anchor, this.doc);
               const headAbs = Y.createAbsolutePositionFromRelativePosition(state.selection.head, this.doc);
@@ -305,7 +302,7 @@ export class RemoteCursorStyleManager {
     for (let [i, v] of awareness.getStates().entries()) {
       globalAwareness[i.toString()] = {
         currentTab: v.currentTab,
-        user: v.user,
+        roomMemberDetails: v.user,
       };
     }
     this.awarenessSubscription = awareness$
@@ -313,8 +310,11 @@ export class RemoteCursorStyleManager {
         startWith(globalAwareness),
         concatMap((globalAwareness) => {
           const newEntries = Object.entries(globalAwareness)
-            .map(([clientID, userAwareness]): [number, userAwareness] => [parseInt(clientID), userAwareness])
-            .filter(([clientID, userAwareness]) => !this.includedClientStyles.has(clientID) && userAwareness.user);
+            .map(([clientID, userAwareness]): [number, clientAwareness] => [parseInt(clientID), userAwareness])
+            .filter(
+              ([clientID, userAwareness]) =>
+                !this.includedClientStyles.has(clientID) && userAwareness.roomMemberDetails,
+            );
 
           return fromArray(newEntries);
         }),
@@ -323,20 +323,20 @@ export class RemoteCursorStyleManager {
         this.setAwarenessStyle(...args);
       });
   }
-  setAwarenessStyle(clientID: number, userAwareness: userAwareness) {
-    if (this.includedClientStyles.has(clientID) || !userAwareness.user) {
+  setAwarenessStyle(clientID: number, userAwareness: clientAwareness) {
+    if (this.includedClientStyles.has(clientID) || !userAwareness.roomMemberDetails) {
       return;
     }
     const selectionHeadClass = styletronEngine.renderStyle({
       position: 'absolute',
-      borderLeft: `${userAwareness.user.color} solid 2px`,
-      borderTop: `${userAwareness.user.color} solid 2px`,
-      borderBottom: `${userAwareness.user.color} solid 2px`,
+      borderLeft: `${userAwareness.roomMemberDetails.color} solid 2px`,
+      borderTop: `${userAwareness.roomMemberDetails.color} solid 2px`,
+      borderBottom: `${userAwareness.roomMemberDetails.color} solid 2px`,
       height: '100%',
       boxSizing: 'border-box',
     });
     const selectionBodyClass = styletronEngine.renderStyle({
-      backgroundColor: lighterColors[userAwareness.user.color],
+      backgroundColor: lighterColors[userAwareness.roomMemberDetails.color],
     });
     const selectionHeadClassForClientID = `selection-head-${clientID}`;
     const selectionBodyClassForClientID = `selection-body-${clientID}`;
@@ -346,10 +346,10 @@ export class RemoteCursorStyleManager {
         position: absolute;
         height: min-content;
         width: min-content;
-        background-color: ${userAwareness.user.color};
+        background-color: ${userAwareness.roomMemberDetails.color};
         padding: 1px;
         top: -22px;
-        content: '${userAwareness.user.name}';
+        content: '${userAwareness.roomMemberDetails.name}';
         color: white;
         font-weight: bold;
       }

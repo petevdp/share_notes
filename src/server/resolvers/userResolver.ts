@@ -43,6 +43,20 @@ export class UserResolver {
   }
 
   @FieldResolver(() => [ClientSideRoom])
+  async recentlyVisitedRooms(@Root() user: User, @Arg('first') first: number): Promise<ClientSideRoom[]> {
+    const out = await this.roomRepository
+      .createQueryBuilder('room')
+      .innerJoinAndSelect('room.visits', 'roomVisit')
+      .innerJoin('roomVisit.user', 'user')
+      .where('user.id = :id', { id: user.id })
+      .orderBy('roomVisit.visitTime', 'DESC')
+      .limit(first)
+      .getMany()
+      .then((rooms) => rooms.map((room) => this.getClientSideRoom(room)));
+    return out;
+  }
+
+  @FieldResolver(() => [ClientSideRoom])
   async ownedRooms(@Root() user: User): Promise<ClientSideRoom[] | null> {
     return user.ownedRooms.then((rooms) => rooms.map((r) => this.getClientSideRoom(r)));
   }
@@ -56,6 +70,7 @@ export class UserResolver {
         .innerJoinAndSelect('room.visits', 'roomVisit')
         .innerJoinAndSelect('roomVisit.user', 'user')
         .innerJoin('room.owner', 'roomOwner')
+        .where('user.id = :id', { id: user.id })
         .orderBy('roomVisits.visitTime', input.sort)
         .limit(input.first)
         .getMany();

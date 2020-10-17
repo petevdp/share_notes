@@ -83,10 +83,6 @@ export function computedRoomCreationSliceStateSelector(rootState: rootState): co
     }
   }
 
-  console.log('href: ', url.href);
-  console.log('path: ', url.pathname);
-  console.log('host', url.hostname);
-
   const wrongDomain = url.hostname !== 'gist.github.com';
   const notGistPath = !/^\/[^\/]+(\/[^\/]+)?\/?$/.test(url.pathname);
 

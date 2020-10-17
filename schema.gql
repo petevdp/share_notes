@@ -4,6 +4,7 @@
 # -----------------------------------------------
 
 type ClientSideRoom {
+  activeRoomMembers: [RoomMember!]!
   createdAt: Float!
   gistName: String
   hashId: String!
@@ -35,7 +36,7 @@ type Mutation {
 
 type Query {
   currentUser: User!
-  room(data: RoomInput!): ClientSideRoom!
+  room(data: RoomInput!): ClientSideRoom
   rooms: [ClientSideRoom!]!
   roomVisits(data: RoomVisitsInput!): [RoomVisit!]!
   user(data: UserInput!): User!
@@ -45,6 +46,15 @@ type Query {
 input RoomInput {
   hashId: String
   id: ID
+}
+
+type RoomMember {
+  avatarUrl: String
+  color: String!
+  name: String!
+  profileUrl: String!
+  type: String!
+  userIdOrAnonID: String
 }
 
 type RoomVisit {
@@ -74,6 +84,7 @@ type User {
   githubLogin: String!
   id: ID!
   ownedRooms: [ClientSideRoom!]!
+  recentlyVisitedRooms(first: Float!): [ClientSideRoom!]!
   roomVisits(data: RoomVisitsForUserInput!): [RoomVisit!]!
 }
 

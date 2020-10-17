@@ -1,0 +1,19 @@
+[
+    "UpdateValuesMissingError: Cannot perform update query because update values are not defined. Call \"qb.set(...)\" method to specify updated values.",
+    "    at new UpdateValuesMissingError (/home/pete/projects/share_notes/node_modules/typeorm/error/UpdateValuesMissingError.js:10:28)",
+    "        -> /home/pete/projects/share_notes/node_modules/typeorm/error/src/error/UpdateValuesMissingError.ts:8:9",
+    "    at UpdateQueryBuilder.createUpdateExpression (/home/pete/projects/share_notes/node_modules/typeorm/query-builder/UpdateQueryBuilder.js:449:19)",
+    "        -> /home/pete/projects/share_notes/node_modules/typeorm/query-builder/src/query-builder/UpdateQueryBuilder.ts:512:19",
+    "    at UpdateQueryBuilder.getQuery (/home/pete/projects/share_notes/node_modules/typeorm/query-builder/UpdateQueryBuilder.js:43:24)",
+    "        -> /home/pete/projects/share_notes/node_modules/typeorm/query-builder/src/query-builder/UpdateQueryBuilder.ts:51:24",
+    "    at UpdateQueryBuilder.QueryBuilder.getQueryAndParameters (/home/pete/projects/share_notes/node_modules/typeorm/query-builder/QueryBuilder.js:241:26)",
+    "        -> /home/pete/projects/share_notes/node_modules/typeorm/query-builder/src/query-builder/QueryBuilder.ts:416:28",
+    "    at UpdateQueryBuilder.<anonymous> (/home/pete/projects/share_notes/node_modules/typeorm/query-builder/UpdateQueryBuilder.js:90:50)",
+    "        -> /home/pete/projects/share_notes/node_modules/typeorm/query-builder/src/query-builder/UpdateQueryBuilder.ts:96:50",
+    "    at step (/home/pete/projects/share_notes/node_modules/typeorm/node_modules/tslib/tslib.js:141:27)",
+    "    at Object.next (/home/pete/projects/share_notes/node_modules/typeorm/node_modules/tslib/tslib.js:122:57)",
+    "    at /home/pete/projects/share_notes/node_modules/typeorm/node_modules/tslib/tslib.js:115:75",
+    "    at new Promise (<anonymous>)",
+    "    at Object.__awaiter (/home/pete/projects/share_notes/node_modules/typeorm/node_modules/tslib/tslib.js:111:16)"
+]
+}

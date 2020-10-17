@@ -17,7 +17,7 @@ export const GET_ROOM = gql`
 `;
 
 export interface getRoomResponse {
-  room: clientSideRoom;
+  room?: clientSideRoom;
 }
 
 export const USER_ROOMS = gql`
@@ -211,16 +211,24 @@ export interface languageDetectionResponse {
   detectFiletype: languageDetectionOutput[];
 }
 
-export const GET_RECENT_ROOMS_FOR_USER = gql`
+export const GET_RECENTLY_VISITED_ROOMS_FOR_CURRENT_USER = gql`
   query getRecentRoomsForUser($userId: ID!, $first: Int) {
-    roomsByVisits(data: { first: $first, sort: "descending", userIds: [$userId] }) {
-      ...RoomDetails
-      visits {
+    currentUser {
+      recentlyVisitedRooms(first: 5) {
         id
-        visitTime
-        user {
+        name
+        visits(first: 1, fromCurrentUser: true) {
           id
-          githubLogin
+          visitTime
+          room {
+            name
+            activeRoomMembers {
+              userId
+              name
+              color
+              avatarUrl
+            }
+          }
         }
       }
     }
@@ -229,9 +237,25 @@ export const GET_RECENT_ROOMS_FOR_USER = gql`
   ${ROOM_DETAILS_FRAGMENT}
 `;
 
-export interface getRecentRoomsForUserInput {
-  userId: string;
-  first?: number;
+export interface getRecentlyVisitedRoomsForCurrentUserResponse {
+  currentUser: {
+    recentlyVisitedRooms: {
+      id: string;
+      name: string;
+      visits: {
+        visitTime: Date;
+        room: {
+          name: string;
+          activeRoomMembers: {
+            userId: string;
+            name: string;
+            color: string;
+            avatarUrl: string;
+          }[];
+        }[];
+      };
+    }[];
+  };
 }
 
 export interface getRecentRoomsForUserResponse {

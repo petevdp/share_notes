@@ -49,6 +49,10 @@ export class ClientSideRoomService {
     return {
       ...room,
       hashId: this.hashIdService.hashIds.encode(room.id),
+
+      // the below properties are are internally getters, so we need to assign this explicitely
+      owner: room.owner,
+      visits: room.visits,
     };
   }
 }

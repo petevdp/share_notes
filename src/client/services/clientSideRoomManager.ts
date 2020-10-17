@@ -1,7 +1,5 @@
 import { DEBUG_FLAGS } from 'Client/debugFlags';
-import { userType } from 'Client/session/types';
 import { clientSettings, getSettingsForEditor, settingsResolvedForEditor } from 'Client/settings/types';
-import { stat } from 'fs';
 import __isEqual from 'lodash/isEqual';
 import * as monaco from 'monaco-editor';
 import { initVimMode } from 'monaco-vim';
@@ -18,34 +16,14 @@ import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { Subject } from 'rxjs/internal/Subject';
 import { getYjsDocNameForRoom, YJS_WEBSOCKET_URL_WS } from 'Shared/environment';
 import { allBaseFileDetailsStates, allComputedFileDetailsStates, roomDetails, RoomManager } from 'Shared/roomManager';
+import { clientAwareness, roomMember, roomMemberInput } from 'Shared/types/roomMemberAwarenessTypes';
 import { getKeysForMap } from 'Shared/ydocUtils';
+import { v4 as uuidv4 } from 'uuid';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 
 import { allColors } from './awarenessColors';
 import { MonacoBinding, RemoteCursorStyleManager } from './monacoBinding';
-
-export interface userAwarenessDetailsInput {
-  type: userType;
-  name: string;
-  userId?: string;
-  avatarUrl?: string;
-  profileUrl?: string;
-}
-
-export interface userAwarenessDetails extends userAwarenessDetailsInput {
-  clientID: number;
-  color: string;
-}
-
-export interface userAwareness {
-  user?: userAwarenessDetails;
-  selection?: {
-    anchor: Y.RelativePosition;
-    head: Y.RelativePosition;
-  };
-  currentTab?: string;
-}
 
 export interface langaugeDetectInput {
   filename: string;
@@ -63,8 +41,8 @@ export interface languageDetectState {
   outputMode?: string;
 }
 
-export type globalAwarenessMap = Map<number, userAwareness>;
-export type globalAwareness = { [id: string]: userAwareness };
+export type globalAwarenessMap = Map<number, clientAwareness>;
+export type globalAwareness = { [id: string]: clientAwareness };
 
 export type sharedRoomDetails = {
   assignedColours: { [cliendId: string]: string };
@@ -118,7 +96,7 @@ interface vimBindingState {
 
 export class ClientSideRoomManager extends RoomManager {
   static lastRoomManagerId = 0;
-  id: number;
+  localId: number;
   provider: WebsocketProvider;
   bindings: Map<string, MonacoBinding>;
   vimBindings: Map<string, vimBindingState>;
@@ -132,9 +110,14 @@ export class ClientSideRoomManager extends RoomManager {
   awareness$: ConnectableObservable<globalAwareness>;
   remoteCursorStyleManager: RemoteCursorStyleManager;
 
-  constructor(roomHashId: string, private settings$: Observable<clientSettings>) {
+  static themeMap = {
+    light: 'vs',
+    dark: 'vs-dark',
+  };
+
+  constructor(private roomHashId: string, private settings$: Observable<clientSettings>) {
     super();
-    this.id = ClientSideRoomManager.lastRoomManagerId + 1;
+    this.localId = ClientSideRoomManager.lastRoomManagerId + 1;
     ClientSideRoomManager.lastRoomManagerId++;
     this.currentFile$$ = new BehaviorSubject(null);
     this.tabsToProvision$$ = new Subject();
@@ -147,17 +130,13 @@ export class ClientSideRoomManager extends RoomManager {
       material-darker
       theme: 'ambiance',
     */
-    const themeMap = {
-      light: 'vs',
-      dark: 'vs-dark',
-    };
 
     // listen for and apply settings changes to editors
     settings$.pipe(takeUntil(this.roomDestroyed$$)).subscribe((settings) => {
       for (let [tabId, binding] of this.bindings.entries()) {
         const settingsForEditor = getSettingsForEditor(settings, roomHashId, tabId);
         this.setEditorSettings(tabId, settingsForEditor, binding.getEditor());
-        binding.getEditor().updateOptions({ theme: themeMap[settings.theme] });
+        binding.getEditor().updateOptions({ theme: ClientSideRoomManager.themeMap[settings.theme] });
       }
     });
 
@@ -174,15 +153,13 @@ export class ClientSideRoomManager extends RoomManager {
     });
 
     this.awareness$ = (() => {
-      return new Observable<globalAwarenessMap>((s) => {
+      return new Observable<globalAwareness>((s) => {
         this.providerSynced.then(() => {
-          const state = this.provider.awareness.getStates() as globalAwarenessMap;
-          s.next(state);
+          s.next(this.getAwarenessStates());
         });
 
         const awarenessListener = () => {
-          const state = this.provider.awareness.getStates() as globalAwarenessMap;
-          s.next(state);
+          s.next(this.getAwarenessStates());
         };
 
         // change doesn't catch all changes to local state fields it seems
@@ -192,21 +169,12 @@ export class ClientSideRoomManager extends RoomManager {
           this.provider.awareness.off('update', awarenessListener);
           s.complete();
         });
-      }).pipe(
-        map((globalAwarenessMap) => {
-          const globalAwareness: globalAwareness = {};
-          for (let [i, v] of globalAwarenessMap.entries()) {
-            globalAwareness[i.toString()] = {
-              currentTab: v.currentTab,
-              user: v.user,
-            };
-          }
-          return globalAwareness;
-        }),
-        distinctUntilChanged(__isEqual),
-        publish(),
-      ) as ConnectableObservable<globalAwareness>;
+      }).pipe(distinctUntilChanged(__isEqual), publish()) as ConnectableObservable<globalAwareness>;
     })();
+
+    this.awareness$.subscribe((a) => {
+      console.log('awareness: ', a);
+    });
 
     this.roomDetails$ = this.yMapToObservable(this.yData.details, this.roomDestroyed$$).pipe(
       publish(),
@@ -228,14 +196,14 @@ export class ClientSideRoomManager extends RoomManager {
       .subscribe(async ([{ tabId, editorContainer, vimStatusBarContainer }, settings, fileDetails]) => {
         this.vimBindings.set(tabId, { statusElement: vimStatusBarContainer });
 
-        const uri = monaco.Uri.file(this.id + '-' + tabOrdinal + '-' + fileDetails[tabId].filename);
+        const uri = monaco.Uri.file(this.localId + '-' + tabOrdinal + '-' + fileDetails[tabId].filename);
         tabOrdinal++;
         console.log('uri: ', uri);
         const model = monaco.editor.createModel('', undefined, uri);
         const editor = monaco.editor.create(editorContainer, {
           value: '',
           model,
-          theme: themeMap[settings.theme],
+          theme: ClientSideRoomManager.themeMap[settings.theme],
           automaticLayout: true,
         });
         const settingsForEditor = getSettingsForEditor(settings, roomHashId, tabId);
@@ -286,12 +254,12 @@ export class ClientSideRoomManager extends RoomManager {
               return allColors;
             }
             const takenColors = Object.values(awareness)
-              .filter((u) => !!u?.user?.color)
-              .map((u) => u?.user?.color as string);
+              .filter((u) => !!u?.roomMemberDetails?.color)
+              .map((u) => u?.roomMemberDetails?.color as string);
 
             return allColors.filter((color) => !takenColors.includes(color));
           }),
-          distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
+          distinctUntilChanged(__isEqual),
         )
         .subscribe(subject);
 
@@ -312,24 +280,48 @@ export class ClientSideRoomManager extends RoomManager {
     this.provider.connect();
   }
 
+  updateSettings(settings: clientSettings) {
+    for (let [tabId, binding] of this.bindings.entries()) {
+      const settingsForEditor = getSettingsForEditor(settings, this.roomHashId, tabId);
+      this.setEditorSettings(tabId, settingsForEditor, binding.getEditor());
+      binding.getEditor().updateOptions({ theme: ClientSideRoomManager.themeMap[settings.theme] });
+    }
+  }
+
   async provisionTab(tabId: string, editorContainer: HTMLElement, vimStatusBarContainer: HTMLElement) {
     await this.providerSynced;
     this.tabsToProvision$$.next({ tabId, editorContainer, vimStatusBarContainer });
   }
 
-  async setAwarenessUserDetails(user: userAwarenessDetailsInput) {
+  async setAwarenessUserDetails(input: roomMemberInput) {
+    if (input.userIdOrAnonID) {
+      const awarenessState = this.getAwarenessStates();
+      const existingClientForUser = Object.values(awarenessState)
+        .map((userAwareness) => userAwareness.roomMemberDetails)
+        .find(
+          (roomMemberDetails) =>
+            roomMemberDetails?.userIdOrAnonID && roomMemberDetails.userIdOrAnonID === input.userIdOrAnonID,
+        );
+
+      if (existingClientForUser) {
+        // the user has this room open elsewhere, so we can just copy his details from there.
+        this.provider.awareness.setLocalStateField('roomMemberDetails', existingClientForUser);
+        return;
+      }
+    }
     const availableColors = (await this.availableColours$$
       .pipe(
         filter((s) => !!s),
         first(),
       )
       .toPromise()) as string[];
-    const userAwareness: userAwarenessDetails = {
-      clientID: this.ydoc.clientID,
+    const userAwareness: roomMember = {
       color: availableColors[0],
-      ...user,
+      userIdOrAnonID: input.userIdOrAnonID || uuidv4(),
+      ...input,
     };
-    this.provider.awareness.setLocalStateField('user', userAwareness);
+    console.log('setting local state for user: ', userAwareness);
+    this.provider.awareness.setLocalStateField('roomMemberDetails', userAwareness);
   }
 
   unprovisionTab(tabId: string) {
@@ -398,6 +390,18 @@ export class ClientSideRoomManager extends RoomManager {
 
   getAllFileContents() {
     return this.yData.fileContents.toJSON() as { [tabId: string]: string };
+  }
+
+  getAwarenessStates() {
+    const globalAwarenessMap = this.provider.awareness.getStates() as globalAwarenessMap;
+    const globalAwareness: globalAwareness = {};
+    for (let [i, v] of globalAwarenessMap.entries()) {
+      globalAwareness[i.toString()] = {
+        currentTab: v.currentTab,
+        roomMemberDetails: v.roomMemberDetails,
+      };
+    }
+    return globalAwareness;
   }
 
   static setAllEditorSettings(

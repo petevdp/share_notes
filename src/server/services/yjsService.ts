@@ -7,11 +7,11 @@ import { User } from 'Server/models/user';
 import { getYjsDocNameForRoom } from 'Shared/environment';
 import { gistDetails } from 'Shared/githubTypes';
 import { roomDetails, RoomManager, startingRoomDetails } from 'Shared/roomManager';
+import { clientAwareness, roomMember } from 'Shared/types/roomMemberAwarenessTypes';
 import { Service } from 'typedi';
 import { Repository } from 'typeorm';
 import { InjectRepository } from 'typeorm-typedi-extensions';
 import WebSocket from 'ws';
-import {} from 'y-websocket/bin/utils';
 import { docs, setupWSConnection, WSSharedDoc } from 'y-websocket/bin/utils';
 import * as Y from 'yjs';
 
@@ -20,7 +20,7 @@ import { TedisService, TOKEN_BY_USER_ID, USER_ID_BY_SESSION_KEY } from './tedisS
 
 @Service()
 export class YjsService {
-  readonly docs: Map<string, Y.Doc>;
+  readonly docs: Map<string, WSSharedDoc>;
   constructor(
     private readonly clientSideRoomService: ClientSideRoomService,
     private readonly tedisService: TedisService,
@@ -37,6 +37,20 @@ export class YjsService {
     return doc;
   }
 
+  activeRoomMembers(roomHashId: string) {
+    const docName = getYjsDocNameForRoom(roomHashId);
+    const doc = this.docs.get(docName);
+
+    console.log([...this.docs.entries()].map(([k, v]) => [k, v.awareness.states]));
+    if (!doc) {
+      console.log('no doc');
+      return [];
+    }
+    return ([...doc.awareness.getStates().values()] as clientAwareness[])
+      .map((memberAwareness) => memberAwareness.roomMemberDetails)
+      .filter(Boolean) as roomMember[];
+  }
+
   async setupWsConnection(conn: WebSocket, req: IncomingMessage) {
     const url = req.url as string;
     const roomHashId = path.basename(url.slice(1).split('?')[0]);
@@ -44,37 +58,35 @@ export class YjsService {
     let newDoc = !this.docs.has(docName);
     setupWSConnection(conn, req, { gc: true, docName: docName });
 
-    (async () => {
-      if (!req.headers.cookie) {
-        return;
-      }
-      const userToken = getCookie('session-token', req.headers.cookie);
-      if (!userToken) {
-        return;
-      }
-      const userId = await this.tedisService.tedis.hget(USER_ID_BY_SESSION_KEY, userToken);
-      if (!userId) {
-        return;
-      }
-      const [user, room]: [User, Room | undefined] = await Promise.all([
-        this.userRepository.findOneOrFail({ id: parseInt(userId) }),
-        this.roomRepository.findOne(this.clientSideRoomService.getIdFromHashId(roomHashId)),
-      ]);
+    if (!req.headers.cookie) {
+      return;
+    }
+    const userToken = getCookie('session-token', req.headers.cookie);
+    if (!userToken) {
+      return;
+    }
+    const userId = await this.tedisService.tedis.hget(USER_ID_BY_SESSION_KEY, userToken);
+    if (!userId) {
+      throw "user isn't logged in or doesn't exist";
+    }
 
-      if (!room) {
-        throw "couldn't find room";
-      }
+    const userPromise = this.userRepository.findOneOrFail(userId);
+    const roomId = this.clientSideRoomService.getIdFromHashId(roomHashId);
+    console.log('id: ', roomId);
+    const roomPromise = this.roomRepository.findOneOrFail(roomId.toString());
 
-      console.log('inserting visit');
-      console.log(user);
-      console.log(room);
-
-      const visit = new RoomVisit();
-      visit.visitTime = new Date();
-      visit.user = Promise.resolve(user);
-      visit.room = Promise.resolve(room);
+    // create a visit
+    const visit = new RoomVisit();
+    visit.visitTime = new Date();
+    await Promise.all([userPromise, roomPromise]).then(() => {
+      visit.user = userPromise;
+      visit.room = roomPromise;
+    });
+    try {
       this.roomVisitRepository.save(visit);
-    })();
+    } catch (err) {
+      console.log(err);
+    }
 
     const doc = this.docs.get(docName);
     if (!doc) {
@@ -82,12 +94,12 @@ export class YjsService {
     }
     if (newDoc) {
       const manager = new ServerSideRoomManager(doc);
-      const clientSideRoom = await this.clientSideRoomService.findRoom({ hashId: roomHashId });
+      const clientSideRoom = this.clientSideRoomService.getClientSideRoom(await roomPromise);
       if (!clientSideRoom) {
         throw "couldn't find clintsideroom";
       }
 
-      const token = await this.tedisService.tedis.hget(TOKEN_BY_USER_ID, clientSideRoom.owner.id.toString());
+      const token = await this.tedisService.tedis.hget(TOKEN_BY_USER_ID, (await clientSideRoom.owner).id.toString());
       const details = await octokitRequest
         .defaults({
           headers: { authorization: `bearer ${token}` },

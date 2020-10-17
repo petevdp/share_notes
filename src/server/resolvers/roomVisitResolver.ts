@@ -21,8 +21,8 @@ export class RoomVisitResolver {
   ) {}
 
   @FieldResolver(() => ClientSideRoom)
-  room(@Root() visit: RoomVisit) {
-    return visit.room;
+  async room(@Root() visit: RoomVisit) {
+    return this.clientSideRoomService.getClientSideRoom(await visit.room);
   }
 
   @FieldResolver(() => User)

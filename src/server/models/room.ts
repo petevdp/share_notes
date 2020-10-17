@@ -21,7 +21,7 @@ export class Room {
   createdAt: Date;
 
   @ManyToOne(() => User, (user) => user.ownedRooms)
-  owner: User;
+  owner: Promise<User>;
 
   @OneToMany(() => RoomVisit, (visit) => visit.room)
   visits: Promise<RoomVisit[]>;
@@ -39,7 +39,7 @@ export class ClientSideRoom {
   gistName: string;
 
   @Field(() => User)
-  owner: User;
+  owner: Promise<User>;
 
   @Field()
   hashId: string;

@@ -4,7 +4,6 @@ import {
   getCurrentUserGithubDetailsResponse,
   getCurrentUserResult,
 } from 'Client/queries';
-import { epicDependencies } from 'Client/store';
 import { eraseCookie, getCookie, getGithubGraphqlClient } from 'Client/utils/utils';
 import { request as gqlRequest } from 'graphql-request';
 import { Epic } from 'redux-observable';
@@ -12,19 +11,10 @@ import { merge } from 'rxjs/internal/observable/merge';
 import { concatMap } from 'rxjs/internal/operators/concatMap';
 import { filter } from 'rxjs/internal/operators/filter';
 import { first } from 'rxjs/internal/operators/first';
-import { ignoreElements } from 'rxjs/internal/operators/ignoreElements';
 import { map } from 'rxjs/internal/operators/map';
-import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { GITHUB_GRAPHQL_API_URL, GRAPHQL_URL, SESSION_TOKEN_COOKIE_KEY } from 'Shared/environment';
 
-import {
-  anonymousLoginActions,
-  clearSessionData,
-  logOut,
-  setCurrentUserData,
-  setSessionGithubDetails,
-  setSessionToken,
-} from './types';
+import { clearSessionData, logOut, setCurrentUserData, setSessionGithubDetails, setSessionToken } from './types';
 
 export const setSessionTokenEpic: Epic = (action$, state$) =>
   state$.pipe(
@@ -68,14 +58,4 @@ export const logOutEpic: Epic = (action$) =>
       await fetch('/auth/logout');
       return clearSessionData();
     }),
-  );
-
-export const loginAnonymouslyEpic: Epic = (aciton$, state$, { roomManager$$ }: epicDependencies) =>
-  aciton$.pipe(
-    filter(anonymousLoginActions.logInAnonymously.match),
-    withLatestFrom(roomManager$$),
-    map(([{ payload: username }, roomManager]) => {
-      roomManager.setAwarenessUserDetails({ name: username, type: 'anonymous' });
-    }),
-    ignoreElements(),
   );

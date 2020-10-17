@@ -1,4 +1,5 @@
 {
   "watch": ["nodemon.json", "ormconfig.json", "./dist/src/server/*/**", "./dist/src/shared/*/**"],
-  "ext": "js,json"
+  "ext": "js,json",
+  "exec": "node --unhandled-rejections=strict --enable-source-maps --trace-warnings --inspect ./dist/src/server/main.js"
 }

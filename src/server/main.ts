@@ -41,7 +41,11 @@ async function runServer() {
 
     const loggingPlugin: ApolloServerPlugin = {
       requestDidStart: (requestContext) => {
-        // console.log(requestContext.request.operationName);
+        if (requestContext.request.operationName !== 'IntrospectionQuery') {
+          console.log('gql query: ');
+          console.log(requestContext.request.query);
+        }
+        // console.log(requestContext.request.query);
         // console.log(requestContext.request.query);
         // console.log(requestContext.request.variables);
         // console.log(requestContext.response?.data);
@@ -67,11 +71,11 @@ async function runServer() {
     const yjsService = Container.get(YjsService);
     const websocketServer = new WebSocket.Server({ server: httpServer });
     websocketServer.on('connection', (conn: WebSocket, req) => {
-      if (req.url && /^\/websocket\/yjs\-room\/.+$/.test(req.url)) {
-        yjsService.setupWsConnection(conn, req);
-      } else {
+      if (!(req.url && /^\/websocket\/yjs\-room\/.+$/.test(req.url))) {
         console.log('invalid upgrade');
+        return;
       }
+      yjsService.setupWsConnection(conn, req);
     });
   })();
 

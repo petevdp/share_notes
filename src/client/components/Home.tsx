@@ -10,8 +10,9 @@ import { roomWithVisited } from 'Client/queries';
 import { deleteRoom } from 'Client/room/types';
 import { rootState } from 'Client/store';
 import { formatRoomVisitedTime } from 'Client/utils/utils';
+import { request as gqlRequest } from 'graphql-request';
 import { last } from 'lodash';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { clientSideRoom } from 'Shared/types/roomTypes';
@@ -23,6 +24,11 @@ export function Home() {
   const ownedRooms = useSelector((s: rootState) => s.ownedRooms?.allRooms);
   // const recentRoomVisits = useSelector((s: rootState) => s.ownedRooms?.recentRoomVisits);
   const currentUserId = useSelector((s: rootState) => s.session.user?.id);
+
+  // const [recentRooms, setRecentRooms] = useState<clientSideRoom[] | null>(null);
+  // useEffect(() => {
+  //   gqlRequest()
+  // }, []);
 
   useEffect(() => {
     if (!currentUserId) {

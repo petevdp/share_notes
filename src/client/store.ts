@@ -17,20 +17,11 @@ import {
   openRoomCreationEpic,
 } from './roomCreation/epics';
 import { roomCreationSlice } from './roomCreation/slice';
-import {
-  fetchCurrentUserDataOnSetSessionTokenEpic,
-  loginAnonymouslyEpic,
-  logOutEpic,
-  setSessionTokenEpic,
-} from './session/epics';
+import { fetchCurrentUserDataOnSetSessionTokenEpic, logOutEpic, setSessionTokenEpic } from './session/epics';
 import { sessionSlice } from './session/slice';
 import { settingsSlice } from './settings/slice';
 
-export interface epicDependencies {
-  roomManager$$: Subject<ClientSideRoomManager>;
-}
-
-const epicMiddleware = createEpicMiddleware({ dependencies: { roomManager$$: new Subject<ClientSideRoomManager>() } });
+const epicMiddleware = createEpicMiddleware();
 
 const persistSettingsConfig = {
   key: 'settings',
@@ -73,7 +64,6 @@ const epics = [
   logOutEpic,
   createRoomEpic,
   initRoomEpic,
-  loginAnonymouslyEpic,
   openRoomCreationEpic,
   getGistPreviewEpic,
   deleteRoomEpic,

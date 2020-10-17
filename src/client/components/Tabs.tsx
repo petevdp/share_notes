@@ -3,7 +3,6 @@ import { Button } from 'baseui/button';
 import { Delete } from 'baseui/icon';
 import { StatefulMenu } from 'baseui/menu';
 import { Popover } from 'baseui/popover';
-import { Skeleton } from 'baseui/skeleton';
 import { fileRenamingActions, removeFile, switchCurrentFile } from 'Client/room/types';
 import { rootState } from 'Client/store';
 import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
@@ -104,15 +103,15 @@ export function TabList() {
               <span className={css({ display: 'flex', justifyContent: 'space-between', height: '5px' })}>
                 {currentRoom.awareness &&
                   Object.values(currentRoom.awareness)
-                    .filter((a) => a.currentTab && a.user && a.currentTab === tabState.tabId)
+                    .filter((a) => a.currentTab && a.roomMemberDetails && a.currentTab === tabState.tabId)
                     .map((a) => (
                       <svg
-                        key={a.user?.clientID}
+                        key={a.roomMemberDetails?.userIdOrAnonID}
                         className={css({ width: '4px', height: '4px', marginRight: '2px' })}
                         viewBox="0 0 100 100"
                         xmlns="http://www.w3.org/2000/svg"
                       >
-                        <circle fill={a.user?.color} cx="50" cy="50" r="50" />
+                        <circle fill={a.roomMemberDetails?.color} cx="50" cy="50" r="50" />
                       </svg>
                     ))}
               </span>

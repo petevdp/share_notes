@@ -1,10 +1,11 @@
 import { createAction } from '@reduxjs/toolkit';
 import { createRoomResponse } from 'Client/queries';
-import { globalAwareness, userAwarenessDetails } from 'Client/services/clientSideRoomManager';
+import { globalAwareness } from 'Client/services/clientSideRoomManager';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';
 import { gistDetails } from 'Shared/githubTypes';
-import { allBaseFileDetailsStates, allUnifiedFileDetailsStates, roomDetails } from 'Shared/roomManager';
+import { allBaseFileDetailsStates } from 'Shared/roomManager';
+import { roomMember } from 'Shared/types/roomMemberAwarenessTypes';
 import { clientSideRoom } from 'Shared/types/roomTypes';
 import * as Y from 'yjs';
 
@@ -113,14 +114,14 @@ export function currentFileRenameWithErrorsSelector(rootState: rootState) {
   }
 }
 
-export function roomUsersAwarenessDetailsSelector(rootState: rootState): userAwarenessDetails[] | undefined {
+export function roomUsersAwarenessDetailsSelector(rootState: rootState): roomMember[] | undefined {
   const awareness = rootState.room.currentRoom?.awareness;
 
   if (awareness) {
     return [
       ...Object.values(awareness)
-        .filter((a) => !!a.user)
-        .map((s) => s.user as userAwarenessDetails),
+        .filter((a) => !!a.roomMemberDetails)
+        .map((s) => s.roomMemberDetails as roomMember),
     ];
   }
 }
