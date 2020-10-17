@@ -11,7 +11,6 @@ if gist already created:
 
 ## now
 
-- make sure current user details are populated into awareness properly
 - add create new gist option
 - landing page
 

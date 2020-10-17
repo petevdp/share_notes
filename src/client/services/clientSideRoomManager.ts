@@ -56,48 +56,11 @@ interface vimBindingState {
   statusElement: HTMLElement;
 }
 
-// export class AwarenessManager {
-//   constructor() {
-//     this.awareness$ = new Observable<globalAwarenessMap>((s) => {
-//       this.providerSynced.then(() => {
-//         const state = this.provider.awareness.getStates() as globalAwarenessMap;
-//         s.next(state);
-//       });
-
-//       const awarenessListener = () => {
-//         const state = this.provider.awareness.getStates() as globalAwarenessMap;
-//         s.next(state);
-//       };
-
-//       // change doesn't catch all changes to local state fields it seems
-//       this.provider.awareness.on('update', awarenessListener);
-
-//       this.roomDestroyed$$.subscribe(() => {
-//         this.provider.awareness.off('update', awarenessListener);
-//         s.complete();
-//       });
-//     }).pipe(
-//       map((globalAwarenessMap) => {
-//         const globalAwareness: globalAwareness = {};
-//         for (let [i, v] of globalAwarenessMap.entries()) {
-//           globalAwareness[i.toString()] = {
-//             currentTab: v.currentTab,
-//             user: v.user,
-//           };
-//         }
-//         return globalAwareness;
-//       }),
-//       distinctUntilChanged(__isEqual),
-//       publish(),
-//     ) as ConnectableObservable<globalAwareness>;
-//   }
-// }
-
 export class ClientSideRoomManager extends RoomManager {
   static lastRoomManagerId = 0;
   localId: number;
   provider: WebsocketProvider;
-  bindings: Map<string, MonacoBinding>;
+  bindings: BehaviorSubject<Map<string, MonacoBinding>>;
   vimBindings: Map<string, vimBindingState>;
   currentFile$$: BehaviorSubject<string | null>;
   availableColours$$: BehaviorSubject<string[] | null>;
@@ -120,7 +83,7 @@ export class ClientSideRoomManager extends RoomManager {
     ClientSideRoomManager.lastRoomManagerId++;
     this.currentFile$$ = new BehaviorSubject(null);
     this.tabsToProvision$$ = new Subject();
-    this.bindings = new Map();
+    this.bindings = new BehaviorSubject(new Map());
     this.vimBindings = new Map();
     this.provider = new WebsocketProvider(YJS_WEBSOCKET_URL_WS, getYjsDocNameForRoom(roomHashId), this.ydoc);
 
@@ -132,7 +95,7 @@ export class ClientSideRoomManager extends RoomManager {
 
     // listen for and apply settings changes to editors
     settings$.pipe(takeUntil(this.roomDestroyed$$)).subscribe((settings) => {
-      for (let [tabId, binding] of this.bindings.entries()) {
+      for (let [tabId, binding] of this.bindings.value.entries()) {
         const settingsForEditor = getSettingsForEditor(settings, roomHashId, tabId);
         this.setEditorSettings(tabId, settingsForEditor, binding.getEditor());
         binding.getEditor().updateOptions({ theme: ClientSideRoomManager.themeMap[settings.theme] });
@@ -221,12 +184,13 @@ export class ClientSideRoomManager extends RoomManager {
           this.provider.awareness,
           this.awareness$,
         );
-        this.bindings.set(tabId, binding);
+        this.bindings.value.set(tabId, binding);
+        this.bindings.next(this.bindings.value);
       });
 
     this.fileDetails$.subscribe((state) => {
       for (let [id, { filename }] of Object.entries(state)) {
-        const binding = this.bindings.get(id);
+        const binding = this.bindings.value.get(id);
         if (!binding) {
           continue;
         }
@@ -280,7 +244,7 @@ export class ClientSideRoomManager extends RoomManager {
   }
 
   updateSettings(settings: clientSettings) {
-    for (let [tabId, binding] of this.bindings.entries()) {
+    for (let [tabId, binding] of this.bindings.value.entries()) {
       const settingsForEditor = getSettingsForEditor(settings, this.roomHashId, tabId);
       this.setEditorSettings(tabId, settingsForEditor, binding.getEditor());
       binding.getEditor().updateOptions({ theme: ClientSideRoomManager.themeMap[settings.theme] });
@@ -325,9 +289,10 @@ export class ClientSideRoomManager extends RoomManager {
   unprovisionTab(tabId: string) {
     console.log('unprovisioning ', tabId);
 
-    const binding = this.bindings.get(tabId);
+    const binding = this.bindings.value.get(tabId);
     binding?.destroy();
-    this.bindings.delete(tabId);
+    this.bindings.value.delete(tabId);
+    this.bindings.next(this.bindings.value);
   }
 
   removeFile(tabId: string) {
@@ -349,12 +314,12 @@ export class ClientSideRoomManager extends RoomManager {
     this.availableColours$$.complete();
     this.remoteCursorStyleManager.destroy();
 
-    for (const binding of this.bindings.values()) {
+    for (const binding of this.bindings.value.values()) {
       // disposing the model will also dispose the binding
       binding.monacoModel.dispose();
       binding.destroy();
     }
-    this.bindings = new Map();
+    this.bindings.next(new Map());
   }
 
   setEditorSettings(tabId: string, settings: settingsResolvedForEditor, editor: monaco.editor.IStandaloneCodeEditor) {
@@ -400,6 +365,21 @@ export class ClientSideRoomManager extends RoomManager {
       };
     }
     return globalAwareness;
+  }
+
+  async setCurrentTab(tabId: string) {
+    console.log('tab: ', tabId);
+
+    this.provider.awareness.setLocalStateField('currentTab', tabId);
+    // the current implementation here to retrieve the binding assums that the tab for this tabid will at some point be provisioned. If it isn't this will never resolve.
+    const binding = await this.bindings
+      .pipe(
+        filter((bindings) => bindings.has(tabId)),
+        map((bindings) => bindings.get(tabId) as MonacoBinding),
+        first(),
+      )
+      .toPromise();
+    binding.getEditor().focus();
   }
 
   static setAllEditorSettings(

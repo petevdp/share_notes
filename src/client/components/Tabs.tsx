@@ -6,6 +6,7 @@ import { Popover } from 'baseui/popover';
 import { fileRenamingActions, removeFile, switchCurrentFile } from 'Client/slices/room/types';
 import { rootState } from 'Client/store';
 import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
+import __uniqBy from 'lodash/uniqBy';
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -102,18 +103,21 @@ export function TabList() {
             >
               <span className={css({ display: 'flex', justifyContent: 'space-between', height: '5px' })}>
                 {currentRoom.awareness &&
-                  Object.values(currentRoom.awareness)
-                    .filter((a) => a.currentTab && a.roomMemberDetails && a.currentTab === tabState.tabId)
-                    .map((a) => (
-                      <svg
-                        key={a.roomMemberDetails?.userIdOrAnonID}
-                        className={css({ width: '4px', height: '4px', marginRight: '2px' })}
-                        viewBox="0 0 100 100"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <circle fill={a.roomMemberDetails?.color} cx="50" cy="50" r="50" />
-                      </svg>
-                    ))}
+                  __uniqBy(
+                    Object.values(currentRoom.awareness).filter(
+                      (a) => a.currentTab && a.roomMemberDetails && a.currentTab === tabState.tabId,
+                    ),
+                    (a) => a.roomMemberDetails?.userIdOrAnonID,
+                  ).map((a) => (
+                    <svg
+                      key={a.roomMemberDetails?.userIdOrAnonID}
+                      className={css({ width: '4px', height: '4px', marginRight: '2px' })}
+                      viewBox="0 0 100 100"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <circle fill={a.roomMemberDetails?.color} cx="50" cy="50" r="50" />
+                    </svg>
+                  ))}
               </span>
               <span
                 className={css({ whiteSpace: 'nowrap', width: 'min-content', display: 'flex', alignItems: 'center' })}

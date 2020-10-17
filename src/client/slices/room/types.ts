@@ -3,6 +3,7 @@ import { globalAwareness } from 'Client/services/clientSideRoomManager';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';
 import { createRoomResponse } from 'Client/utils/queries';
+import __uniqBy from 'lodash/uniqBy';
 import { gistDetails } from 'Shared/githubTypes';
 import { allBaseFileDetailsStates } from 'Shared/roomManager';
 import { roomMember, roomMemberWithColor } from 'Shared/types/roomMemberAwarenessTypes';
@@ -116,12 +117,12 @@ export function currentFileRenameWithErrorsSelector(rootState: rootState) {
 
 export function roomUsersAwarenessDetailsSelector(rootState: rootState): roomMemberWithColor[] | undefined {
   const awareness = rootState.room.currentRoom?.awareness;
-
   if (awareness) {
-    return [
+    const roomMembers = [
       ...Object.values(awareness)
         .filter((a) => !!a.roomMemberDetails)
         .map((s) => s.roomMemberDetails as roomMemberWithColor),
     ];
+    return __uniqBy(roomMembers, (m) => m.userIdOrAnonID);
   }
 }

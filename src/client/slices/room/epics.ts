@@ -132,7 +132,9 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
             takeUntil(manager.roomDestroyed$$),
           )
           .subscribe((tabId) => {
-            manager.provider.awareness.setLocalStateField('currentTab', tabId);
+            if (tabId) {
+              manager.setCurrentTab(tabId);
+            }
           });
 
         action$
