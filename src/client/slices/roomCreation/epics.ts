@@ -5,12 +5,17 @@ import { octokitRequestWithAuth } from 'Client/utils/utils';
 import { request as gqlRequest } from 'graphql-request';
 import __isEmpty from 'lodash/isEmpty';
 import __isEqual from 'lodash/isEqual';
+import { useEffect, useRef } from 'react';
+import { AnyAction } from 'redux';
 import { Epic, StateObservable } from 'redux-observable';
 import { auditTime } from 'rxjs/internal/operators/auditTime';
 import { concatMap } from 'rxjs/internal/operators/concatMap';
 import { filter } from 'rxjs/internal/operators/filter';
+import { ignoreElements } from 'rxjs/internal/operators/ignoreElements';
 import { map } from 'rxjs/internal/operators/map';
+import { startWith } from 'rxjs/internal/operators/startWith';
 import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
+import { Subject } from 'rxjs/internal/Subject';
 import { GRAPHQL_URL } from 'Shared/environment';
 import { gistDetails } from 'Shared/githubTypes';
 import { createRoomInput } from 'Shared/types/roomTypes';
@@ -19,8 +24,10 @@ import { setCurrentUserDetails } from '../currentUserDetails/types';
 import {
   computedRoomCreationSliceStateSelector,
   gistDetailsStore,
-  GistUrlInputStatus,
+  gistImportFormWithComputed,
+  GistImportStatus,
   roomCreationActions,
+  RoomCreationFormType,
 } from './types';
 
 export const initializeRoomCreationEpic: Epic = (action$) =>
@@ -33,41 +40,45 @@ export const createRoomEpic: Epic = (action$, state$: StateObservable<rootState>
   action$.pipe(
     filter(roomCreationActions.createRoom.match),
     withLatestFrom(state$),
-    concatMap(
-      async ([
-        {
-          payload: { input: baseInput },
-        },
-        rootState,
-      ]) => {
-        if (!rootState.session.token) {
-          throw 'not logged in';
-        }
-        const roomCreationState = computedRoomCreationSliceStateSelector(rootState);
-        let gistDetails: gistDetails;
-        if (roomCreationState.urlInputStatus === GistUrlInputStatus.UnownedGist) {
+    concatMap(async ([{ payload: roomCreationState }, rootState]) => {
+      if (!rootState.session.token) {
+        throw 'not logged in';
+      }
+      let gistDetails: gistDetails;
+      if (roomCreationState.formSelected === RoomCreationFormType.Import) {
+        const form = roomCreationState.gistImportForm;
+        if (form.status === GistImportStatus.UnownedGist) {
+          const gistId = getGistId(form.gistUrl);
           const githubRequest = octokitRequestWithAuth();
           gistDetails = await githubRequest('POST /gists/{id}/forks', {
-            id: baseInput.gistName,
+            id: gistId,
           }).then((res) => res.data);
-        } else if (roomCreationState.urlInputStatus === GistUrlInputStatus.OwnedGist) {
-          gistDetails = roomCreationState.detailsForUrlAtGist as gistDetails;
+        } else if (form.status === GistImportStatus.OwnedGist) {
+          gistDetails = form.detailsForUrlAtGist as gistDetails;
         } else {
           throw 'invalid status for room creation';
         }
+      } else {
+        const form = roomCreationState.gistCreationForm;
+        const response = await octokitRequestWithAuth()('POST /gists', {
+          files: { [form.name]: { content: form.name } },
+        });
 
-        const roomCreationInput: createRoomInput = {
-          ...baseInput,
-          gistName: gistDetails.id,
-        };
+        gistDetails = response.data;
+      }
 
-        const res = await gqlRequest<createRoomResponse>(GRAPHQL_URL, CREATE_ROOM, { data: roomCreationInput });
-        return roomCreated(res);
-      },
-    ),
+      const roomCreationInput: createRoomInput = {
+        name: roomCreationState.roomName,
+        ownerId: rootState.currentUserDetails.userDetails?.id as string,
+        gistName: gistDetails.id,
+      };
+
+      const res = await gqlRequest<createRoomResponse>(GRAPHQL_URL, CREATE_ROOM, { data: roomCreationInput });
+      return roomCreated(res);
+    }),
   );
 
-function getCurrentUsersGists(): Promise<gistDetailsStore> {
+export function getCurrentUsersGists(): Promise<gistDetailsStore> {
   return octokitRequestWithAuth()('GET /gists').then((res) => {
     const store: gistDetailsStore = {};
     for (let gist of res.data) {
@@ -82,32 +93,39 @@ function getCurrentUsersGists(): Promise<gistDetailsStore> {
   });
 }
 
-export const openRoomCreationEpic: Epic = (action$, state$) =>
-  action$.pipe(
-    filter(roomCreationActions.roomCreationOpened.match),
-    concatMap(async () => {
-      // other initialization takss
-      const ownedGists = await getCurrentUsersGists();
-      return roomCreationActions.setOwnedGists(ownedGists);
-    }),
-  );
+export function useFetchImportableGistDetails(
+  importForm: gistImportFormWithComputed,
+  roomCreationDispatch: React.Dispatch<AnyAction>,
+) {
+  const gistUrlSubject = useRef(new Subject<gistImportFormWithComputed>());
+  useEffect(() => {
+    gistUrlSubject.current
+      .pipe(
+        auditTime(2000),
+        filter(({ status }) => status === GistImportStatus.NeedToLoadDetails),
+        concatMap(async ({ status: urlInputStatus, gistUrlId }) => {
+          return octokitRequestWithAuth()(`GET /gists/{id}`, { id: gistUrlId as string })
+            .then((res) => res.data as gistDetails)
+            .then(roomCreationActions.setGistDetails);
+        }),
+      )
+      .subscribe({
+        next: (action) => {
+          console.log('dispatching: ', action);
+          roomCreationDispatch(action);
+        },
+      });
 
-export const getGistPreviewEpic: Epic = (action$, state$: StateObservable<rootState>) =>
-  action$.pipe(
-    filter(roomCreationActions.setGistUrl.match),
-    auditTime(2000),
-    withLatestFrom(state$.pipe(map(computedRoomCreationSliceStateSelector))),
-    concatMap(async ([, { urlInputStatus, gistUrlId }]) => {
-      if (urlInputStatus !== GistUrlInputStatus.NeedToLoadDetails) {
-        return;
-      }
-      if (!gistUrlId) {
-        throw 'need to load gist details, but no gist url id';
-      }
-      const details = await octokitRequestWithAuth()(`GET /gists/{id}`, { id: gistUrlId }).then(
-        (res) => res.data as gistDetails,
-      );
+    return () => gistUrlSubject.current.complete();
+  }, []);
 
-      return roomCreationActions.setGistDetails(details);
-    }),
-  );
+  useEffect(() => {
+    console.log('next: ', importForm);
+    gistUrlSubject.current.next(importForm);
+  }, [gistUrlSubject, importForm]);
+}
+
+function getGistId(gistUrl: string) {
+  const url = new URL(gistUrl);
+  return url.pathname.substring(url.pathname.lastIndexOf('/') + 1);
+}

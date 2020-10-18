@@ -1,9 +1,7 @@
 import { combineReducers, configureStore, getDefaultMiddleware } from '@reduxjs/toolkit';
-import { ClientSideRoomManager } from 'Client/services/clientSideRoomManager';
 import { combineEpics, createEpicMiddleware } from 'redux-observable';
 import { FLUSH, PAUSE, PERSIST, persistReducer, persistStore, PURGE, REGISTER, REHYDRATE } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
-import { Subject } from 'rxjs/internal/Subject';
 
 import { currentUserDetailsSlice } from './slices/currentUserDetails/slice';
 import { fetchOwnedRoomsEpic } from './slices/ownedRooms/epics';
@@ -11,12 +9,7 @@ import { ownedRoomsSlice } from './slices/ownedRooms/slice';
 import { deleteRoomEpic, initRoomEpic } from './slices/room/epics';
 import { roomSlice } from './slices/room/slice';
 import { initRoom, provisionTab } from './slices/room/types';
-import {
-  createRoomEpic,
-  getGistPreviewEpic,
-  initializeRoomCreationEpic,
-  openRoomCreationEpic,
-} from './slices/roomCreation/epics';
+import { createRoomEpic, initializeRoomCreationEpic } from './slices/roomCreation/epics';
 import { roomCreationSlice } from './slices/roomCreation/slice';
 import { logOutEpic, retreiveSessionTokenEpic } from './slices/session/epics';
 import { sessionSlice } from './slices/session/slice';
@@ -68,8 +61,6 @@ const epics = [
   logOutEpic,
   createRoomEpic,
   initRoomEpic,
-  openRoomCreationEpic,
-  getGistPreviewEpic,
   deleteRoomEpic,
   fetchOwnedRoomsEpic,
 ];
