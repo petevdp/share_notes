@@ -40,13 +40,16 @@ export function Room() {
 
   // obfuscate key for addNewFile with the room hash to avoid potential duplicate keys
   const addNewFileKey = `${roomHashId}-add-new-file`;
-  const actionItems: ItemT[] = [
-    { label: 'save back to gist', key: 'saveBackToGist' },
+  let actionItems: ItemT[] = [
     {
       label: 'Rename File',
       key: 'renameFile',
     },
   ];
+
+  if (currentRoom?.gistDetails) {
+    actionItems = [...actionItems, { label: 'save back to gist', key: 'saveBackToGist' }];
+  }
 
   const onActionItemSelect = ({ item: { key } }: { item: { label: string; key: string } }) => {
     switch (key) {

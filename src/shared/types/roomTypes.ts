@@ -6,7 +6,7 @@ import { user } from './userTypes';
 export interface room {
   id: number;
   name: string;
-  gistName: string;
+  gistName?: string;
   owner: user;
   createdAt: Date;
   visits: roomVisit[];
@@ -23,8 +23,9 @@ export interface roomInput {
 
 export interface createRoomInput {
   name: string;
-  gistName: string;
+  gistName?: string;
   ownerId: string;
+  createdGistUrl?: string;
 }
 
 export interface deleteRoomInput {

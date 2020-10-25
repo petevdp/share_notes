@@ -283,7 +283,7 @@ export const GET_OWNED_ROOMS_FOR_CURRENT_USER = gql`
 export interface roomWithVisited {
   id: string;
   name: string;
-  gistName: string;
+  gistName?: string;
   hashId: string;
   owner: {
     id: string;

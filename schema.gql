@@ -15,7 +15,8 @@ type ClientSideRoom {
 }
 
 input CreateRoomInput {
-  gistName: String!
+  createdGistUrl: String
+  gistName: String
   name: String!
   ownerId: ID!
 }

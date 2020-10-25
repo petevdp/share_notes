@@ -33,14 +33,14 @@ export interface roomDetails {
   gistLoaded: boolean;
   hashId: string;
   name: string;
-  gistName: string;
+  gistName?: string;
 }
 
 export interface startingRoomDetails {
   id: string;
   hashId: string;
   name: string;
-  gistName: string;
+  gistName?: string;
 }
 
 export abstract class RoomManager {

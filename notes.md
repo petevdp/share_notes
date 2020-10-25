@@ -11,6 +11,10 @@ if gist already created:
 
 ## now
 
+- make gist creation optional
+- what's up with populate's transact?
+- anonymous room owner
+
 - add create new gist option
 - landing page
 
@@ -59,3 +63,11 @@ if gist already created:
 
 - there are some type mismatches for certain gql queries with overly generic response types
 - sometimes we get an error involving setting options on the editors when we create a room
+
+# optional gists
+
+- save back to gist action has to be conditional
+- need to make gistName optional
+- add link gist action
+
+# anonymous rooms

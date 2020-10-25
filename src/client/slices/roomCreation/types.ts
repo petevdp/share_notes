@@ -25,6 +25,7 @@ export type gistImportForm = {
 };
 
 export enum RoomCreationFormType {
+  Quick,
   Creation,
   Import,
 }
@@ -129,12 +130,15 @@ export function getComputedRoomCreationSliceState(
 
   const roomNameIsValid = roomCreation.roomName.trim().length > 0;
 
+  const { Quick, Creation, Import } = RoomCreationFormType;
+  const { formSelected } = roomCreation;
+
   const canSubmit =
     roomNameIsValid &&
     !roomCreation.submitted &&
-    (roomCreation.formSelected === RoomCreationFormType.Creation
-      ? gistCreationForm.isValid
-      : SUBMITTABLE_IMPORT_STATUSES.includes(gistImportForm.status));
+    (formSelected === Quick ||
+      (formSelected === Creation && gistCreationForm.isValid) ||
+      (formSelected === Import && SUBMITTABLE_IMPORT_STATUSES.includes(gistImportForm.status)));
 
   return {
     ...roomCreation,

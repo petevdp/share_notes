@@ -1,9 +1,11 @@
+import fs from 'fs';
 import { AuthorizedContext } from 'Server/context';
 import { CreateRoomInput, DeleteRoomInput, RoomInput } from 'Server/inputs/roomInputs';
 import { ClientSideRoom, Room } from 'Server/models/room';
 import { RoomMember } from 'Server/models/roomMember';
 import { RoomVisit } from 'Server/models/roomVisit';
 import { User } from 'Server/models/user';
+import { CREATED_GISTS_LOG } from 'Server/paths';
 import { ClientSideRoomService } from 'Server/services/clientSideRoomService';
 import { TedisService, USER_ID_BY_SESSION_KEY } from 'Server/services/tedisService';
 import { YjsService } from 'Server/services/yjsService';
@@ -74,6 +76,12 @@ export class RoomResolver {
   @Mutation(() => ClientSideRoom)
   async createRoom(@Arg('data') userData: CreateRoomInput) {
     const owner = await this.userRepository.findOneOrFail({ id: parseInt(userData.ownerId) });
+    if (userData.createdGistUrl) {
+      fs.appendFile(CREATED_GISTS_LOG, userData.createdGistUrl + '\n', () => {
+        // wow math
+        2 + 2 === 4;
+      });
+    }
 
     const room = new Room();
     room.createdAt = new Date();

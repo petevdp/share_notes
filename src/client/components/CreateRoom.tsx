@@ -91,6 +91,7 @@ function RoomCreationForm({ currentUserDetails }: { currentUserDetails: currentU
         if (!roomCreation.canSubmit) {
           return;
         }
+        roomCreationDispatch(roomCreationActions.createRoom(roomCreation));
         globalDispatch(roomCreationActions.createRoom(roomCreation));
       }}
     >
@@ -109,6 +110,7 @@ function RoomCreationForm({ currentUserDetails }: { currentUserDetails: currentU
             roomCreationDispatch(roomCreationActions.setActiveForm(Number(e.activeKey)));
           }}
         >
+          <Tab title="Quick Create" key={RoomCreationFormType.Quick}></Tab>
           <Tab title="Import Existing Gist" key={RoomCreationFormType.Import}>
             <GistImportFields roomCreation={roomCreation} roomCreationDispatch={roomCreationDispatch} />
           </Tab>

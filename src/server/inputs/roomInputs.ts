@@ -14,11 +14,14 @@ export class CreateRoomInput implements createRoomInput {
   @Field(() => String)
   name: string;
 
-  @Field(() => String)
-  gistName: string;
+  @Field(() => String, { nullable: true })
+  gistName?: string;
 
   @Field(() => ID)
   ownerId: string;
+
+  @Field(() => String, { nullable: true })
+  createdGistUrl?: string;
 }
 
 @InputType()

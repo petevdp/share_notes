@@ -15,7 +15,7 @@ export class Room {
   name: string;
 
   @Column({ nullable: true })
-  gistName: string;
+  gistName?: string;
 
   @Column({ type: 'timestamp' })
   createdAt: Date;
@@ -36,7 +36,7 @@ export class ClientSideRoom {
   name: string;
 
   @Field({ nullable: true })
-  gistName: string;
+  gistName?: string;
 
   @Field(() => User)
   owner: Promise<User>;

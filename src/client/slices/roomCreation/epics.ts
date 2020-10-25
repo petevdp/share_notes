@@ -39,13 +39,17 @@ export const initializeRoomCreationEpic: Epic = (action$) =>
 export const createRoomEpic: Epic = (action$, state$: StateObservable<rootState>) =>
   action$.pipe(
     filter(roomCreationActions.createRoom.match),
+    auditTime(2000),
     withLatestFrom(state$),
     concatMap(async ([{ payload: roomCreationState }, rootState]) => {
       if (!rootState.session.token) {
         throw 'not logged in';
       }
-      let gistDetails: gistDetails;
-      if (roomCreationState.formSelected === RoomCreationFormType.Import) {
+      const { Quick, Creation, Import } = RoomCreationFormType;
+      const { formSelected } = roomCreationState;
+      let gistDetails: gistDetails | undefined;
+      let createdGist = false;
+      if (formSelected === Import) {
         const form = roomCreationState.gistImportForm;
         if (form.status === GistImportStatus.UnownedGist) {
           const gistId = getGistId(form.gistUrl);
@@ -55,23 +59,31 @@ export const createRoomEpic: Epic = (action$, state$: StateObservable<rootState>
           }).then((res) => res.data);
         } else if (form.status === GistImportStatus.OwnedGist) {
           gistDetails = form.detailsForUrlAtGist as gistDetails;
+          createdGist = true;
         } else {
           throw 'invalid status for room creation';
         }
-      } else {
+      } else if (formSelected === Creation) {
         const form = roomCreationState.gistCreationForm;
         const response = await octokitRequestWithAuth()('POST /gists', {
           files: { [form.name]: { content: form.name } },
         });
 
         gistDetails = response.data;
+        createdGist = true;
+      } else if (formSelected === Quick) {
+        // do nothing
       }
 
       const roomCreationInput: createRoomInput = {
         name: roomCreationState.roomName,
         ownerId: rootState.currentUserDetails.userDetails?.id as string,
-        gistName: gistDetails.id,
+        gistName: gistDetails?.id,
       };
+
+      if (createdGist && gistDetails && process.env.NODE_ENV === 'development') {
+        roomCreationInput.createdGistUrl = gistDetails.url;
+      }
 
       const res = await gqlRequest<createRoomResponse>(GRAPHQL_URL, CREATE_ROOM, { data: roomCreationInput });
       return roomCreated(res);

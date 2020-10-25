@@ -100,15 +100,19 @@ export class YjsService {
       }
 
       const token = await this.tedisService.tedis.hget(TOKEN_BY_USER_ID, (await clientSideRoom.owner).id.toString());
-      const details = await octokitRequest
-        .defaults({
-          headers: { authorization: `bearer ${token}` },
-        })('GET /gists/:gist_id', { gist_id: clientSideRoom.gistName })
-        .then((res) => res.data);
+
+      let details: gistDetails | undefined;
+      if (clientSideRoom.gistName) {
+        details = await octokitRequest
+          .defaults({
+            headers: { authorization: `bearer ${token}` },
+          })('GET /gists/:gist_id', { gist_id: clientSideRoom.gistName })
+          .then((res) => res.data);
+      }
 
       manager.populate(
         {
-          gistName: clientSideRoom?.gistName,
+          gistName: clientSideRoom.gistName,
           hashId: clientSideRoom.hashId,
           id: clientSideRoom.id.toString(),
           name: clientSideRoom.name,
@@ -124,22 +128,23 @@ export class YjsService {
 }
 
 export class ServerSideRoomManager extends RoomManager {
-  populate(startingRoomDetails: startingRoomDetails, gistDetails: gistDetails) {
+  populate(startingRoomDetails: startingRoomDetails, gistDetails?: gistDetails) {
     const details: roomDetails = {
       ...startingRoomDetails,
       gistLoaded: true,
     };
-    // this.ydoc.transact(() => {
+
     for (let [key, detail] of Object.entries(details)) {
       this.yData.details.set(key, detail);
     }
 
-    this.ydoc.transact(() => {
-      for (let file of Object.values(gistDetails.files)) {
-        this.addNewFile({ filename: file.filename, content: file.content });
-      }
-    });
-    // });
+    if (gistDetails) {
+      this.ydoc.transact(() => {
+        for (let file of Object.values(gistDetails.files)) {
+          this.addNewFile({ filename: file.filename, content: file.content });
+        }
+      });
+    }
   }
 }
 

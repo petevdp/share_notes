@@ -13,6 +13,7 @@ import { Action } from 'redux';
 import { Epic, StateObservable } from 'redux-observable';
 import { Observable } from 'rxjs/internal/Observable';
 import { concat } from 'rxjs/internal/observable/concat';
+import { from } from 'rxjs/internal/observable/from';
 import { merge } from 'rxjs/internal/observable/merge';
 import { of } from 'rxjs/internal/observable/of';
 import { concatMap } from 'rxjs/internal/operators/concatMap';
@@ -88,6 +89,11 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
           if (!r) {
             throw 'room not found';
           }
+
+          if (!r.gistName) {
+            return;
+          }
+
           return getOctokitRequestWIthAuth()('GET /gists/{gist_id}', {
             gist_id: r.gistName,
           }).then((r) => r.data as gistDetails);
@@ -222,7 +228,7 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
           of(roomInitialized(manager.provider.doc.clientID)),
           merge(
             roomDataPromise.then(setRoomData),
-            gistDataPromise.then(setRoomGistDetails),
+            from(gistDataPromise).pipe(filter(Boolean), map(setRoomGistDetails)),
             fileDetailsStateUpdateAction$,
             roomAwarenessUpdate$,
             switchCurrentFileAfterAdded$,
