@@ -12,10 +12,9 @@ if gist already created:
 ## now
 
 - make gist creation optional
+- add link gist action
 - what's up with populate's transact?
 - anonymous room owner
-
-- add create new gist option
 - landing page
 
 ## later

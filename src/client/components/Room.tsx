@@ -5,6 +5,7 @@ import { ItemT, StatefulMenu } from 'baseui/menu';
 import { StatefulPopover } from 'baseui/popover';
 import { useSnackbar } from 'baseui/snackbar';
 import { addNewFile, destroyRoom, fileRenamingActions, initRoom, saveBackToGist } from 'Client/slices/room/types';
+import { roomUpdateActions } from 'Client/slices/roomUpdating/types';
 import { rootState } from 'Client/store';
 import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
 import React, { useEffect } from 'react';
@@ -12,6 +13,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 
 import { AnonymousLoginModal } from './AnonymousLoginModal';
+import { EditRoomModal } from './EditRoomModal';
 import { RenameFileModal } from './RenameFileModal';
 import { GlobalSettingsDropdown } from './SettingsDropdown';
 import { TabContent } from './TabContent';
@@ -47,6 +49,10 @@ export function Room() {
     },
   ];
 
+  if (currentRoom?.roomDetails) {
+    actionItems = [...actionItems, { label: 'Edit Room Details', key: 'editRoom' }];
+  }
+
   if (currentRoom?.gistDetails) {
     actionItems = [...actionItems, { label: 'save back to gist', key: 'saveBackToGist' }];
   }
@@ -55,6 +61,13 @@ export function Room() {
     switch (key) {
       case 'saveBackToGist':
         dispatch(saveBackToGist());
+        break;
+      case 'editRoom':
+        if (currentRoom?.roomDetails && !currentRoom.roomDetails.gistName) {
+          dispatch(roomUpdateActions.initialize(currentRoom.roomDetails));
+        } else if (currentRoom?.roomDetails && currentRoom.gistDetails) {
+          dispatch(roomUpdateActions.initialize(currentRoom.roomDetails, currentRoom.gistDetails));
+        }
         break;
       case 'renameFile':
         if (currentRoom?.currentTabId) {
@@ -120,6 +133,7 @@ export function Room() {
       <TabContent />
       <RenameFileModal />
       <AnonymousLoginModal />
+      <EditRoomModal />
     </div>
   );
 }

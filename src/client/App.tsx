@@ -12,7 +12,7 @@ import { PersistGate } from 'redux-persist/integration/react';
 import { DebugEngine, Provider as StyletronProvider } from 'styletron-react';
 
 import { AuthGuardedRoute } from './components/AuthGuard';
-import { CreateRoom } from './components/CreateRoom';
+import { RoomCreation } from './components/CreateRoom';
 import { GlobalHeader } from './components/GlobalHeader';
 import { Home } from './components/Home';
 import { Room } from './components/Room';
@@ -107,7 +107,7 @@ function Routes() {
         <Redirect to="/"></Redirect>
       </Route>
       <AuthGuardedRoute exact path="/rooms/new">
-        <CreateRoom />
+        <RoomCreation />
       </AuthGuardedRoute>
       <Route path="/rooms/:roomHashId">
         <Room />

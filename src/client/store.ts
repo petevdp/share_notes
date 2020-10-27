@@ -11,9 +11,13 @@ import { roomSlice } from './slices/room/slice';
 import { initRoom, provisionTab } from './slices/room/types';
 import { createRoomEpic, initializeRoomCreationEpic } from './slices/roomCreation/epics';
 import { roomCreationSlice } from './slices/roomCreation/slice';
+import { DEBUG__forceOpenEditRoomDetailsModalEpic } from './slices/roomUpdating/epics';
+import { roomUpdatingSlice } from './slices/roomUpdating/slice';
+import { roomUpdateActions } from './slices/roomUpdating/types';
 import { logOutEpic, retreiveSessionTokenEpic } from './slices/session/epics';
 import { sessionSlice } from './slices/session/slice';
 import { settingsSlice } from './slices/settings/slice';
+import { DEBUG_FLAGS } from './utils/debugFlags';
 
 const epicMiddleware = createEpicMiddleware();
 
@@ -37,6 +41,7 @@ const rootReducer = combineReducers({
   ),
   currentUserDetails: currentUserDetailsSlice.reducer,
   roomCreation: roomCreationSlice.reducer,
+  roomUpdating: roomUpdatingSlice.reducer,
   ownedRooms: ownedRoomsSlice.reducer,
 });
 
@@ -64,6 +69,12 @@ const epics = [
   deleteRoomEpic,
   fetchOwnedRoomsEpic,
 ];
+
+if (process.env.NODE_ENV === 'development') {
+  if (DEBUG_FLAGS.forceOpenEditRoomDetailsModal) {
+    epics.push(DEBUG__forceOpenEditRoomDetailsModalEpic);
+  }
+}
 
 epicMiddleware.run(combineEpics(...epics));
 

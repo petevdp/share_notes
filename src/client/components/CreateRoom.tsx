@@ -1,36 +1,30 @@
 import { useStyletron } from 'baseui';
 import { Button } from 'baseui/button';
 import { Card, StyledAction, StyledBody } from 'baseui/card';
-import { Checkbox } from 'baseui/checkbox';
 import { FormControl } from 'baseui/form-control';
 import { Heading, HeadingLevel } from 'baseui/heading';
-import { Check } from 'baseui/icon';
 import { Input } from 'baseui/input';
-import { Select } from 'baseui/select';
 import { FILL, Tab, Tabs } from 'baseui/tabs-motion';
-import { Tag } from 'baseui/tag';
-import { Label1 } from 'baseui/typography';
 import { currentUser } from 'Client/slices/currentUserDetails/types';
-import {
-  getCurrentUsersGists as fetchCurrentUsersGists,
-  useFetchImportableGistDetails,
-} from 'Client/slices/roomCreation/epics';
+import { fetchCurrentUsersGists, useFetchImportableGistDetails } from 'Client/slices/roomCreation/epics';
 import { initialState, roomCreationSlice } from 'Client/slices/roomCreation/slice';
 import {
+  computedRoomCreationSliceStateSelector,
   getComputedRoomCreationSliceState,
-  GistImportStatus,
+  ROOM_CREATION_ACTION_NAMESPACE,
   roomCreationActions,
   RoomCreationFormType,
-  roomCreationSliceStateWithComputed,
 } from 'Client/slices/roomCreation/types';
+import { ROOM_UPDATE_ACTION_NAMESPACE } from 'Client/slices/roomUpdating/types';
 import { rootState } from 'Client/store';
 import React, { useEffect, useReducer } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Redirect } from 'react-router-dom';
-import { AnyAction } from 'redux';
 
-export function CreateRoom() {
-  const dispatch = useDispatch();
+import { GistCreationFields } from './GistCreationFields';
+import { GistImportFields } from './GistImportFIelds';
+
+export function RoomCreation() {
   const roomHashId = useSelector((s: rootState) => s.room.currentRoom?.roomDetails?.hashId);
   const initializingRoom = useSelector((s: rootState) => s.room.currentRoom?.initializingRoom);
   const currentUserDetails = useSelector((s: rootState) => s.currentUserDetails.userDetails);
@@ -69,15 +63,15 @@ export function CreateRoom() {
 }
 
 function RoomCreationForm({ currentUserDetails }: { currentUserDetails: currentUser | undefined }) {
-  const globalDispatch = useDispatch();
+  const dispatch = useDispatch();
   const [] = useStyletron();
-  const [roomCreationState, roomCreationDispatch] = useReducer(roomCreationSlice.reducer, initialState);
+  const roomCreationState = useSelector(computedRoomCreationSliceStateSelector);
   const roomCreation = getComputedRoomCreationSliceState(roomCreationState);
-  useFetchImportableGistDetails(roomCreation.gistImportForm, roomCreationDispatch);
+  useFetchImportableGistDetails(roomCreation.gistImportFields, (data) =>
+    dispatch(roomCreationActions.setGistDetails(data)),
+  );
   useEffect(() => {
-    fetchCurrentUsersGists().then((gistDetails) =>
-      roomCreationDispatch(roomCreationActions.setOwnedGists(gistDetails)),
-    );
+    fetchCurrentUsersGists().then((gistDetails) => dispatch(roomCreationActions.setOwnedGists(gistDetails)));
   }, []);
   console.log(roomCreation);
 
@@ -91,15 +85,15 @@ function RoomCreationForm({ currentUserDetails }: { currentUserDetails: currentU
         if (!roomCreation.canSubmit) {
           return;
         }
-        roomCreationDispatch(roomCreationActions.createRoom(roomCreation));
-        globalDispatch(roomCreationActions.createRoom(roomCreation));
+        dispatch(roomCreationActions.createRoom(roomCreation));
+        dispatch(roomCreationActions.createRoom(roomCreation));
       }}
     >
       <StyledBody>
         <FormControl label={() => 'Room Name'}>
           <Input
             value={roomCreation.roomName}
-            onChange={(e) => roomCreationDispatch(roomCreationActions.setRoomName(e.currentTarget.value))}
+            onChange={(e) => dispatch(roomCreationActions.setRoomName(e.currentTarget.value))}
           />
         </FormControl>
         <Tabs
@@ -107,15 +101,22 @@ function RoomCreationForm({ currentUserDetails }: { currentUserDetails: currentU
           activeKey={roomCreation.formSelected}
           onChange={(e) => {
             console.log(e);
-            roomCreationDispatch(roomCreationActions.setActiveForm(Number(e.activeKey)));
+            dispatch(roomCreationActions.setActiveForm(Number(e.activeKey)));
           }}
         >
-          <Tab title="Quick Create" key={RoomCreationFormType.Quick}></Tab>
+          <Tab title="No Gist" key={RoomCreationFormType.NoGist}></Tab>
           <Tab title="Import Existing Gist" key={RoomCreationFormType.Import}>
-            <GistImportFields roomCreation={roomCreation} roomCreationDispatch={roomCreationDispatch} />
+            <GistImportFields
+              actionNamespace={ROOM_UPDATE_ACTION_NAMESPACE}
+              fields={roomCreation.gistImportFields}
+              gistSelectionOptions={roomCreation.gistSelectionOptions}
+            />
           </Tab>
           <Tab title="Create New Gist" key={RoomCreationFormType.Creation}>
-            <GistCreationFields roomCreation={roomCreation} roomCreationDispatch={roomCreationDispatch} />
+            <GistCreationFields
+              fields={roomCreation.gistCreationFields}
+              actionNamespace={ROOM_CREATION_ACTION_NAMESPACE}
+            />
           </Tab>
         </Tabs>
       </StyledBody>
@@ -135,124 +136,5 @@ function RoomCreationForm({ currentUserDetails }: { currentUserDetails: currentU
         </Button>
       </StyledAction>
     </form>
-  );
-}
-
-function GistImportFields({
-  roomCreation,
-  roomCreationDispatch,
-}: {
-  roomCreation: roomCreationSliceStateWithComputed;
-  roomCreationDispatch: React.Dispatch<AnyAction>;
-}) {
-  const [css, theme] = useStyletron();
-
-  return (
-    <>
-      <FormControl label={() => 'Your Gists'}>
-        <Select
-          options={roomCreation.gistSelectionOptions}
-          value={roomCreation.gistImportForm.selectedGistValue}
-          onChange={({ value }) => roomCreationDispatch(roomCreationActions.gistImport.setGistSelectionValue(value))}
-          labelKey="label"
-          valueKey="id"
-          placeholder="Choose from owned Gists"
-          maxDropdownHeight="300px"
-          type={'search'}
-        />
-      </FormControl>
-      <FormControl error={roomCreation.gistImportForm.errorMessage} label={'Gist Url'}>
-        <Input
-          value={roomCreation.gistImportForm.gistUrl}
-          error={roomCreation.gistImportForm.status === GistImportStatus.Invalid}
-          onChange={(e) => {
-            roomCreationDispatch(roomCreationActions.gistImport.setGistUrl(e.currentTarget.value));
-          }}
-        />
-      </FormControl>
-      <Heading styleLevel={6}>Selected Gist Details</Heading>
-      {roomCreation.gistImportForm.detailsForUrlAtGist && (
-        <Card>
-          <div>
-            <Label1>Description</Label1>
-            <div className={css({ backgroundColor: theme.colors.backgroundTertiary, padding: '5px' })}>
-              {roomCreation.gistImportForm.detailsForUrlAtGist.description || '(empty)'}
-            </div>
-          </div>
-          <div>
-            <Label1>Files</Label1>
-            {/* <ul> */}
-            {Object.values(roomCreation.gistImportForm.detailsForUrlAtGist.files).map((f) => (
-              <Tag closeable={false} key={f.filename} overrides={{ Text: { style: { maxWidth: 'unset' } } }}>
-                {f.filename}
-              </Tag>
-            ))}
-            {/* </ul> */}
-          </div>
-        </Card>
-      )}
-      {roomCreation.gistImportForm.status === GistImportStatus.UnownedGist && (
-        <Checkbox
-          overrides={{
-            Root: {
-              style: {
-                width: 'max-content',
-              },
-            },
-          }}
-          checked={roomCreation.gistImportForm.shouldForkCheckboxChecked}
-          onChange={() => {
-            const checked = (event?.target as any).checked as boolean;
-            roomCreationDispatch(roomCreationActions.setIsCheckboxChecked(checked));
-          }}
-        >
-          {"You don't own the currently selected gist. Fork Instead?"}
-        </Checkbox>
-      )}
-    </>
-  );
-}
-
-function GistCreationFields({
-  roomCreation,
-  roomCreationDispatch,
-}: {
-  roomCreation: roomCreationSliceStateWithComputed;
-  roomCreationDispatch: React.Dispatch<AnyAction>;
-}) {
-  const form = roomCreation.gistCreationForm;
-  return (
-    <>
-      <FormControl label="gist name">
-        <Input
-          value={form.name}
-          onChange={(e) => roomCreationDispatch(roomCreationActions.gistCreation.setGistName(e.currentTarget.value))}
-        />
-      </FormControl>
-      <FormControl label="Gist Description">
-        <Input
-          value={form.description}
-          onChange={(e) =>
-            roomCreationDispatch(roomCreationActions.gistCreation.setGistDescription(e.currentTarget.value))
-          }
-        />
-      </FormControl>
-      <Checkbox
-        overrides={{
-          Root: {
-            style: {
-              width: 'max-content',
-            },
-          },
-        }}
-        checked={form.isPrivate}
-        onChange={(e) => {
-          const checked = (event?.target as any).checked as boolean;
-          roomCreationDispatch(roomCreationActions.gistCreation.setIsGistPrivate(checked));
-        }}
-      >
-        Private Gist
-      </Checkbox>
-    </>
   );
 }

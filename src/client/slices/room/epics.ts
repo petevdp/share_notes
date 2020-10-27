@@ -6,7 +6,7 @@ import { anonymousLoginActions, roomMemberInputSelector } from 'Client/slices/se
 import { clientSettings } from 'Client/slices/settings/types';
 import { rootState } from 'Client/store';
 import { DELETE_ROOM, deleteRoomResponse, GET_ROOM, getRoomResponse } from 'Client/utils/queries';
-import { octokitRequestWithAuth as getOctokitRequestWIthAuth } from 'Client/utils/utils';
+import { octokitRequestWithAuth as getOctokitRequestWithAuth } from 'Client/utils/utils';
 import { request as gqlRequest } from 'graphql-request';
 import _isEqual from 'lodash/isEqual';
 import { Action } from 'redux';
@@ -29,6 +29,7 @@ import { gistDetails } from 'Shared/githubTypes';
 
 import { roomMemberInput } from '../../../../dist/src/shared/types/roomMemberAwarenessTypes';
 import { deleteRoomInput } from '../../../shared/types/roomTypes';
+import { roomUpdateActions } from '../roomUpdating/types';
 import {
   addNewFile,
   deleteRoom,
@@ -85,6 +86,8 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
           data: { hashId: roomHashId },
         }).then((res) => res.room);
 
+        roomDataPromise.then((d) => console.log('got room data: ', d));
+
         const gistDataPromise = roomDataPromise.then((r) => {
           if (!r) {
             throw 'room not found';
@@ -93,8 +96,9 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
           if (!r.gistName) {
             return;
           }
+          console.log('getting gist data');
 
-          return getOctokitRequestWIthAuth()('GET /gists/{gist_id}', {
+          return getOctokitRequestWithAuth()('GET /gists/{gist_id}', {
             gist_id: r.gistName,
           }).then((r) => r.data as gistDetails);
         });

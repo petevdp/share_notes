@@ -4,14 +4,14 @@ import { Option } from 'baseui/select';
 import { roomCreated } from 'Client/slices/room/types';
 import { rootState } from 'Client/store';
 
+import { createGistCreationFieldsActions, createGistCreationFieldsReducer } from '../partials/gistCreationFields';
+import { createGistImportFieldsReducer } from '../partials/gistImportFields';
 import { roomCreationActions, RoomCreationFormType, roomCreationSliceState } from './types';
 
 export const initialState: roomCreationSliceState = getInitialState();
 
 const {
   setActiveForm,
-  gistCreation: { setGistDescription, setGistName, setIsGistPrivate },
-  gistImport: { setGistSelectionValue, setGistUrl },
   setRoomName,
   initialize,
   createRoom,
@@ -26,19 +26,7 @@ export const roomCreationSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder.addCase(setActiveForm, (s, { payload: type }) => ({ ...s, formSelected: type }));
-    builder.addCase(setGistUrl, (s, { payload: gistUrl }) => {
-      s.gistImportForm.gistUrl = gistUrl;
-      s.gistImportForm.selectedGistValue = [];
-    });
     builder.addCase(setRoomName, (s, { payload: roomName }) => ({ ...s, roomName }));
-    builder.addCase(setGistSelectionValue, (state, { payload: value }) => {
-      const selectedGist = value[0]?.id && state.ownedGists && state.ownedGists[value[0]?.id];
-      if (selectedGist) {
-        state.gistImportForm.gistUrl = selectedGist.html_url;
-      }
-      // value is a readonly array for somre reason
-      state.gistImportForm.selectedGistValue = value as Option[];
-    });
     builder.addCase(setOwnedGists, (s, { payload: ownedGists }) => ({ ...s, ownedGists }));
     builder.addCase(initialize, (_, { payload: username }) => getInitialState());
     builder.addCase(createRoom, (state) => ({ ...state, submitted: true }));
@@ -49,14 +37,12 @@ export const roomCreationSlice = createSlice({
 
     builder.addCase(setIsCheckboxChecked, (s, { payload: checked }) => ({ ...s, shouldForkCheckboxChecked: checked }));
 
-    builder.addCase(setGistName, (s, { payload: name }) => {
-      s.gistCreationForm.name = name;
-    });
-    builder.addCase(setGistDescription, (s, { payload: description }) => {
-      s.gistCreationForm.description = description;
-    });
-    builder.addCase(setIsGistPrivate, (s, { payload: isPrivate }) => {
-      s.gistCreationForm.isPrivate = isPrivate;
+    const gistImportFieldsReducer = createGistImportFieldsReducer('roomCreation', initialState.gistImportFields);
+    const gistCreationFieldsReducer = createGistCreationFieldsReducer('roomCreation', initialState.gistCreationFields);
+
+    builder.addDefaultCase((state, action) => {
+      state.gistImportFields = gistImportFieldsReducer(state.gistImportFields, action, state.ownedGists);
+      gistCreationFieldsReducer(state.gistCreationFields, action);
     });
   },
 });
@@ -67,12 +53,12 @@ function getInitialState(): roomCreationSliceState {
     formSelected: RoomCreationFormType.Import,
     ownedGists: {},
     otherGists: {},
-    gistImportForm: {
+    gistImportFields: {
       gistUrl: '',
       shouldForkCheckboxChecked: false,
       selectedGistValue: [],
     },
-    gistCreationForm: {
+    gistCreationFields: {
       name: '',
       description: '',
       isPrivate: false,

@@ -24,16 +24,9 @@ export const roomSlice = createSlice({
     builder.addCase(leaveRoom, () => ({}));
     builder.addCase(setRoomGistDetails, (s, { payload: details }) => {
       if (!s?.currentRoom) {
-        throw 'current room not set';
+        return s;
       }
-
-      return {
-        ...s,
-        currentRoom: {
-          ...s.currentRoom,
-          gistDetails: details,
-        },
-      };
+      s.currentRoom.gistDetails = details;
     });
 
     builder.addCase(setRoomData, (s, { payload: details }) => {

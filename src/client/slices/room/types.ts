@@ -90,6 +90,8 @@ export const removeFile = createAction('removeFile', (filename: string) => ({ pa
 export const saveBackToGist = createAction('saveBackToGist');
 export const gistSaved = createAction('gistSaved', (updatedDetails: gistDetails) => ({ payload: updatedDetails }));
 
+export const linkGist = createAction('linkGist', (gistId: string) => ({ payload: gistId }));
+
 export const fileRenamingActions = {
   startRenameCurrentFile: createAction('startRenameCurrentFile'),
   startFileRename: createAction('startFileRename', (tabId: string) => ({ payload: tabId })),
