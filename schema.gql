@@ -32,7 +32,7 @@ input DeleteRoomInput {
 
 type Mutation {
   createRoom(data: CreateRoomInput!): ClientSideRoom!
-  deleteRoom(data: DeleteRoomInput!): [ClientSideRoom!]!
+  deleteRoom(data: DeleteRoomInput!): Boolean!
   updateRoom(input: UpdateRoomInput!): ClientSideRoom!
 }
 

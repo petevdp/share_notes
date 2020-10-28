@@ -1,5 +1,8 @@
 import { createSlice } from '@reduxjs/toolkit';
+import { log } from 'console';
 
+import { roomDeleted } from '../room/types';
+import { loggedInStatusSelector } from '../session/types';
 import { ownedRoomsActions, ownedRoomsSliceState } from './types';
 
 const initialState = null as ownedRoomsSliceState;
@@ -15,5 +18,10 @@ export const ownedRoomsSlice = createSlice({
       allRooms,
     }));
     builder.addCase(resetOwnedRooms, () => null);
+    builder.addCase(roomDeleted, (state, { payload: roomId }) => {
+      if (state?.allRooms) {
+        state.allRooms = state.allRooms.filter((r) => r.id !== roomId);
+      }
+    });
   },
 });

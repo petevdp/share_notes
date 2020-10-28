@@ -67,18 +67,38 @@ export function Home() {
 function RoomListElement({ room }: { room: roomWithVisited }) {
   const dispatch = useDispatch();
   const lastVisit = room.visits[0];
+  const [css] = useStyletron();
   return (
     <ListItem
+      overrides={
+        {
+          // Content: {
+          //   style: {
+          //     display: 'flex',
+          //     justifyContent: 'space-between',
+          //   },
+          // },
+        }
+      }
       endEnhancer={() => (
-        <Button onClick={() => dispatch(deleteRoom(room.id.toString()))} size="compact" kind="secondary" shape="round">
-          <Delete />
-        </Button>
+        <>
+          <span className={css({ marginRight: '10px', fontSize: '15px', fontWeight: 'lighter' })}>
+            last visted: {lastVisit && formatRoomVisitedTime(lastVisit.visitTime)}{' '}
+          </span>
+          <Button
+            onClick={() => dispatch(deleteRoom(room.id.toString()))}
+            size="compact"
+            kind="secondary"
+            shape="round"
+          >
+            <Delete />
+          </Button>
+        </>
       )}
     >
       <StyledLink $as={Link} to={`/rooms/${room.hashId}`}>
         {room.name}
       </StyledLink>
-      <span>last visted: {lastVisit && formatRoomVisitedTime(lastVisit.visitTime)} </span>
     </ListItem>
   );
 }

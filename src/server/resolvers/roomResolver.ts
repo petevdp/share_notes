@@ -106,7 +106,7 @@ export class RoomResolver {
   }
 
   @Authorized()
-  @Mutation(() => [ClientSideRoom])
+  @Mutation(() => Boolean)
   async deleteRoom(@Arg('data') data: DeleteRoomInput, @Ctx() context: AuthorizedContext) {
     await this.roomRepository.delete(data.id);
     const userId = await this.tedisService.getCurrentUserId(context.githubSessionToken);
