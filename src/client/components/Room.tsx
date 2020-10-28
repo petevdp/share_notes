@@ -64,9 +64,14 @@ export function Room() {
         break;
       case 'editRoom':
         if (currentRoom?.roomDetails && !currentRoom.roomDetails.gistName) {
-          dispatch(roomUpdateActions.initialize(currentRoom.roomDetails));
+          dispatch(roomUpdateActions.initialize({ roomDetails: currentRoom.roomDetails }));
         } else if (currentRoom?.roomDetails && currentRoom.gistDetails) {
-          dispatch(roomUpdateActions.initialize(currentRoom.roomDetails, currentRoom.gistDetails));
+          dispatch(
+            roomUpdateActions.initialize({
+              roomDetails: currentRoom.roomDetails,
+              gistDetails: currentRoom.gistDetails,
+            }),
+          );
         }
         break;
       case 'renameFile':

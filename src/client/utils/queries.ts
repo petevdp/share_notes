@@ -1,10 +1,9 @@
 import { gql } from 'graphql-request';
 import { identity } from 'lodash';
+import { roomDetails } from 'Shared/roomManager';
 import { languageDetectionOutput } from 'Shared/types/languageDetectionTypes';
-import { clientSideRoom, ROOM_DETAILS_FRAGMENT } from 'Shared/types/roomTypes';
-
-import { roomDetails } from '../../../dist/src/shared/roomManager';
-import { roomVisit } from '../../../dist/src/shared/types/roomVisitTypes';
+import { clientSideRoom, gistUpdate, ROOM_DETAILS_FRAGMENT, updateRoomInput } from 'Shared/types/roomTypes';
+import { roomVisit } from 'Shared/types/roomVisitTypes';
 
 export const GET_ROOM = gql`
   query GetRoom($data: RoomInput!) {
@@ -59,6 +58,24 @@ export const DELETE_ROOM = gql`
     deleteRoom(data: $data)
   }
 `;
+
+export const UPDATE_ROOM = gql`
+  mutation UpdateRoom($input: UpdateRoomInput!) {
+    updateRoom(input: $input) {
+      ...RoomDetails
+    }
+  }
+
+  ${ROOM_DETAILS_FRAGMENT}
+`;
+
+export interface updateRoomVariables {
+  input: updateRoomInput;
+}
+
+export interface updateRoomResponse {
+  updateRoom: clientSideRoom;
+}
 
 export interface deleteRoomResponse {
   deleteRoom: boolean;

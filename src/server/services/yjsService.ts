@@ -114,7 +114,7 @@ export class YjsService {
         {
           gistName: clientSideRoom.gistName,
           hashId: clientSideRoom.hashId,
-          id: clientSideRoom.id.toString(),
+          id: clientSideRoom.id,
           name: clientSideRoom.name,
         },
         details,

@@ -1,3 +1,4 @@
+import { log } from 'console';
 import { gql } from 'graphql-request';
 
 import { roomVisit } from './roomVisitTypes';
@@ -53,3 +54,40 @@ const ROOM_DETAILS_FRAGMENT_WITH_VISITS = gql`
 
   ${ROOM_DETAILS_FRAGMENT}
 `;
+
+export enum GistUpdateType {
+  None,
+  Delete,
+  Create,
+  Import,
+}
+
+export const gistUpdateTypeArr = [
+  GistUpdateType.None,
+  GistUpdateType.Delete,
+  GistUpdateType.Create,
+  GistUpdateType.Import,
+];
+
+export type gistUpdate =
+  | {
+      type: GistUpdateType.Create;
+      name: string;
+      description: string;
+    }
+  | {
+      type: GistUpdateType.Delete;
+    }
+  | {
+      type: GistUpdateType.Import;
+      gistId: string;
+    }
+  | {
+      type: GistUpdateType.None;
+    };
+
+export interface updateRoomInput {
+  roomId: string;
+  roomName: string;
+  gistUpdate: gistUpdate;
+}

@@ -11,7 +11,7 @@ import { roomSlice } from './slices/room/slice';
 import { initRoom, provisionTab } from './slices/room/types';
 import { createRoomEpic, initializeRoomCreationEpic } from './slices/roomCreation/epics';
 import { roomCreationSlice } from './slices/roomCreation/slice';
-import { DEBUG__forceOpenEditRoomDetailsModalEpic } from './slices/roomUpdating/epics';
+import { DEBUG__forceOpenEditRoomDetailsModalEpic, updateRoomEpic } from './slices/roomUpdating/epics';
 import { roomUpdatingSlice } from './slices/roomUpdating/slice';
 import { roomUpdateActions } from './slices/roomUpdating/types';
 import { logOutEpic, retreiveSessionTokenEpic } from './slices/session/epics';
@@ -68,6 +68,7 @@ const epics = [
   initRoomEpic,
   deleteRoomEpic,
   fetchOwnedRoomsEpic,
+  updateRoomEpic,
 ];
 
 if (process.env.NODE_ENV === 'development') {

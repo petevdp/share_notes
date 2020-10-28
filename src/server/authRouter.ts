@@ -15,7 +15,7 @@ import {
 } from 'Shared/environment';
 import { Repository } from 'typeorm';
 
-import { Context } from './context';
+import { AuthorizedContext, Context } from './context';
 import { User } from './models/user';
 import { TedisService, TOKEN_BY_USER_ID, USER_ID_BY_SESSION_KEY } from './services/tedisService';
 interface github0AuthIdentityParams {
@@ -50,13 +50,9 @@ export const getAuthRouter = (tedisService: TedisService, userRepository: Reposi
 
     const githubResData = (querystring.parse(githubRes.data) as unknown) as github0AuthResponse;
 
-    const context: Context = {
-      githubSessionToken: githubResData.access_token,
-    };
-
     const userQueryResult = await GithubUtils.runQuery<GithubUtils.extraUserDetailsQueryResult>(
       GithubUtils.EXTRA_USER_DETAILS_QUERY,
-      context,
+      githubResData.access_token,
     );
 
     if (userQueryResult) {

@@ -33,6 +33,7 @@ input DeleteRoomInput {
 type Mutation {
   createRoom(data: CreateRoomInput!): ClientSideRoom!
   deleteRoom(data: DeleteRoomInput!): [ClientSideRoom!]!
+  updateRoom(input: UpdateRoomInput!): ClientSideRoom!
 }
 
 type Query {
@@ -78,6 +79,19 @@ input RoomVisitsInput {
   roomIds: [String!]
   sort: String
   userIds: [ID!]
+}
+
+input UpdateRoomGistInput {
+  description: String
+  gistId: String
+  name: String
+  type: Int!
+}
+
+input UpdateRoomInput {
+  gistUpdate: UpdateRoomGistInput!
+  roomId: ID!
+  roomName: String!
 }
 
 type User {

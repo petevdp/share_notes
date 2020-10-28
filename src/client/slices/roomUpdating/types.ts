@@ -2,7 +2,7 @@ import { createAction } from '@reduxjs/toolkit';
 import { Option } from 'baseui/select';
 import { rootState } from 'Client/store';
 import { gistDetails } from 'Shared/githubTypes';
-import { clientSideRoom } from 'Shared/types/roomTypes';
+import { clientSideRoom, gistUpdate, GistUpdateType } from 'Shared/types/roomTypes';
 
 import {
   createGistCreationFieldsActions,
@@ -17,13 +17,6 @@ import {
   gistImportFieldsWithComputed,
 } from '../partials/gistImportFields';
 import { gistDetailsStore } from '../roomCreation/types';
-
-export enum GistUpdateType {
-  None,
-  Delete,
-  Create,
-  Import,
-}
 
 export interface roomUpdatingState {
   startingDetails: { roomDetails: clientSideRoom; gistDetails?: gistDetails };
@@ -87,14 +80,26 @@ export function roomUpdatingSliceStateWithComputedSelector(state: rootState) {
 
 export const ROOM_UPDATE_ACTION_NAMESPACE = 'roomUpdating';
 
+export interface startingRoomDetails {
+  roomDetails: clientSideRoom;
+  gistDetails?: gistDetails;
+}
+
 const namespaceAction = (action: string) => `${ROOM_UPDATE_ACTION_NAMESPACE}/${action}`;
 
 export const roomUpdateActions = {
-  initialize: createAction(namespaceAction('initialize'), (roomDetails: clientSideRoom, gistDetails?: gistDetails) => ({
-    payload: { roomDetails, gistDetails },
+  initialize: createAction(namespaceAction('initialize'), (startingRoomDetails: startingRoomDetails) => ({
+    payload: startingRoomDetails,
   })),
-  updateRoom: createAction(namespaceAction('updateRoom')),
-  roomUpdated: createAction(namespaceAction('roomUpdated')),
+  updateRoom: createAction(
+    namespaceAction('updateRoom'),
+    (roomName: string, roomId: string, gistUpdate: gistUpdate, startingRoomDetails: startingRoomDetails) => ({
+      payload: { roomName, roomId, gistUpdate, startingRoomDetails },
+    }),
+  ),
+  roomUpdated: createAction(namespaceAction('roomUpdated'), (startingRoomDetails: startingRoomDetails) => ({
+    payload: startingRoomDetails,
+  })),
   close: createAction(namespaceAction('close')),
   setRoomName: createAction(namespaceAction('setRoomName'), (newName: string) => ({ payload: newName })),
   setGistUpdateType: createAction(namespaceAction('setGistUpdateType'), (type: GistUpdateType) => ({ payload: type })),

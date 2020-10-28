@@ -1,13 +1,22 @@
+import { request as octokitRequest } from '@octokit/request';
 import { gql, GraphQLClient } from 'graphql-request';
 import { Context } from 'Server/context';
 import { GITHUB_GRAPHQL_API_URL } from 'Shared/environment';
 
-export function runQuery<T>(query: string, context: Context, variables?: any) {
+function getAuthHeader(token: string) {
+  return `bearer ${token}`;
+}
+
+export function runQuery<T>(query: string, token: string, variables?: any) {
   const client = new GraphQLClient(GITHUB_GRAPHQL_API_URL, {
-    headers: { Authorization: `bearer ${context.githubSessionToken}` },
+    headers: { Authorization: getAuthHeader(token) },
   });
 
   return client.request<T>(query, variables);
+}
+
+export function githubRequestWithAuth(token: string) {
+  return octokitRequest.defaults({ headers: { Authorization: getAuthHeader(token) } });
 }
 
 export interface extraUserDetails {

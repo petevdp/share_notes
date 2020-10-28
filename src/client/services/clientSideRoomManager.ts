@@ -15,7 +15,14 @@ import { takeUntil } from 'rxjs/internal/operators/takeUntil';
 import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { Subject } from 'rxjs/internal/Subject';
 import { getYjsDocNameForRoom, YJS_WEBSOCKET_URL_WS } from 'Shared/environment';
-import { allBaseFileDetailsStates, allComputedFileDetailsStates, roomDetails, RoomManager } from 'Shared/roomManager';
+import { gistDetails } from 'Shared/githubTypes';
+import {
+  allBaseFileDetailsStates,
+  allComputedFileDetailsStates,
+  roomDetails,
+  RoomManager,
+  startingRoomDetails,
+} from 'Shared/roomManager';
 import { clientAwareness, roomMemberInput, roomMemberWithColor } from 'Shared/types/roomMemberAwarenessTypes';
 import { getKeysForMap } from 'Shared/ydocUtils';
 import { WebsocketProvider } from 'y-websocket';
@@ -304,6 +311,9 @@ export class ClientSideRoomManager extends RoomManager {
     this.yData.fileContents.delete(tabId);
   }
 
+  setRoomDetails(details: startingRoomDetails) {}
+  updateGistDetails(details: gistDetails) {}
+
   destroy() {
     console.log('destroying roomManager');
     super.destroy();
@@ -353,6 +363,10 @@ export class ClientSideRoomManager extends RoomManager {
 
   getAllFileContents() {
     return this.yData.fileContents.toJSON() as { [tabId: string]: string };
+  }
+
+  getRoomDetails() {
+    return this.yData.details.toJSON() as roomDetails;
   }
 
   getAwarenessStates() {

@@ -1,6 +1,16 @@
+import { fork } from 'child_process';
+import { log } from 'console';
 import fs from 'fs';
+import pipe from 'lodash/fp/pipe';
 import { AuthorizedContext } from 'Server/context';
-import { CreateRoomInput, DeleteRoomInput, RoomInput } from 'Server/inputs/roomInputs';
+import {
+  CreateRoomInput,
+  DeleteRoomInput,
+  RoomInput,
+  UpdateRoomGistInput,
+  UpdateRoomInput,
+  validateUpdateRoomGistInput,
+} from 'Server/inputs/roomInputs';
 import { ClientSideRoom, Room } from 'Server/models/room';
 import { RoomMember } from 'Server/models/roomMember';
 import { RoomVisit } from 'Server/models/roomVisit';
@@ -9,6 +19,8 @@ import { CREATED_GISTS_LOG } from 'Server/paths';
 import { ClientSideRoomService } from 'Server/services/clientSideRoomService';
 import { TedisService, USER_ID_BY_SESSION_KEY } from 'Server/services/tedisService';
 import { YjsService } from 'Server/services/yjsService';
+import { githubRequestWithAuth } from 'Server/utils/githubUtils';
+import { GistUpdateType } from 'Shared/types/roomTypes';
 import { Arg, Authorized, Ctx, FieldResolver, Mutation, Query, Resolver, Root } from 'type-graphql';
 import { Service } from 'typedi';
 import { Repository } from 'typeorm';
@@ -110,5 +122,66 @@ export class RoomResolver {
     }
 
     return true;
+  }
+
+  @Authorized()
+  @Mutation(() => ClientSideRoom)
+  async updateRoom(@Arg('input') input: UpdateRoomInput, @Ctx() context: AuthorizedContext) {
+    const { gistUpdate: gistUpdateInput, roomName, roomId } = input;
+    const gistUpdate = validateUpdateRoomGistInput(gistUpdateInput);
+    const currentUserId = await this.tedisService.getCurrentUserId(context.githubSessionToken);
+    if (!currentUserId) {
+      throw 'idk';
+    }
+    const room = await this.roomRepository.findOneOrFail({ id: parseInt(roomId) }, { relations: ['owner'] });
+
+    if (parseInt(currentUserId) !== (await room.owner).id) {
+      throw 'user doesnt own this room';
+    }
+
+    const owner = await room.owner;
+    console.log('room: ', room);
+    console.log('owner: ', owner);
+
+    switch (gistUpdate.type) {
+      case GistUpdateType.Create:
+        const { name, description } = gistUpdate;
+        const newGistData = await githubRequestWithAuth(context.githubSessionToken)('POST /gists', {
+          files: { [name]: { content: name } },
+          description,
+        }).then((res) => res.data);
+        room.gistName = newGistData.id;
+        break;
+
+      case GistUpdateType.Import:
+        const { gistId } = gistUpdate;
+        const originalGistData = await githubRequestWithAuth(context.githubSessionToken)('GET /gists/:gist_id', {
+          gist_id: gistId,
+        }).then((res) => res.data);
+
+        if (originalGistData.owner.id !== owner.githubDatabaseId) {
+          // this user doesn't own the room, so we create a fork
+          const forkedGistData = await githubRequestWithAuth(context.githubSessionToken)('POST /gists/:gist_id/forks', {
+            gist_id: gistId,
+          }).then((res) => res.data);
+
+          room.gistName = forkedGistData.id;
+        } else {
+          // this user owns the room
+          room.gistName = originalGistData.id;
+        }
+        break;
+
+      case GistUpdateType.Delete:
+        delete room.gistName;
+        break;
+
+      case GistUpdateType.None:
+        break;
+    }
+
+    room.name = roomName;
+
+    return this.roomRepository.save(room).then((room) => this.clientSideRoomService.getClientSideRoom(room));
   }
 }

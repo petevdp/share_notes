@@ -1,5 +1,14 @@
-import { createRoomInput, deleteRoomInput, roomInput } from 'Shared/types/roomTypes';
-import { Field, ID, InputType } from 'type-graphql';
+import { IsIn, IsString, validate } from 'class-validator';
+import { FieldsOnCorrectTypeRule } from 'graphql';
+import {
+  createRoomInput,
+  deleteRoomInput,
+  gistUpdate,
+  GistUpdateType,
+  gistUpdateTypeArr,
+  roomInput,
+} from 'Shared/types/roomTypes';
+import { ArgumentValidationError, Field, ID, InputType, Int } from 'type-graphql';
 
 @InputType()
 export class RoomInput implements roomInput {
@@ -28,4 +37,56 @@ export class CreateRoomInput implements createRoomInput {
 export class DeleteRoomInput implements deleteRoomInput {
   @Field(() => ID)
   id: string;
+}
+
+@InputType()
+export class UpdateRoomGistInput {
+  @Field(() => Int)
+  @IsIn(gistUpdateTypeArr)
+  type: number;
+
+  @Field(() => String, { nullable: true })
+  @IsString({ groups: ['create'] })
+  name?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsString({ groups: ['create'] })
+  description?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsString({ groups: ['import', 'delete'] })
+  gistId?: string;
+}
+
+@InputType()
+export class UpdateRoomInput {
+  @Field(() => ID)
+  roomId: string;
+
+  @Field(() => String)
+  roomName: string;
+
+  @Field(() => UpdateRoomGistInput)
+  gistUpdate: UpdateRoomGistInput;
+}
+
+export function validateUpdateRoomGistInput(input: UpdateRoomGistInput): gistUpdate {
+  const { type } = input;
+  const { None, Delete, Create, Import } = GistUpdateType;
+
+  switch (type) {
+    case Create:
+      validate(input, { groups: ['create'] });
+      break;
+    case Import:
+      validate(input, { groups: ['import'] });
+      break;
+    case Delete:
+      validate(input, { groups: ['delete'] });
+      break;
+    case None:
+      break;
+      return { type: None };
+  }
+  return input;
 }

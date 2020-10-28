@@ -1,7 +1,10 @@
+import { useStyletron, withStyle } from 'baseui';
+import { Button } from 'baseui/button';
 import { ModalOverrides } from 'baseui/modal';
 import { Override } from 'baseui/overrides';
 import { PopoverOverrides } from 'baseui/popover';
-import React from 'react';
+import { StyledSpinnerNext as Spinner } from 'baseui/spinner';
+import React, { Props, ReactNode } from 'react';
 
 export function getOverrideProps<T>(override: Override<T>) {
   if (override && typeof override === 'object') {
@@ -67,3 +70,24 @@ export const RoomModalZIndexOverride: ModalOverrides = {
     },
   },
 };
+
+const RestyledSpinner = withStyle(Spinner, { marginRight: '5px', height: '20px', width: '20px' });
+
+export function SubmitButtonWithSpinner({
+  children,
+  disabled,
+  loading,
+}: {
+  disabled: boolean;
+  loading: boolean;
+} & Props<unknown>) {
+  const [css, theme] = useStyletron();
+  return (
+    <>
+      {loading && <RestyledSpinner />}
+      <Button disabled={disabled} type="submit">
+        {children}
+      </Button>
+    </>
+  );
+}

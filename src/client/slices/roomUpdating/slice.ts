@@ -1,30 +1,36 @@
 import { createSlice } from '@reduxjs/toolkit';
+import { StateObservable } from 'redux-observable';
+import { gistDetails } from 'Shared/githubTypes';
+import { clientSideRoom, GistUpdateType } from 'Shared/types/roomTypes';
 
 import * as gistCreation from '../partials/gistCreationFields';
 import { createGistCreationFieldsReducer } from '../partials/gistCreationFields';
 import * as gistImporting from '../partials/gistImportFields';
 import { createGistImportFieldsReducer } from '../partials/gistImportFields';
-import { GistUpdateType, roomUpdateActions, roomUpdatingSliceState } from './types';
+import { roomUpdateActions, roomUpdatingSliceState } from './types';
 
-const { initialize, setRoomName, roomUpdated, close, setGistUpdateType, setOwnedGists } = roomUpdateActions;
+const { initialize, setRoomName, roomUpdated, close, setGistUpdateType, setOwnedGists, updateRoom } = roomUpdateActions;
+
+function initializeRoom(roomDetails: clientSideRoom, gistDetails?: gistDetails) {
+  return {
+    startingDetails: { roomDetails, gistDetails },
+    roomName: roomDetails.name,
+    gistCreationFields: gistCreation.initialState,
+    gistImportFields: gistImporting.initialState,
+    gistUpdateType: GistUpdateType.None,
+    submitted: false,
+  };
+}
 
 export const roomUpdatingSlice = createSlice({
   name: 'roomUpdating',
   initialState: null as roomUpdatingSliceState,
   reducers: {},
   extraReducers: (builder) => {
-    builder.addCase(initialize, (state, { payload: startingDetails }) => {
-      return {
-        startingDetails,
-        roomName: startingDetails.roomDetails.name,
-        gistCreationFields: gistCreation.initialState,
-        gistImportFields: gistImporting.initialState,
-        gistUpdateType: GistUpdateType.None,
-        submitted: false,
-      };
-    });
+    builder.addCase(initialize, (state, { payload: { roomDetails, gistDetails } }) =>
+      initializeRoom(roomDetails, gistDetails),
+    );
 
-    builder.addCase(roomUpdated, () => null);
     builder.addCase(close, () => null);
 
     builder.addCase(setRoomName, (state, { payload: newName }) => {
@@ -47,6 +53,17 @@ export const roomUpdatingSlice = createSlice({
       }
       state.ownedGists = gists;
     });
+
+    builder.addCase(updateRoom, (state) => {
+      if (!state) {
+        return null;
+      }
+      state.submitted = true;
+    });
+
+    builder.addCase(roomUpdated, (state, { payload: newRoomDetails }) =>
+      initializeRoom(newRoomDetails.roomDetails, newRoomDetails.gistDetails),
+    );
 
     {
       const gistImportFieldsReducer = createGistImportFieldsReducer('roomUpdating');

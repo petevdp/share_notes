@@ -4,6 +4,7 @@ import { publish } from 'rxjs/internal/operators/publish';
 import { Subject } from 'rxjs/internal/Subject';
 import * as Y from 'yjs';
 
+import { gistDetails } from './githubTypes';
 import { getKeysForMap } from './ydocUtils';
 
 export interface baseFileDetailsState {
@@ -28,19 +29,15 @@ export interface allUnifiedFileDetailsStates {
   [id: string]: unifiedFileDetailsState;
 }
 
-export interface roomDetails {
-  id: string;
-  gistLoaded: boolean;
+export interface startingRoomDetails {
+  id: number;
   hashId: string;
   name: string;
   gistName?: string;
 }
 
-export interface startingRoomDetails {
-  id: string;
-  hashId: string;
-  name: string;
-  gistName?: string;
+export interface roomDetails extends startingRoomDetails {
+  gistLoaded: boolean;
 }
 
 export abstract class RoomManager {
@@ -63,6 +60,25 @@ export abstract class RoomManager {
       fileContents: ydoc.getMap(`fileContents`),
       details: ydoc.getMap(`details`),
     };
+  }
+
+  populate(startingRoomDetails: startingRoomDetails, gistDetails?: gistDetails) {
+    const details: roomDetails = {
+      ...startingRoomDetails,
+      gistLoaded: true,
+    };
+
+    for (let [key, detail] of Object.entries(details)) {
+      this.yData.details.set(key, detail);
+    }
+
+    if (gistDetails) {
+      this.ydoc.transact(() => {
+        for (let file of Object.values(gistDetails.files)) {
+          this.addNewFile({ filename: file.filename, content: file.content });
+        }
+      });
+    }
   }
 
   addNewFile(detailsInput?: { filename?: string; content?: string }) {

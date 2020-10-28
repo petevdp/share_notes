@@ -27,6 +27,7 @@ import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { GRAPHQL_URL } from 'Shared/environment';
 import { gistDetails } from 'Shared/githubTypes';
 
+import { RoomManager } from '../../../../dist/src/shared/roomManager';
 import { roomMemberInput } from '../../../../dist/src/shared/types/roomMemberAwarenessTypes';
 import { deleteRoomInput } from '../../../shared/types/roomTypes';
 import { roomUpdateActions } from '../roomUpdating/types';
@@ -226,6 +227,24 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
             return gistSaved(updatedDetails);
           }),
         );
+
+        action$
+          .pipe(
+            filter(roomUpdateActions.roomUpdated.match),
+            filter(
+              ({ payload: { roomDetails } }) =>
+                roomDetails.hashId === roomHashId && manager.getRoomDetails().id === roomDetails.id,
+            ),
+            takeUntil(manager.roomDestroyed$$),
+          )
+          .subscribe(async ({ payload: { roomDetails, gistDetails } }) => {
+            const existingDetails = manager.getRoomDetails();
+            if (roomDetails.gistName && existingDetails.gistName !== roomDetails.gistName) {
+              manager.populate({ ...roomDetails, id: roomDetails.id }, gistDetails);
+            } else {
+              manager.setRoomDetails(roomDetails);
+            }
+          });
 
         manager.connect();
         return concat(

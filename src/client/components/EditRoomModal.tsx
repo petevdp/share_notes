@@ -4,22 +4,25 @@ import { Card, StyledAction, StyledBody } from 'baseui/card';
 import { FormControl } from 'baseui/form-control';
 import { Input } from 'baseui/input';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from 'baseui/modal';
+import { StyledSpinnerNext as Spinner } from 'baseui/spinner';
 import { fetchCurrentUsersGists } from 'Client/slices/roomCreation/epics';
 import {
-  GistUpdateType,
   ROOM_UPDATE_ACTION_NAMESPACE,
   roomUpdatingSliceStateWithComputedSelector,
 } from 'Client/slices/roomUpdating/types';
 import { roomUpdateActions } from 'Client/slices/roomUpdating/types';
+import { SubmitButtonWithSpinner } from 'Client/utils/basewebUtils';
 import { DEBUG_FLAGS } from 'Client/utils/debugFlags';
-import React, { useEffect } from 'react';
+import React, { PropsWithChildren, ReactNode, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { gistUpdate, GistUpdateType } from 'Shared/types/roomTypes';
 
 import { GistCard } from './GistCard';
 import { GistCreationFields } from './GistCreationFields';
 import { GistImportFields } from './GistImportFIelds';
 
-const { close, setRoomName, setGistUpdateType, setOwnedGists } = roomUpdateActions;
+const { close, setRoomName, setGistUpdateType, setOwnedGists, updateRoom } = roomUpdateActions;
 export function EditRoomModal() {
   const state = useSelector(roomUpdatingSliceStateWithComputedSelector);
   const dispatch = useDispatch();
@@ -37,7 +40,7 @@ export function EditRoomModal() {
       dispatch(close());
     };
   }, []);
-  const [css] = useStyletron();
+  const [css, theme] = useStyletron();
 
   if (!state) {
     return null;
@@ -46,6 +49,39 @@ export function EditRoomModal() {
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (!state.canSubmit) {
+      return;
+    }
+
+    const gistUpdate: gistUpdate = ((): gistUpdate => {
+      const { Create, Import, Delete, None } = GistUpdateType;
+      switch (state.gistUpdateType) {
+        case Create:
+          return {
+            type: Create,
+            name: state.gistCreationFields.name,
+            description: state.gistCreationFields.description,
+          };
+        case Import:
+          return {
+            type: Import,
+            gistId: state.gistImportFields.gistUrlId as string,
+          };
+        case Delete:
+          return {
+            type: Delete,
+          };
+        case None:
+          return {
+            type: None,
+          };
+      }
+    })();
+
+    dispatch(
+      updateRoom(state.roomName, state.startingDetails.roomDetails.id.toString(), gistUpdate, state.startingDetails),
+    );
   };
   return (
     <Modal unstable_ModalBackdropScroll={true} isOpen={isOpen} onClose={() => dispatch(roomUpdateActions.close())}>
@@ -59,41 +95,70 @@ export function EditRoomModal() {
             <Card>
               <StyledBody>No Gist Linked</StyledBody>
               <StyledAction>
-                <Button kind="secondary" onClick={() => dispatch(setGistUpdateType(GistUpdateType.Import))}>
+                <Button
+                  type="button"
+                  kind="secondary"
+                  onClick={() => dispatch(setGistUpdateType(GistUpdateType.Import))}
+                >
                   Import Existing Gist
                 </Button>
                 <span> or </span>
-                <Button kind="secondary" onClick={() => dispatch(setGistUpdateType(GistUpdateType.Create))}>
+                <Button
+                  type="button"
+                  kind="secondary"
+                  onClick={() => dispatch(setGistUpdateType(GistUpdateType.Create))}
+                >
                   Create New Gist
                 </Button>
               </StyledAction>
             </Card>
           )}
           {state.gistUpdateType === GistUpdateType.None && startingDetails.gistDetails && (
-            <GistCard details={startingDetails.gistDetails} title={'Linked Gist:'} />
+            <GistCard
+              details={startingDetails.gistDetails}
+              title={
+                <GistEditCardTitle titleText="Current Gist">
+                  <Button
+                    type="button"
+                    size="mini"
+                    kind="tertiary"
+                    onClick={() => dispatch(setGistUpdateType(GistUpdateType.Import))}
+                  >
+                    Import New Gist
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => dispatch(setGistUpdateType(GistUpdateType.Create))}
+                    size="mini"
+                    kind="tertiary"
+                  >
+                    Create New Gist
+                  </Button>
+                </GistEditCardTitle>
+              }
+            />
           )}
           {state.gistUpdateType === GistUpdateType.Create && (
             <Card
               title={
-                <div className={css({ display: 'flex', justifyContent: 'space-between' })}>
-                  <span>Create Gist</span>
-                  <span>
-                    <Button
-                      size="mini"
-                      kind="tertiary"
-                      onClick={() => dispatch(setGistUpdateType(GistUpdateType.Import))}
-                    >
-                      Import New Gist Instead
-                    </Button>
-                    <Button
-                      onClick={() => dispatch(setGistUpdateType(GistUpdateType.None))}
-                      size="mini"
-                      kind="tertiary"
-                    >
-                      Cancel
-                    </Button>
-                  </span>
-                </div>
+                <GistEditCardTitle titleText="Create Gist">
+                  <Button
+                    type="button"
+                    size="mini"
+                    kind="tertiary"
+                    onClick={() => dispatch(setGistUpdateType(GistUpdateType.Import))}
+                  >
+                    Import New Gist Instead
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => dispatch(setGistUpdateType(GistUpdateType.None))}
+                    size="mini"
+                    kind="tertiary"
+                  >
+                    Cancel
+                  </Button>
+                </GistEditCardTitle>
               }
             >
               <GistCreationFields actionNamespace={ROOM_UPDATE_ACTION_NAMESPACE} fields={state.gistCreationFields} />
@@ -102,25 +167,24 @@ export function EditRoomModal() {
           {state.gistUpdateType === GistUpdateType.Import && (
             <Card
               title={
-                <div className={css({ display: 'flex', justifyContent: 'space-between' })}>
-                  <span>Import Gist</span>
-                  <span>
-                    <Button
-                      size="mini"
-                      kind="tertiary"
-                      onClick={() => dispatch(setGistUpdateType(GistUpdateType.Create))}
-                    >
-                      Create New Gist Instead
-                    </Button>
-                    <Button
-                      onClick={() => dispatch(setGistUpdateType(GistUpdateType.None))}
-                      size="mini"
-                      kind="tertiary"
-                    >
-                      Cancel
-                    </Button>
-                  </span>
-                </div>
+                <GistEditCardTitle titleText="Import Gist">
+                  <Button
+                    type="button"
+                    size="mini"
+                    kind="tertiary"
+                    onClick={() => dispatch(setGistUpdateType(GistUpdateType.Create))}
+                  >
+                    Create New Gist Instead
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => dispatch(setGistUpdateType(GistUpdateType.None))}
+                    size="mini"
+                    kind="tertiary"
+                  >
+                    Cancel
+                  </Button>
+                </GistEditCardTitle>
               }
             >
               <GistImportFields
@@ -132,9 +196,23 @@ export function EditRoomModal() {
           )}
         </ModalBody>
         <ModalFooter>
-          <Button type="submit">Save</Button>
+          <span className={css({ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' })}>
+            <SubmitButtonWithSpinner disabled={!state.canSubmit} loading={state.submitted}>
+              Save
+            </SubmitButtonWithSpinner>
+          </span>
         </ModalFooter>
       </form>
     </Modal>
+  );
+}
+
+function GistEditCardTitle({ children, titleText }: React.Props<unknown> & { titleText: ReactNode }) {
+  const [css] = useStyletron();
+  return (
+    <div className={css({ display: 'flex', justifyContent: 'space-between' })}>
+      <span>{titleText}</span>
+      <span> {children} </span>
+    </div>
   );
 }

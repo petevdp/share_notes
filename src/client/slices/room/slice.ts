@@ -1,5 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 
+import { roomUpdateActions } from '../roomUpdating/types';
 import {
   fileRenamingActions,
   gistSaved,
@@ -67,6 +68,19 @@ export const roomSlice = createSlice({
         },
       },
     }));
+
+    builder.addCase(roomUpdateActions.roomUpdated, (state, { payload: updatedRoom }) => {
+      if (
+        !state ||
+        !state.currentRoom?.roomDetails ||
+        state.currentRoom.roomDetails.id !== updatedRoom.roomDetails.id
+      ) {
+        return;
+      }
+
+      state.currentRoom.roomDetails = updatedRoom.roomDetails;
+      state.currentRoom.gistDetails = updatedRoom.gistDetails;
+    });
 
     builder.addCase(roomInitialized, (s, { payload: yjsClientId }) => {
       if (!s.currentRoom) {

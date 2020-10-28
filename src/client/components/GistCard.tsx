@@ -2,10 +2,10 @@ import { useStyletron } from 'baseui';
 import { Card } from 'baseui/card';
 import { Tag } from 'baseui/tag';
 import { Label1 } from 'baseui/typography';
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { gistDetails } from 'Shared/githubTypes';
 
-export function GistCard({ details, title }: { title?: string; details: gistDetails }) {
+export function GistCard({ details, title }: { title?: ReactNode; details: gistDetails }) {
   const [css, theme] = useStyletron();
   return (
     <Card title={title}>
