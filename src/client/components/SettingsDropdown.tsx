@@ -16,6 +16,8 @@ import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
+import { getTabButtonOverrides } from './Tabs';
+
 interface globalSettingsItem<K extends keyof globalEditorSettings> extends ItemT {
   label: string;
   key: K;
@@ -248,7 +250,7 @@ export function GlobalSettingsDropdown() {
         />
       )}
     >
-      <Button kind="minimal" shape="round" size="compact">
+      <Button overrides={getTabButtonOverrides()} kind="tertiary" shape="round" size="compact">
         <span className="material-icons">settings</span>
       </Button>
     </StatefulPopover>

@@ -1,11 +1,12 @@
-import { useStyletron } from 'baseui';
-import { Button } from 'baseui/button';
+import { ThemeProvider, useStyletron } from 'baseui';
+import { Button, ButtonOverrides } from 'baseui/button';
 import { Delete } from 'baseui/icon';
 import { StatefulMenu } from 'baseui/menu';
 import { Popover } from 'baseui/popover';
 import { fileRenamingActions, removeFile, switchCurrentFile } from 'Client/slices/room/types';
 import { rootState } from 'Client/store';
 import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
+import __merge from 'lodash/merge';
 import __uniqBy from 'lodash/uniqBy';
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -15,7 +16,7 @@ export function TabList() {
   const currentRoom = useSelector((s: rootState) => s.room.currentRoom);
   const [openTabContextMenus, setOpenTabContextMenu] = useState(new Set<string>());
 
-  const [css] = useStyletron();
+  const [css, theme] = useStyletron();
 
   const openTabContextMenu = (tabId: string) =>
     setOpenTabContextMenu((s) => {
@@ -54,7 +55,8 @@ export function TabList() {
         };
         return (
           <Popover
-            popoverMargin={0}
+            // popoverMargin={0}
+            popperOptions={}
             key={tabState.tabId}
             onClick={() => dispatch(switchCurrentFile(tabState.tabId))}
             isOpen={openTabContextMenus.has(tabState.tabId)}
@@ -72,7 +74,7 @@ export function TabList() {
                 ...RoomPopoverZIndexOverride.Body,
                 style: {
                   ...RoomPopoverZIndexOverride.Body.style,
-                  top: '42px',
+                  top: '35px',
                 },
               },
             }}
@@ -81,7 +83,7 @@ export function TabList() {
               kind="secondary"
               onClick={() => dispatch(switchCurrentFile(tabState.tabId))}
               isSelected={currentRoom.currentTabId == tabState.tabId}
-              overrides={{
+              overrides={__merge(getTabButtonOverrides(), {
                 BaseButton: {
                   props: {
                     onContextMenu: (e: any) => {
@@ -91,59 +93,72 @@ export function TabList() {
                   },
                   style: {
                     display: 'flex',
-                    flexDirection: 'column',
                     alignItems: 'flex-start',
-                    paddingTop: '0px',
-                    paddingBottom: '5px',
-                    paddingLeft: '5px',
-                    paddingRight: '5px',
+                    paddingTop: '4px',
+                    paddingBottom: '4px',
+                    paddingLeft: '4px',
+                    paddingRight: '4px',
                   },
                 },
-              }}
+              })}
             >
-              <span className={css({ display: 'flex', justifyContent: 'space-between', height: '5px' })}>
-                {currentRoom.awareness &&
-                  __uniqBy(
-                    Object.values(currentRoom.awareness).filter(
-                      (a) => a.currentTab && a.roomMemberDetails && a.currentTab === tabState.tabId,
-                    ),
-                    (a) => a.roomMemberDetails?.userIdOrAnonID,
-                  ).map((a) => (
-                    <svg
-                      key={a.roomMemberDetails?.userIdOrAnonID}
-                      className={css({ width: '4px', height: '4px', marginRight: '2px' })}
-                      viewBox="0 0 100 100"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <circle fill={a.roomMemberDetails?.color} cx="50" cy="50" r="50" />
-                    </svg>
-                  ))}
-              </span>
               <span
-                className={css({ whiteSpace: 'nowrap', width: 'min-content', display: 'flex', alignItems: 'center' })}
+                className={css({
+                  whiteSpace: 'nowrap',
+                  width: 'min-content',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'start',
+                  marginTop: '3px',
+                  marginLeft: '3px',
+                  marginRight: '3px',
+                  marginBottom: '3px',
+                  flexWrap: 'nowrap',
+                })}
               >
+                <span className={css({ display: 'flex', justifyContent: 'flex-start', height: '6px' })}>
+                  {currentRoom.awareness &&
+                    __uniqBy(
+                      Object.values(currentRoom.awareness).filter(
+                        (a) => a.currentTab && a.roomMemberDetails && a.currentTab === tabState.tabId,
+                      ),
+                      (a) => a.roomMemberDetails?.userIdOrAnonID,
+                    ).map((a) => (
+                      <svg
+                        key={a.roomMemberDetails?.userIdOrAnonID}
+                        className={css({ width: '4px', height: '4px', marginRight: '2px' })}
+                        viewBox="0 0 100 100"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <circle fill={a.roomMemberDetails?.color} cx="50" cy="50" r="50" />
+                      </svg>
+                    ))}
+                </span>
                 <span className={css({ display: 'inline-block' })} key="filename">
                   {tabState.filename}
                 </span>
-                <span
-                  key={'delete button'}
-                  onClick={(e) => dispatch(removeFile(tabState.tabId)) && e.stopPropagation()}
-                  className={css({
-                    ':hover': {
-                      backgroundColor: '#c4c4c4',
-                      color: '#000000',
-                    },
-                    backgroundColor: 'transparent',
-                    color: '#c4c4c4',
-                    display: 'flex',
-                    alignSelf: 'start',
-                    justifySelf: 'flex-end',
-                    padding: '.2px',
-                    borderRadius: '50%',
-                  })}
-                >
-                  <Delete />
-                </span>
+              </span>
+              <span
+                key={'delete button'}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  dispatch(removeFile(tabState.tabId));
+                }}
+                className={css({
+                  ':hover': {
+                    backgroundColor: '#c4c4c4',
+                    color: '#000000',
+                  },
+                  backgroundColor: 'transparent',
+                  color: '#c4c4c4',
+                  display: 'flex',
+                  alignSelf: 'start',
+                  justifySelf: 'flex-end',
+                  padding: '.2px',
+                  borderRadius: '50%',
+                })}
+              >
+                <Delete />
               </span>
             </Button>
           </Popover>
@@ -152,3 +167,15 @@ export function TabList() {
     </nav>
   );
 }
+
+export const getTabButtonOverrides = (): ButtonOverrides => ({
+  BaseButton: {
+    style: {
+      height: '40px',
+      paddingTop: '7px',
+      paddingBottom: '7px',
+      paddingLeft: '7px',
+      paddingRight: '7px',
+    },
+  },
+});

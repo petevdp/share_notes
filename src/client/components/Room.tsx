@@ -1,5 +1,5 @@
 import { useStyletron } from 'baseui';
-import { Button } from 'baseui/button';
+import { Button, ButtonOverrides } from 'baseui/button';
 import { ChevronDown, Plus } from 'baseui/icon';
 import { ItemT, StatefulMenu } from 'baseui/menu';
 import { StatefulPopover } from 'baseui/popover';
@@ -8,6 +8,7 @@ import { addNewFile, destroyRoom, fileRenamingActions, initRoom, saveBackToGist 
 import { roomUpdateActions } from 'Client/slices/roomUpdating/types';
 import { rootState } from 'Client/store';
 import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
+import __merge from 'lodash/merge';
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
@@ -17,7 +18,7 @@ import { EditRoomModal } from './EditRoomModal';
 import { RenameFileModal } from './RenameFileModal';
 import { GlobalSettingsDropdown } from './SettingsDropdown';
 import { TabContent } from './TabContent';
-import { TabList } from './Tabs';
+import { getTabButtonOverrides, TabList } from './Tabs';
 
 export function Room() {
   const [css] = useStyletron();
@@ -109,7 +110,19 @@ export function Room() {
           })}
         >
           <TabList />
-          <Button key={addNewFileKey} onClick={() => dispatch(addNewFile())} kind="tertiary">
+          <Button
+            key={addNewFileKey}
+            onClick={() => dispatch(addNewFile())}
+            kind="tertiary"
+            overrides={__merge<ButtonOverrides, ButtonOverrides>(
+              {
+                BaseButton: {
+                  style: { display: 'flex', flexDirection: 'column', justifyContent: 'center', alignContent: 'center' },
+                },
+              },
+              getTabButtonOverrides(),
+            )}
+          >
             <Plus />
           </Button>
         </span>
@@ -124,7 +137,7 @@ export function Room() {
             overrides={RoomPopoverZIndexOverride}
           >
             <Button
-              overrides={{ Root: { style: { marginRight: '4px' } } }}
+              overrides={__merge({ Root: { style: { marginRight: '4px' } } }, getTabButtonOverrides())}
               kind="secondary"
               shape="pill"
               endEnhancer={() => <ChevronDown />}

@@ -11,11 +11,15 @@ if gist already created:
 
 ## now
 
-- make gist creation optional
-- add link gist action
+- loading and transitions
+  - create room
+- force anonymous login
+- quick settings
+- icons for actions/move actions
+- fix rooms display
+- landing page
 - what's up with populate's transact?
 - anonymous room owner
-- landing page
 
 ## later
 
