@@ -11,7 +11,7 @@ import {
   roomUpdatingSliceStateWithComputedSelector,
 } from 'Client/slices/roomUpdating/types';
 import { roomUpdateActions } from 'Client/slices/roomUpdating/types';
-import { SubmitButtonWithSpinner } from 'Client/utils/basewebUtils';
+import { RoomModalZIndexOverride, SubmitButtonWithSpinner } from 'Client/utils/basewebUtils';
 import { DEBUG_FLAGS } from 'Client/utils/debugFlags';
 import React, { PropsWithChildren, ReactNode, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -84,7 +84,12 @@ export function EditRoomModal() {
     );
   };
   return (
-    <Modal unstable_ModalBackdropScroll={true} isOpen={isOpen} onClose={() => dispatch(roomUpdateActions.close())}>
+    <Modal
+      overrides={RoomModalZIndexOverride}
+      unstable_ModalBackdropScroll={true}
+      isOpen={isOpen}
+      onClose={() => dispatch(roomUpdateActions.close())}
+    >
       <ModalHeader>Edit Room</ModalHeader>
       <form onSubmit={onSubmit}>
         <ModalBody>
@@ -171,7 +176,7 @@ export function EditRoomModal() {
                   <Button
                     type="button"
                     size="mini"
-                    kind="tertiary"
+                    kind="secondary"
                     onClick={() => dispatch(setGistUpdateType(GistUpdateType.Create))}
                   >
                     Create New Gist Instead
@@ -210,8 +215,8 @@ export function EditRoomModal() {
 function GistEditCardTitle({ children, titleText }: React.Props<unknown> & { titleText: ReactNode }) {
   const [css] = useStyletron();
   return (
-    <div className={css({ display: 'flex', justifyContent: 'space-between' })}>
-      <span>{titleText}</span>
+    <div className={css({ display: 'flex', justifyContent: 'space-between', fontSize: '20px' })}>
+      <span className={css({ fontSize: '18px' })}>{titleText}</span>
       <span> {children} </span>
     </div>
   );

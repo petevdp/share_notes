@@ -9,7 +9,7 @@ import { StyledLink } from 'baseui/link';
 import { ItemT, StatefulMenu, StyledList, StyledListItem } from 'baseui/menu';
 import { StatefulPopover } from 'baseui/popover';
 import { LabelMedium } from 'baseui/typography';
-import SvgGithub from 'Client/generatedSvgComponents/Github';
+import SvgGithub from 'Client/components/generatedSvgComponents/Github';
 import { loggedInStatusSelector, LoginStatus, logOut } from 'Client/slices/session/types';
 import { settingsActions } from 'Client/slices/settings/types';
 import { rootState } from 'Client/store';
@@ -165,7 +165,7 @@ export function GlobalHeader() {
             <>
               <StyledNavigationItem>
                 <StyledLink $as={Link} to="/rooms/new">
-                  Create New Room
+                  Create Room
                 </StyledLink>
               </StyledNavigationItem>
               <StyledNavigationItem>

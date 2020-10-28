@@ -33,6 +33,10 @@ export interface roomUpdatingStateWithComputed extends roomUpdatingState {
   gistCreationFields: gistCreationFieldsWithComputed;
   gistImportFields: gistImportFieldsWithComputed;
   gistSelectionOptions: Option[];
+  modifiedFields: {
+    name: boolean;
+    gistUpdate: boolean;
+  };
   canSubmit: boolean;
 }
 
@@ -42,6 +46,12 @@ export type roomUpdatingSliceStateWithComputed = roomUpdatingStateWithComputed |
 export function getComputedRoomUpdatingSliceState(state: roomUpdatingState): roomUpdatingStateWithComputed {
   const gistCreationFields = getGistCreationFieldsWithComputed(state.gistCreationFields);
   const gistImportFields = getGistImportFieldsWithComputed(state.gistImportFields, state.ownedGists, state.otherGists);
+
+  const modifiedFields = {
+    name: state.roomName !== state.startingDetails.roomDetails.name,
+    gistUpdate: state.gistUpdateType !== GistUpdateType.None,
+  };
+
   const canSubmit = (() => {
     const roomNameIsValid = state.roomName.trim().length > 0;
     const { None, Create, Delete, Import } = GistUpdateType;
@@ -49,6 +59,7 @@ export function getComputedRoomUpdatingSliceState(state: roomUpdatingState): roo
 
     return (
       roomNameIsValid &&
+      Object.values(modifiedFields).some(Boolean) &&
       ([None, Delete].includes(gistUpdateType) ||
         (gistUpdateType === Create && gistCreationFields.isValid) ||
         (gistUpdateType === Import && gistImportFields.isValid))
@@ -67,6 +78,7 @@ export function getComputedRoomUpdatingSliceState(state: roomUpdatingState): roo
           details: gist,
         }))
       : [],
+    modifiedFields,
   };
 }
 
