@@ -30,6 +30,7 @@ export function AnonymousLoginModal() {
       isOpen={!!formData}
       onClose={() => dispatch(anonymousLoginActions.cancel())}
       unstable_ModalBackdropScroll={true}
+      closeable={false}
     >
       <ModalHeader>Start Editing Anonymously</ModalHeader>
       <ModalBody>

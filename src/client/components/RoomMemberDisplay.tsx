@@ -1,5 +1,5 @@
 import { styled, useStyletron } from 'baseui';
-import { Avatar } from 'baseui/avatar';
+import { Avatar, AvatarOverrides, StyleProps } from 'baseui/avatar';
 import { Button } from 'baseui/button';
 import { ChevronDown } from 'baseui/icon';
 import { ListItem, ListItemLabel } from 'baseui/list';
@@ -71,7 +71,11 @@ export function RoomMemberDisplay() {
                         <Avatar src={item.imgUrl} name={item.title} />
                       </a>
                     ) : (
-                      <Avatar src={item.imgUrl} name={item.title} />
+                      <Avatar
+                        src={item.imgUrl}
+                        name={item.title}
+                        overrides={{ Root: { style: { backgroundColor: item.color } } }}
+                      />
                     )}
                     <ListItemLabel>{item.title}</ListItemLabel>
                   </ListItem>
@@ -112,13 +116,31 @@ export function RoomMemberDisplay() {
         }}
       >
         {usersAwareness.map((u) => {
+          const overrides =
+            u.type === 'github'
+              ? {
+                  Root: {
+                    style: {
+                      padding: '4px',
+                    },
+                  },
+                }
+              : {
+                  Root: {
+                    style: {
+                      padding: '4px',
+                      backgroundColor: u.color,
+                    },
+                  },
+                };
+
           return (
             <Avatar
               size={theme.sizing.scale800}
               key={u.userIdOrAnonID}
               name={u.name}
               src={u.type === 'github' ? u.avatarUrl : undefined}
-              overrides={{ Root: { style: { padding: '1px' } } }}
+              overrides={overrides}
             />
           );
         })}

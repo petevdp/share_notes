@@ -55,8 +55,6 @@ export function TabList() {
         };
         return (
           <Popover
-            // popoverMargin={0}
-            popperOptions={}
             key={tabState.tabId}
             onClick={() => dispatch(switchCurrentFile(tabState.tabId))}
             isOpen={openTabContextMenus.has(tabState.tabId)}

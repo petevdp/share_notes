@@ -11,6 +11,7 @@ if gist already created:
 
 ## now
 
+- soft delete room
 - loading and transitions
   - create room
 - force anonymous login

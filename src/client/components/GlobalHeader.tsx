@@ -182,7 +182,12 @@ export function GlobalHeader() {
                                 <StyledUserMenuListItem>
                                   <StyledUserProfileTileContainer>
                                     <StyledUserProfilePictureContainer>
-                                      <Avatar name={githubLogin || ''} src={avatarUrl} size={'48px'} />
+                                      <Avatar
+                                        name={githubLogin || ''}
+                                        src={avatarUrl}
+                                        size={'48px'}
+                                        overrides={{ Root: { style: { backgroundColor: 'blue' } } }}
+                                      />
                                     </StyledUserProfilePictureContainer>
                                     <StyledUserProfileInfoContainer>
                                       <LabelMedium>{githubLogin}</LabelMedium>

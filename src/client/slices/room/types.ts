@@ -22,6 +22,12 @@ interface anonymousLogin {
   username: string;
 }
 
+export interface currentRename {
+  tabIdToRename: string;
+  newFilename: string;
+  userChangedNewFilename: boolean;
+}
+
 export type roomSliceState = {
   currentRoom?: {
     initializingRoom: boolean;
@@ -37,11 +43,7 @@ export type roomSliceState = {
     };
     gistDetails?: gistDetails;
     currentTabId?: string;
-    currentRename?: {
-      tabIdToRename: string;
-      newFilename: string;
-      userChangedNewFilename: boolean;
-    };
+    currentRename?: currentRename;
   };
 };
 
@@ -106,15 +108,51 @@ export const setRoomAwarenessState = createAction('setRoomAwarenessState', (awar
 export const deleteRoom = createAction('deleteRoom', (roomId: string) => ({ payload: roomId }));
 export const roomDeleted = createAction('roomDeleted', (roomId: string) => ({ payload: roomId }));
 
+export enum RenameError {
+  Empty,
+  Invalid,
+  Duplicate,
+}
+
+export interface currentRenameWithComputed extends currentRename {
+  errors: RenameError[];
+  isValid: boolean;
+}
+
 export function isLoggedInForRoomSelector(rootState: rootState) {
   return !!(rootState.session.token || rootState.session.anonymousRoomMember);
 }
 
-export function currentFileRenameWithErrorsSelector(rootState: rootState) {
+export function currentFileRenameWithComputedSelector(rootState: rootState): currentRenameWithComputed | undefined {
+  const currentRoom = rootState.room.currentRoom;
+  const fileDetailsStates = currentRoom?.roomSharedState.fileDetailsStates;
   const currentRename = rootState.room.currentRoom?.currentRename;
-  if (!currentRename) {
+  if (!currentRoom || !fileDetailsStates || !currentRename) {
     return;
   }
+  const otherFilenames = Object.values(fileDetailsStates)
+    .filter((d) => d.tabId !== currentRoom.currentTabId)
+    .map((d) => d.filename);
+
+  const errors = [];
+
+  const newFilename = currentRename.newFilename;
+
+  if (newFilename.length === 0) {
+    errors.push(RenameError.Empty);
+  }
+  if (!/^[a-zA-Z0-9_.\-/ ]+$/.test(newFilename)) {
+    errors.push(RenameError.Invalid);
+  }
+  if (otherFilenames && otherFilenames.includes(newFilename)) {
+    errors.push(RenameError.Duplicate);
+  }
+
+  return {
+    ...currentRename,
+    errors,
+    isValid: errors.length === 0,
+  };
 }
 
 export function roomUsersAwarenessDetailsSelector(rootState: rootState): roomMemberWithColor[] | undefined {

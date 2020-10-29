@@ -1,8 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { log } from 'console';
 
 import { roomDeleted } from '../room/types';
-import { loggedInStatusSelector } from '../session/types';
 import { ownedRoomsActions, ownedRoomsSliceState } from './types';
 
 const initialState = null as ownedRoomsSliceState;

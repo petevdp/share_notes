@@ -2,49 +2,37 @@ import { Button } from 'baseui/button';
 import { FormControl } from 'baseui/form-control';
 import { Input } from 'baseui/input';
 import { Modal, ModalBody, ModalHeader } from 'baseui/modal';
-import { fileRenamingActions, renameFile } from 'Client/slices/room/types';
+import {
+  currentFileRenameWithComputedSelector,
+  fileRenamingActions,
+  RenameError,
+  renameFile,
+} from 'Client/slices/room/types';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';
 import { RoomModalZIndexOverride } from 'Client/utils/basewebUtils';
 import React, { useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+
 export function RenameFileModal() {
   const dispatch = useDispatch();
-  const { fileDetails, otherFilenames, currentRename } = useSelector((rootState: rootState) => {
+  const fileDetails = useSelector((rootState: rootState) => {
     const currentRoom = rootState.room.currentRoom;
     if (!currentRoom?.roomSharedState.fileDetailsStates || !currentRoom.currentTabId) {
-      return { fileDetails: undefined, otherFilenames: undefined, currentRename: currentRoom?.currentRename };
+      return;
     }
-    const otherFilenames = Object.values(currentRoom.roomSharedState.fileDetailsStates)
-      .filter((d) => d.tabId !== currentRoom.currentTabId)
-      .map((d) => d.filename);
-
-    return {
-      fileDetails: currentRoom.roomSharedState.fileDetailsStates[currentRoom.currentTabId],
-      otherFilenames,
-      currentRename: currentRoom?.currentRename,
-    };
+    return currentRoom.roomSharedState.fileDetailsStates[currentRoom.currentTabId];
   });
 
-  const error = useMemo(() => {
-    if (!currentRename) {
-      return null;
-    }
-    const { userChangedNewFilename, newFilename } = currentRename;
-    if (!userChangedNewFilename) {
-      return null;
-    }
-    if (newFilename.length === 0) {
-      return "Filenames can't be empty.";
-    }
-    if (!/^[a-zA-Z0-9_.\-/ ]+$/.test(newFilename)) {
-      return 'Please provide a valid filename(numbers, letters, dashes(-), underscores(_) periods(.) and spaces';
-    }
-    if (otherFilenames && otherFilenames.includes(newFilename)) {
-      return 'Filenames must be unique.';
-    }
-    return null;
-  }, [currentRename, otherFilenames]);
+  const currentRename = useSelector(currentFileRenameWithComputedSelector);
+  const errorCodes = currentRename?.errors;
+
+  const errorMessage = useMemo(() => {
+    return errorCodes
+      ?.map((code) => RENAME_ERROR_MESSAGES.get(code))
+      .filter(Boolean)
+      .map((msg) => <div key={msg}>{msg}</div>);
+  }, [errorCodes]);
 
   const onChange = (e: React.FormEvent<HTMLInputElement>) => {
     const changedFilename = e.currentTarget.value;
@@ -63,21 +51,21 @@ export function RenameFileModal() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (!error && currentRename) {
+            if (currentRename?.isValid) {
               dispatch(renameFile(currentRename.tabIdToRename, currentRename.newFilename));
             }
           }}
         >
-          <FormControl error={error} label="New Filename">
+          <FormControl error={errorMessage} label="New Filename">
             <Input
-              error={!!error}
+              error={!currentRename?.isValid}
               inputMode="inputmode"
               clearable
               value={currentRename?.newFilename || ''}
               onChange={onChange}
             />
           </FormControl>
-          <Button type="submit" disabled={!!error}>
+          <Button type="submit" disabled={!currentRename?.isValid}>
             Rename
           </Button>
         </form>
@@ -85,3 +73,10 @@ export function RenameFileModal() {
     </Modal>
   );
 }
+
+const { Empty, Invalid, Duplicate } = RenameError;
+const RENAME_ERROR_MESSAGES = new Map([
+  [Empty, "Filenames can't be empty."],
+  [Invalid, 'Please provide a valid filename(numbers, letters, dashes(-), underscores(_) periods(.) and spaces.'],
+  [Duplicate, 'Filenames must be unique.'],
+]);
