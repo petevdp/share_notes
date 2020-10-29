@@ -68,20 +68,30 @@ export class RoomResolver {
     @Arg('first', { nullable: true }) first: number,
     @Ctx() context: AuthorizedContext,
   ): Promise<RoomVisit[]> {
-    if (!first && !userId && !fromCurrentUser) {
-      return room.visits;
-    } else {
-      let query = this.roomVisitRepository.createQueryBuilder('roomVisit');
-      if (!fromCurrentUser) {
-        query = query.innerJoin('roomVisit.user', 'user').where('user.id = :userId', { userId });
-      } else if (userId) {
-        const currentUserId = (await this.tedisService.getCurrentUserId(context.githubSessionToken)) as string;
-        query = query.innerJoin('roomVisit.user', 'user').where('user.id = :userId', { userId: currentUserId });
+    let query = this.roomVisitRepository
+      .createQueryBuilder('roomVisit')
+      .innerJoin('roomVisit.room', 'room')
+      .where('room.id = :roomId', { roomId: room.id })
+      .orderBy('roomVisit.visitTime', 'DESC');
+
+    if (fromCurrentUser || userId) {
+      const userIdToCheck = fromCurrentUser
+        ? ((await this.tedisService.getCurrentUserId(context.githubSessionToken)) as string)
+        : userId;
+
+      const userSpecificQuery = query
+        .innerJoin('roomVisit.user', 'user')
+        .andWhere('user.id = :userId', { userId: userIdToCheck });
+
+      if (first) {
+        return userSpecificQuery.limit(first).getMany();
       } else {
-        /// don't know how to handle this case, but not needed;
+        return userSpecificQuery.getMany();
       }
-      const visits = await query.orderBy('roomVisit.visitTime', 'DESC').limit(first).getMany();
-      return visits;
+    } else if (!first) {
+      return query.getMany();
+    } else {
+      return query.limit(first).getMany();
     }
   }
 
@@ -90,7 +100,7 @@ export class RoomResolver {
     const owner = await this.userRepository.findOneOrFail({ id: parseInt(userData.ownerId) });
     if (userData.createdGistUrl) {
       fs.appendFile(CREATED_GISTS_LOG, userData.createdGistUrl + '\n', () => {
-        // wow math
+        // wow math(this block can't be empty)
         2 + 2 === 4;
       });
     }
