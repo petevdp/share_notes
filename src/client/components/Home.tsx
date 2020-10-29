@@ -47,19 +47,16 @@ export function Home() {
         marginRight: 'auto',
       })}
     >
-      <HeadingLevel>
-        <Heading>Rooms</Heading>
-        <div
-          className={css({
-            display: 'grid',
-            gridGap: '8px',
-          })}
-        >
-          <Card>
-            <ul>{ownedRoomElements}</ul>
-          </Card>
-        </div>
-      </HeadingLevel>
+      <div
+        className={css({
+          display: 'grid',
+          gridGap: '8px',
+        })}
+      >
+        <Card title="Your Rooms">
+          <ul>{ownedRoomElements}</ul>
+        </Card>
+      </div>
     </div>
   );
 }
