@@ -221,7 +221,6 @@ export class MonacoBinding {
     ytext.observe(this._ytextObserver);
     monacoModel.setValue(ytext.toString());
     this._monacoChangeHandler = monacoModel.onDidChangeContent((event) => {
-      console.log('handling change: ', event);
       // apply changes from right to left
       this.mux(() => {
         this.doc.transact(() => {

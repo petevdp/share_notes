@@ -8,7 +8,7 @@ import { StatefulPopover } from 'baseui/popover';
 import { expandBorderStyles } from 'baseui/styles';
 import { roomUsersAwarenessDetailsSelector } from 'Client/slices/room/types';
 import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
-import React from 'react';
+import React, { Ref } from 'react';
 import { useSelector } from 'react-redux';
 
 interface profileItem {
@@ -62,10 +62,10 @@ export function RoomMemberDisplay() {
               },
             },
             Option: {
-              component: React.forwardRef(function RoomMembmerDisplayMenuOptionProfile(props) {
+              component: React.forwardRef(function RoomMemberDisplayMenuOptionProfile(props, ref) {
                 const item: profileItem = props.item;
                 return (
-                  <ListItem endEnhancer={() => <ColorSwatch $color={item.color} />}>
+                  <ListItem ref={ref as Ref<any>} endEnhancer={() => <ColorSwatch $color={item.color} />}>
                     {item.profileUrl ? (
                       <a href={item.profileUrl} target="_blank" rel="noreferrer">
                         <Avatar src={item.imgUrl} name={item.title} />

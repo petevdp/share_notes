@@ -1,6 +1,7 @@
 import { combineReducers, configureStore, getDefaultMiddleware } from '@reduxjs/toolkit';
 import { combineEpics, createEpicMiddleware } from 'redux-observable';
 import { FLUSH, PAUSE, PERSIST, persistReducer, persistStore, PURGE, REGISTER, REHYDRATE } from 'redux-persist';
+import autoMergeLevel1 from 'redux-persist/lib/stateReconciler/autoMergeLevel1';
 import storage from 'redux-persist/lib/storage';
 
 import { currentUserDetailsSlice } from './slices/currentUserDetails/slice';
@@ -14,7 +15,7 @@ import { roomCreationSlice } from './slices/roomCreation/slice';
 import { DEBUG__forceOpenEditRoomDetailsModalEpic, updateRoomEpic } from './slices/roomUpdating/epics';
 import { roomUpdatingSlice } from './slices/roomUpdating/slice';
 import { roomUpdateActions } from './slices/roomUpdating/types';
-import { logOutEpic, retreiveSessionTokenEpic } from './slices/session/epics';
+import { logOutEpic, redirectAfterAuthEpic, retreiveSessionTokenEpic } from './slices/session/epics';
 import { sessionSlice } from './slices/session/slice';
 import { settingsSlice } from './slices/settings/slice';
 import { DEBUG_FLAGS } from './utils/debugFlags';
@@ -26,11 +27,12 @@ const rootReducer = combineReducers({
     {
       key: 'session',
       version: 1,
+      whitelist: ['anonymousRoomMember'],
       storage,
     },
     sessionSlice.reducer,
   ),
-  room: roomSlice.reducer,
+  room: persistReducer({ key: 'room', version: 1, storage }, roomSlice.reducer),
   settings: persistReducer(
     {
       key: 'settings',
@@ -42,7 +44,7 @@ const rootReducer = combineReducers({
   currentUserDetails: currentUserDetailsSlice.reducer,
   roomCreation: roomCreationSlice.reducer,
   roomUpdating: roomUpdatingSlice.reducer,
-  ownedRooms: ownedRoomsSlice.reducer,
+  ownedRooms: persistReducer({ key: 'ownedRooms', version: 1, storage }, ownedRoomsSlice.reducer),
 });
 
 export type rootState = ReturnType<typeof rootReducer>;
@@ -63,6 +65,7 @@ const epics = [
   // it's important that we set the session token first so it's always set before other async actions
   retreiveSessionTokenEpic,
   initializeRoomCreationEpic,
+  redirectAfterAuthEpic,
   logOutEpic,
   createRoomEpic,
   initRoomEpic,

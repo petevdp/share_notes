@@ -10,10 +10,12 @@ import { ItemT, StatefulMenu, StyledList, StyledListItem } from 'baseui/menu';
 import { StatefulPopover } from 'baseui/popover';
 import { LabelMedium } from 'baseui/typography';
 import SvgGithub from 'Client/components/generatedSvgComponents/Github';
+import { loginWithGithub } from 'Client/slices/session/epics';
 import { loggedInStatusSelector, LoginStatus, logOut } from 'Client/slices/session/types';
 import { settingsActions } from 'Client/slices/settings/types';
 import { rootState } from 'Client/store';
 import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
+import { log } from 'console';
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useLocation } from 'react-router-dom';
@@ -57,22 +59,16 @@ export const StyledUserProfileInfoContainer = styled('div', () => {
   };
 });
 
-function loginWithGithub() {
-  const url = new URL(GITHUB_0AUTH_URL);
-  url.searchParams.set('client_id', GITHUB_CLIENT_ID);
-  url.searchParams.set('redirect_url', AUTH_REDIRECT_URL);
-  url.searchParams.set('scope', 'gist,read:user');
-  window.location.href = url.toString();
-  return;
-}
-
 export function GlobalHeader() {
   const [css, theme] = useStyletron();
   const location = useLocation();
   const currentRoomDetails = useSelector((state: rootState) => state.room.currentRoom?.roomDetails);
   const roomAwareness = useSelector((state: rootState) => state.room.currentRoom?.awareness);
   const currentUser = useSelector((state: rootState) => state.currentUserDetails);
+  const themeSetting = useSelector((state: rootState) => state.settings.theme);
   const loginStatus = useSelector(loggedInStatusSelector);
+  console.log('status: ', loginStatus);
+  console.log('currentUser: ', currentUser);
 
   const dispatch = useDispatch();
   const [] = useState(false);
@@ -83,7 +79,7 @@ export function GlobalHeader() {
 
   let userNav: ItemT[] = [
     { label: 'Log Out', key: 'logOut' },
-    { label: `Toggle Night Mode`, key: 'toggleTheme' },
+    { label: themeSetting === 'dark' ? `Toggle Light Mode` : 'Toggle Dark Mode', key: 'toggleTheme' },
   ];
 
   const onUserNavItemSelect = (item: ItemT) => {
@@ -96,11 +92,6 @@ export function GlobalHeader() {
         break;
     }
   };
-
-  if (githubLogin) {
-    const userProfileItem: ItemT = { key: 'userProfile', label: githubLogin };
-    userNav = [...userNav, userProfileItem];
-  }
 
   const containerStyles = css({
     boxSizing: 'border-box',
