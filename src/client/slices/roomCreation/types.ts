@@ -94,7 +94,6 @@ export function getComputedRoomCreationSliceState(
 }
 
 export const ROOM_CREATION_ACTION_NAMESPACE = 'roomCreation';
-
 export const roomCreationActions = {
   setActiveForm: createAction(namespaceAction('setActiveForm'), (type: RoomCreationFormType) => ({ payload: type })),
   roomCreationOpened: createAction(namespaceAction('roomCreationOpened')),

@@ -41,7 +41,7 @@ export const roomCreationSlice = createSlice({
     const gistCreationFieldsReducer = createGistCreationFieldsReducer('roomCreation', initialState.gistCreationFields);
 
     builder.addDefaultCase((state, action) => {
-      state.gistImportFields = gistImportFieldsReducer(state.gistImportFields, action, state.ownedGists);
+      gistImportFieldsReducer(state.gistImportFields, action, state.ownedGists);
       gistCreationFieldsReducer(state.gistCreationFields, action);
     });
   },

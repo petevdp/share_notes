@@ -58,32 +58,27 @@ export function createGistImportFieldsActions(namespace: string) {
 
 export function createGistImportFieldsReducer(namespace: string, initial: gistImportFields = initialState) {
   const { setGistSelectionValue, setGistUrl, setIsForkCheckboxChecked } = createGistImportFieldsActions(namespace);
+  console.log('actions: ', setGistSelectionValue.type);
 
   return function gistImportFieldsReducer(
     state: WritableDraft<gistImportFields>,
     action: AnyAction,
     ownedGists?: WritableDraft<gistDetailsStore | undefined>,
   ) {
-    // we have to create the reducer every time so we can include ownedGists as a state dependency
-    return createReducer(initial, (builder) => {
-      builder.addCase(setGistSelectionValue, (state, { payload: value }) => {
-        const selectedGist = value[0]?.id && ownedGists && ownedGists[value[0]?.id];
-        if (selectedGist && selectedGist !== 'notFound') {
-          state.gistUrl = selectedGist.html_url;
-        }
-        // value is a readonly array for somre reason
-        state.selectedGistValue = value as Option[];
-      });
-
-      builder.addCase(setGistUrl, (state, { payload: gistUrl }) => {
-        state.gistUrl = gistUrl;
-        state.selectedGistValue = [];
-      });
-
-      builder.addCase(setIsForkCheckboxChecked, (state, { payload: isChecked }) => {
-        state.shouldForkCheckboxChecked = isChecked;
-      });
-    })(state, action);
+    if (setGistSelectionValue.match(action)) {
+      const value = action.payload;
+      const selectedGist = value[0]?.id && ownedGists && ownedGists[value[0]?.id];
+      if (selectedGist && selectedGist !== 'notFound') {
+        state.gistUrl = selectedGist.html_url;
+      }
+      // value is a readonly array for somre reason
+      state.selectedGistValue = value as Option[];
+    } else if (setGistUrl.match(action)) {
+      state.gistUrl = action.payload;
+      state.selectedGistValue = [];
+    } else if (setIsForkCheckboxChecked.match(action)) {
+      state.shouldForkCheckboxChecked = action.payload;
+    }
   };
 }
 

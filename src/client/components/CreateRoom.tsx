@@ -107,7 +107,7 @@ function RoomCreationForm({ currentUserDetails }: { currentUserDetails: currentU
           <Tab title="No Gist" key={RoomCreationFormType.NoGist}></Tab>
           <Tab title="Import Existing Gist" key={RoomCreationFormType.Import}>
             <GistImportFields
-              actionNamespace={ROOM_UPDATE_ACTION_NAMESPACE}
+              actionNamespace={ROOM_CREATION_ACTION_NAMESPACE}
               fields={roomCreation.gistImportFields}
               gistSelectionOptions={roomCreation.gistSelectionOptions}
             />
