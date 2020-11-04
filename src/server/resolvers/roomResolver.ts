@@ -150,8 +150,6 @@ export class RoomResolver {
     }
 
     const owner = await room.owner;
-    console.log('room: ', room);
-    console.log('owner: ', owner);
 
     switch (gistUpdate.type) {
       case GistUpdateType.Create:

@@ -91,10 +91,6 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
           map(({ payload: { tabId, setting: { value } } }) => [tabId.toString(), value as boolean]),
         );
 
-        togglePreviewMarkdown$.subscribe(([id, val]) => {
-          console.log('toggle: ', id, val);
-        });
-
         const manager = new ClientSideRoomManager(roomHashId, settings$, togglePreviewMarkdown$);
 
         const fileDetailsStateUpdateAction$ = manager.fileDetails$.pipe(

@@ -49,7 +49,6 @@ function EditorTab({ tabId, visible }: { tabId: string; visible: boolean }) {
       dispatch(unprovisionTab(tabId));
     };
   }, [tabId, editorContainerRef, fileDetailsPresent]);
-  console.log('settings: ', editorSettings);
   return (
     <div className={css({ display: visible ? 'block' : 'none' })}>
       <span className={css({ width: '100%', display: 'flex', flexWrap: 'nowrap' })}>

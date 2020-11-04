@@ -15,8 +15,6 @@ function normalizeDetectedFiletype(filetype: string) {
 
 export async function detectLanguageMode(filename: string) {
   const mapping = await mappingPromise;
-  console.log('filename: ', filename);
-  console.log('detected: ', detect.filename(filename));
   const detectedType = detect.filename(filename);
   if (!detectedType || !mapping[normalizeDetectedFiletype(detectedType)]) {
     return undefined;

@@ -297,13 +297,8 @@ export class ClientSideRoomManager extends RoomManager {
       ]),
     );
 
-    this.newEditorBindings$.subscribe((tabId) => {
-      console.log('new binding:  ', tabId);
-    });
-
     const previewedContentChange$ = merge(markdownPreviewToggle$, newEditorBindingsWithPreview$).pipe(
       filter(([, showPreview]) => {
-        console.log('preview: ', showPreview);
         return showPreview;
       }),
       withLatestFrom(this.fileDetails$),
@@ -409,8 +404,6 @@ export class ClientSideRoomManager extends RoomManager {
   }
 
   unprovisionTab(tabId: string) {
-    console.log('unprovisioning ', tabId);
-
     const binding = this.bindings$.value.get(tabId);
     binding?.destroy();
     this.bindings$.value.delete(tabId);

@@ -40,10 +40,7 @@ export class YjsService {
   activeRoomMembers(roomHashId: string) {
     const docName = getYjsDocNameForRoom(roomHashId);
     const doc = this.docs.get(docName);
-
-    console.log([...this.docs.entries()].map(([k, v]) => [k, v.awareness.states]));
     if (!doc) {
-      console.log('no doc');
       return [];
     }
     return ([...doc.awareness.getStates().values()] as clientAwareness[])
@@ -72,7 +69,6 @@ export class YjsService {
 
     const userPromise = this.userRepository.findOneOrFail(userId);
     const roomId = this.clientSideRoomService.getIdFromHashId(roomHashId);
-    console.log('id: ', roomId);
     const roomPromise = this.roomRepository.findOneOrFail(roomId.toString());
 
     // create a visit
