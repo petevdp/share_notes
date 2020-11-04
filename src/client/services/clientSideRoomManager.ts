@@ -10,25 +10,24 @@ import { BehaviorSubject } from 'rxjs/internal/BehaviorSubject';
 import { Observable } from 'rxjs/internal/Observable';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { ConnectableObservable } from 'rxjs/internal/observable/ConnectableObservable';
-import { EMPTY } from 'rxjs/internal/observable/empty';
-import { merge } from 'rxjs/internal/observable/merge';
+import { from } from 'rxjs/internal/observable/from';
+import { concatMap } from 'rxjs/internal/operators/concatMap';
 import { distinctUntilChanged } from 'rxjs/internal/operators/distinctUntilChanged';
 import { filter } from 'rxjs/internal/operators/filter';
 import { first } from 'rxjs/internal/operators/first';
 import { map } from 'rxjs/internal/operators/map';
-import { mergeAll } from 'rxjs/internal/operators/mergeAll';
+import { mapTo } from 'rxjs/internal/operators/mapTo';
 import { mergeMap } from 'rxjs/internal/operators/mergeMap';
 import { publish } from 'rxjs/internal/operators/publish';
+import { scan } from 'rxjs/internal/operators/scan';
 import { takeUntil } from 'rxjs/internal/operators/takeUntil';
 import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
-import { scheduleArray } from 'rxjs/internal/scheduled/scheduleArray';
 import { Subject } from 'rxjs/internal/Subject';
 import { getYjsDocNameForRoom, YJS_WEBSOCKET_URL_WS } from 'Shared/environment';
 import { gistDetails } from 'Shared/githubTypes';
 import {
   allBaseFileDetailsStates,
   allComputedFileDetailsStates,
-  baseFileDetailsState,
   roomDetails,
   RoomManager,
   startingRoomDetails,
@@ -297,48 +296,91 @@ export class ClientSideRoomManager extends RoomManager {
       ]),
     );
 
-    const previewedContentChange$ = merge(markdownPreviewToggle$, newEditorBindingsWithPreview$).pipe(
-      filter(([, showPreview]) => {
-        return showPreview;
-      }),
-      withLatestFrom(this.fileDetails$),
-      mergeMap(([[tabId], allFileDetails]) => {
-        const binding = this.bindings$.value.get(tabId);
-        const fileDetails = allFileDetails[tabId];
-        if (binding && fileDetails && determineLanguage(fileDetails.filename)?.id === 'markdown') {
-          const stopShowingPreview$ = combineLatest(markdownPreviewToggle$, this.fileDetails$).pipe(
-            filter(
-              ([[changedTabId, previewingMarkdown], fileDetails]) =>
-                (changedTabId == tabId && !previewingMarkdown) ||
-                determineLanguage(fileDetails[tabId].filename)?.id !== 'markdown',
-            ),
-          );
-          const content$ = new Observable<string>((s) => {
-            const disposable = binding.monacoModel.onDidChangeContent(() => {
-              const value = binding.monacoModel.getValue();
-              s.next(value);
-            });
-            binding.monacoModel.onWillDispose(() => {
-              s.complete();
-            });
-            s.next(binding.monacoModel.getValue());
-            return () => disposable.dispose();
-          });
+    function getShowMarkdownPreviewTuples(
+      allDetails: allBaseFileDetailsStates,
+      settings: clientSettings,
+    ): [string, boolean][] {
+      return Object.entries(allDetails).map(([tabId, details]) => [
+        tabId,
+        getSettingsForEditorWithComputed(settings, roomHashId, tabId, details.filetype === 'markdown')
+          .showMarkdownPreview,
+      ]);
+    }
 
-          return content$.pipe(
-            takeUntil(stopShowingPreview$),
-            mergeMap(async (content) => {
-              const { default: marked } = await import('marked');
-              return [tabId, marked(content)];
-            }),
-          );
-        } else {
-          return EMPTY;
-        }
+    /**
+     * Emits changes to the set of tabs that should be showing previews.
+     * For a tab to be showing previews, it must be:
+     * - a provisioned tab
+     * - markdown preview setting resolved for the tab must be on
+     * - must be displaying a markdown file
+     */
+    const showPreviewDelta$ = combineLatest(this.fileDetails$, this.settings$, this.bindings$).pipe(
+      scan(
+        (acc, [allDetails, settings, bindings]) => {
+          const ids = new Set([...bindings.keys(), ...acc.prevShowPreviewState.keys()]);
+          let delta = new Map<string, boolean>();
+          let showPreviewState = new Set<string>();
+
+          for (let tabId of ids) {
+            const details = allDetails[tabId];
+            const settingsForEditor = getSettingsForEditorWithComputed(
+              settings,
+              roomHashId,
+              tabId,
+              details && details.filetype === 'markdown',
+            );
+            const willShowMarkdownPreview = bindings.get(tabId) && settingsForEditor.showMarkdownPreview;
+            const didShowMarkdownPreview = acc.prevShowPreviewState.has(tabId);
+            if (willShowMarkdownPreview) {
+              showPreviewState.add(tabId);
+              if (didShowMarkdownPreview === false) {
+                delta.set(tabId, true);
+              }
+            } else if (!willShowMarkdownPreview && didShowMarkdownPreview) {
+              delta.set(tabId, false);
+            }
+          }
+
+          return { prevShowPreviewState: showPreviewState, delta };
+        },
+        { prevShowPreviewState: new Set<string>(), delta: new Map<string, boolean>() },
+      ),
+      concatMap(({ delta }) => from(delta.entries())),
+    );
+
+    // emits the html for previews for tabs that should be showing them
+    const markdownPreview$ = showPreviewDelta$.pipe(
+      filter(([, showPreview]) => showPreview),
+      mergeMap(([tabId]) => {
+        const stopPreview$ = showPreviewDelta$.pipe(
+          filter(([id, previewDelta]) => id === tabId && !previewDelta),
+          mapTo(true),
+          first(),
+        );
+        const binding = this.bindings$.value.get(tabId) as MonacoBinding;
+        const content$ = new Observable<string>((s) => {
+          const disposable = binding.monacoModel.onDidChangeContent(() => {
+            const value = binding.monacoModel.getValue();
+            s.next(value);
+          });
+          binding.monacoModel.onWillDispose(() => {
+            s.complete();
+          });
+          s.next(binding.monacoModel.getValue());
+          return () => disposable.dispose();
+        });
+
+        return content$.pipe(
+          takeUntil(stopPreview$),
+          mergeMap(async (content) => {
+            const { default: marked } = await import('marked');
+            return [tabId, marked(content)];
+          }),
+        );
       }),
     );
 
-    previewedContentChange$.subscribe(([tabId, htmlString]) => {
+    markdownPreview$.subscribe(([tabId, htmlString]) => {
       const element = this.markdownPreviewElements.get(tabId);
       if (element) {
         element.innerHTML = htmlString;
