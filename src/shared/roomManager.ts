@@ -4,7 +4,7 @@ import { publish } from 'rxjs/internal/operators/publish';
 import { Subject } from 'rxjs/internal/Subject';
 import * as Y from 'yjs';
 
-import { gistDetails } from './githubTypes';
+import { fileDetails, gistDetails } from './githubTypes';
 import { getKeysForMap } from './ydocUtils';
 
 export interface baseFileDetailsState {
@@ -63,7 +63,7 @@ export abstract class RoomManager {
     };
   }
 
-  populate(startingRoomDetails: startingRoomDetails, gistDetails?: gistDetails) {
+  populate(startingRoomDetails: startingRoomDetails, files?: { [key: string]: fileDetails }) {
     const details: roomDetails = {
       ...startingRoomDetails,
       gistLoaded: true,
@@ -73,9 +73,9 @@ export abstract class RoomManager {
       this.yData.details.set(key, detail);
     }
 
-    if (gistDetails) {
+    if (files) {
       this.ydoc.transact(() => {
-        for (let file of Object.values(gistDetails.files)) {
+        for (let file of Object.values(files)) {
           this.addNewFile({ filename: file.filename, content: file.content });
         }
       });

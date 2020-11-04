@@ -6,7 +6,7 @@ import { Room } from 'Server/models/room';
 import { RoomVisit } from 'Server/models/roomVisit';
 import { User } from 'Server/models/user';
 import { getYjsDocNameForRoom } from 'Shared/environment';
-import { gistDetails } from 'Shared/githubTypes';
+import { fileDetails, gistDetails } from 'Shared/githubTypes';
 import { roomDetails, RoomManager, startingRoomDetails } from 'Shared/roomManager';
 import { clientAwareness, roomMember, roomMemberWithColor } from 'Shared/types/roomMemberAwarenessTypes';
 import { Service } from 'typedi';
@@ -126,7 +126,7 @@ export class YjsService {
             id: clientSideRoom.id,
             name: clientSideRoom.name,
           },
-          details,
+          details?.files,
         );
       }
     }
@@ -138,7 +138,7 @@ export class YjsService {
 }
 
 export class ServerSideRoomManager extends RoomManager {
-  populate(startingRoomDetails: startingRoomDetails, files?: gistDetails) {
+  populate(startingRoomDetails: startingRoomDetails, files?: { [key: string]: fileDetails }) {
     const details: roomDetails = {
       ...startingRoomDetails,
       gistLoaded: true,
@@ -150,8 +150,9 @@ export class ServerSideRoomManager extends RoomManager {
 
     if (files) {
       this.ydoc.transact(() => {
-        for (let file of Object.values(files)) {
-          this.addNewFile({ filename: file.filename, content: file.content });
+        Object.entries(files);
+        for (let [filename, file] of Object.entries(files)) {
+          this.addNewFile({ filename, content: file.content || filename });
         }
       });
     } else {

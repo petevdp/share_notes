@@ -249,7 +249,7 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
           .subscribe(async ({ payload: { roomDetails, gistDetails } }) => {
             const existingDetails = manager.getRoomDetails();
             if (roomDetails.gistName && existingDetails.gistName !== roomDetails.gistName) {
-              manager.populate({ ...roomDetails, id: roomDetails.id }, gistDetails);
+              manager.populate({ ...roomDetails, id: roomDetails.id }, gistDetails?.files);
             } else {
               manager.setRoomDetails(roomDetails);
             }
