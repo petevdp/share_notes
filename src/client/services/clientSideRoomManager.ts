@@ -287,26 +287,6 @@ export class ClientSideRoomManager extends RoomManager {
       return subject;
     })();
 
-    const newEditorBindingsWithPreview$: Observable<[string, boolean]> = this.newEditorBindings$.pipe(
-      withLatestFrom(this.settings$, this.fileDetails$),
-      map(([[tabId], settings, fileDetails]) => [
-        tabId,
-        getSettingsForEditorWithComputed(settings, roomHashId, tabId, fileDetails[tabId].filetype === 'markdown')
-          .showMarkdownPreview,
-      ]),
-    );
-
-    function getShowMarkdownPreviewTuples(
-      allDetails: allBaseFileDetailsStates,
-      settings: clientSettings,
-    ): [string, boolean][] {
-      return Object.entries(allDetails).map(([tabId, details]) => [
-        tabId,
-        getSettingsForEditorWithComputed(settings, roomHashId, tabId, details.filetype === 'markdown')
-          .showMarkdownPreview,
-      ]);
-    }
-
     /**
      * Emits changes to the set of tabs that should be showing previews.
      * For a tab to be showing previews, it must be:
