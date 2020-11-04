@@ -144,24 +144,28 @@ export function Room() {
         <span
           className={css({
             display: 'flex',
+            alignItems: 'center',
           })}
         >
           {currentRoom?.isCurrentFileMarkdown && (
             <Checkbox
-              onChange={(event) => {
-                const checked = (event?.target as any).checked as boolean;
-                if (currentRoom?.hashId && currentRoom.currentTabId) {
+              onChange={() => {
+                if (currentRoom?.hashId && currentRoom.currentTabId && settingsForCurrentEditor) {
                   dispatch(
                     settingsActions.setGlobalEditorSetting({
                       key: 'showMarkdownPreview',
-                      value: checked,
+                      value: !settingsForCurrentEditor.showMarkdownPreview,
                     } as individualEditorSetting),
                   );
                 }
               }}
-              checkmarkType="toggle_round"
               checked={settingsForCurrentEditor?.showMarkdownPreview}
-            />
+              labelPlacement="left"
+              checkmarkType="toggle_round"
+              overrides={{ Label: { style: { fontSize: '15px', whiteSpace: 'nowrap' } } }}
+            >
+              Toggle Markdown Preview
+            </Checkbox>
           )}
           <StatefulPopover
             placement={'bottom'}
