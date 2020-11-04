@@ -73,7 +73,6 @@ function RoomCreationForm({ currentUserDetails }: { currentUserDetails: currentU
   useEffect(() => {
     fetchCurrentUsersGists().then((gistDetails) => dispatch(roomCreationActions.setOwnedGists(gistDetails)));
   }, []);
-  console.log(roomCreation);
 
   return (
     <form
@@ -100,7 +99,6 @@ function RoomCreationForm({ currentUserDetails }: { currentUserDetails: currentU
           fill={FILL.fixed}
           activeKey={roomCreation.formSelected}
           onChange={(e) => {
-            console.log(e);
             dispatch(roomCreationActions.setActiveForm(Number(e.activeKey)));
           }}
         >

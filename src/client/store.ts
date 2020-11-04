@@ -32,7 +32,8 @@ const rootReducer = combineReducers({
     },
     sessionSlice.reducer,
   ),
-  room: persistReducer({ key: 'room', version: 1, storage }, roomSlice.reducer),
+  // room: persistReducer({ key: 'room', version: 1, storage }, roomSlice.reducer),
+  room: roomSlice.reducer,
   settings: persistReducer(
     {
       key: 'settings',

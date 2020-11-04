@@ -23,7 +23,6 @@ export const retreiveSessionTokenEpic: Epic = (action$, state$: StateObservable<
     first(),
     concatMap((rootState) => {
       const token = rootState.session.token || getCookie(SESSION_TOKEN_COOKIE_KEY);
-      console.log('token ', token);
       if (token) {
         return concat(of(tokenRetrievalAttempted(token)), getCurrentUserDetails());
       }

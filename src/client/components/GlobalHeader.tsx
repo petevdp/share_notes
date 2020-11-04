@@ -67,9 +67,6 @@ export function GlobalHeader() {
   const currentUser = useSelector((state: rootState) => state.currentUserDetails);
   const themeSetting = useSelector((state: rootState) => state.settings.theme);
   const loginStatus = useSelector(loggedInStatusSelector);
-  console.log('status: ', loginStatus);
-  console.log('currentUser: ', currentUser);
-
   const dispatch = useDispatch();
   const [] = useState(false);
   const [] = useState(undefined as undefined | UserNavItemT);

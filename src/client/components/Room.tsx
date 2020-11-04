@@ -1,11 +1,25 @@
 import { useStyletron } from 'baseui';
 import { Button, ButtonOverrides } from 'baseui/button';
+import { Checkbox, StyledCheckmark } from 'baseui/checkbox';
 import { ChevronDown, Plus } from 'baseui/icon';
 import { ItemT, StatefulMenu } from 'baseui/menu';
 import { StatefulPopover } from 'baseui/popover';
 import { useSnackbar } from 'baseui/snackbar';
-import { addNewFile, destroyRoom, fileRenamingActions, initRoom, saveBackToGist } from 'Client/slices/room/types';
+import {
+  addNewFile,
+  currentFileRenameWithComputedSelector,
+  currentRoomStateWithComputedSelector,
+  destroyRoom,
+  fileRenamingActions,
+  initRoom,
+  saveBackToGist,
+} from 'Client/slices/room/types';
 import { roomUpdateActions } from 'Client/slices/roomUpdating/types';
+import {
+  individualEditorSetting,
+  settingsActions,
+  settingsForCurrentEditorSelector,
+} from 'Client/slices/settings/types';
 import { rootState } from 'Client/store';
 import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
 import __merge from 'lodash/merge';
@@ -24,7 +38,8 @@ export function Room() {
   const [css] = useStyletron();
   const { roomHashId } = useParams<{ roomHashId: string }>();
   const dispatch = useDispatch();
-  const currentRoom = useSelector((s: rootState) => s.room.currentRoom);
+  const currentRoom = useSelector(currentRoomStateWithComputedSelector);
+  const settingsForCurrentEditor = useSelector(settingsForCurrentEditorSelector);
   const { enqueue } = useSnackbar();
 
   useEffect(() => {
@@ -131,6 +146,23 @@ export function Room() {
             display: 'flex',
           })}
         >
+          {currentRoom?.isCurrentFileMarkdown && (
+            <Checkbox
+              onChange={(event) => {
+                const checked = (event?.target as any).checked as boolean;
+                if (currentRoom?.hashId && currentRoom.currentTabId) {
+                  dispatch(
+                    settingsActions.setGlobalEditorSetting({
+                      key: 'showMarkdownPreview',
+                      value: checked,
+                    } as individualEditorSetting),
+                  );
+                }
+              }}
+              checkmarkType="toggle_round"
+              checked={settingsForCurrentEditor?.showMarkdownPreview}
+            />
+          )}
           <StatefulPopover
             placement={'bottom'}
             content={() => <StatefulMenu onItemSelect={onActionItemSelect} items={actionItems}></StatefulMenu>}

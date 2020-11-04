@@ -75,3 +75,18 @@ if gist already created:
 - add link gist action
 
 # anonymous rooms
+
+# performance
+
+- editing markdown, no preview: 64% scripting
+- editing markdown, preview:
+
+emojis that might break things:
+
+⚡
+⬇️
+⚖️
+🌐
+⛹️
+💯
+🚨

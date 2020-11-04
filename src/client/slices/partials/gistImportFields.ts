@@ -58,8 +58,6 @@ export function createGistImportFieldsActions(namespace: string) {
 
 export function createGistImportFieldsReducer(namespace: string, initial: gistImportFields = initialState) {
   const { setGistSelectionValue, setGistUrl, setIsForkCheckboxChecked } = createGistImportFieldsActions(namespace);
-  console.log('actions: ', setGistSelectionValue.type);
-
   return function gistImportFieldsReducer(
     state: WritableDraft<gistImportFields>,
     action: AnyAction,

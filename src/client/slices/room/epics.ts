@@ -3,7 +3,7 @@ import 'codemirror/theme/night.css';
 
 import { request as octokitRequest } from '@octokit/request';
 import { anonymousLoginActions, roomMemberInputSelector } from 'Client/slices/session/types';
-import { clientSettings } from 'Client/slices/settings/types';
+import { clientSettings, settingsActions } from 'Client/slices/settings/types';
 import { rootState } from 'Client/store';
 import { DELETE_ROOM, deleteRoomResponse, GET_ROOM, getRoomResponse } from 'Client/utils/queries';
 import { octokitRequestWithAuth as getOctokitRequestWithAuth } from 'Client/utils/utils';
@@ -21,6 +21,7 @@ import { distinctUntilChanged } from 'rxjs/internal/operators/distinctUntilChang
 import { filter } from 'rxjs/internal/operators/filter';
 import { first } from 'rxjs/internal/operators/first';
 import { map } from 'rxjs/internal/operators/map';
+import { mergeMap } from 'rxjs/internal/operators/mergeMap';
 import { startWith } from 'rxjs/internal/operators/startWith';
 import { takeUntil } from 'rxjs/internal/operators/takeUntil';
 import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
@@ -56,12 +57,12 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
   action$.pipe(
     filter(initRoom.match),
     withLatestFrom(state$),
-    concatMap(async (args) => ({
+    mergeMap(async (args) => ({
       ClientSideRoomManager: (await import('Client/services/clientSideRoomManager')).ClientSideRoomManager,
       action: args[0],
       state: args[1],
     })),
-    concatMap(
+    mergeMap(
       ({
         ClientSideRoomManager,
         action: {
@@ -77,7 +78,24 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
           startWith(startingSettings),
         );
 
-        const manager = new ClientSideRoomManager(roomHashId, settings$);
+        const togglePreviewMarkdown$: Observable<[string, boolean]> = action$.pipe(
+          filter(settingsActions.setIndividualEditorSetting.match),
+          filter(
+            ({
+              payload: {
+                setting: { key },
+                roomHashId: actionRoomHashId,
+              },
+            }) => roomHashId === actionRoomHashId && key === 'showMarkdownPreview',
+          ),
+          map(({ payload: { tabId, setting: { value } } }) => [tabId.toString(), value as boolean]),
+        );
+
+        togglePreviewMarkdown$.subscribe(([id, val]) => {
+          console.log('toggle: ', id, val);
+        });
+
+        const manager = new ClientSideRoomManager(roomHashId, settings$, togglePreviewMarkdown$);
 
         const fileDetailsStateUpdateAction$ = manager.fileDetails$.pipe(
           map((fileDetails) => setFileDetailsState(fileDetails)),
@@ -87,8 +105,6 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
           data: { hashId: roomHashId },
         }).then((res) => res.room);
 
-        roomDataPromise.then((d) => console.log('got room data: ', d));
-
         const gistDataPromise = roomDataPromise.then((r) => {
           if (!r) {
             throw 'room not found';
@@ -97,7 +113,6 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
           if (!r.gistName) {
             return;
           }
-          console.log('getting gist data');
 
           return getOctokitRequestWithAuth()('GET /gists/{gist_id}', {
             gist_id: r.gistName,
@@ -112,15 +127,12 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
             takeUntil(manager.roomDestroyed$$),
           )
           .subscribe((userDetails) => {
-            console.log('user details emitted: ', userDetails);
             manager.setAwarenessUserDetails(userDetails as roomMemberInput);
           });
 
-        action$
-          .pipe(filter(provisionTab.match), takeUntil(manager.roomDestroyed$$))
-          .subscribe(({ payload: { tabId, containerElement, vimStatusBarRef } }) => {
-            manager.provisionTab(tabId, containerElement, vimStatusBarRef);
-          });
+        action$.pipe(filter(provisionTab.match), takeUntil(manager.roomDestroyed$$)).subscribe(({ payload }) => {
+          manager.provisionTab(payload);
+        });
 
         action$
           .pipe(filter(unprovisionTab.match), takeUntil(manager.roomDestroyed$$))

@@ -174,7 +174,7 @@ export function GlobalSettingsDropdown() {
                               <label>{item.label}</label>
                               <Checkbox
                                 checked={itemState as boolean}
-                                onChange={() => {
+                                onChange={(event) => {
                                   const checked = (event?.target as any).checked as boolean;
                                   dispatch(
                                     settingsActions.setGlobalEditorSetting({
@@ -190,7 +190,6 @@ export function GlobalSettingsDropdown() {
                           break;
                         }
                         case 'numericSelect': {
-                          console.log('item state: ', itemState);
                           if (item.type.typeName !== 'numericSelect') {
                             throw 'incorrect item type for setting';
                           }

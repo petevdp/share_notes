@@ -122,7 +122,6 @@ export function useFetchImportableGistDetails(
 
   useEffect(() => {
     if (!gistUrlSubject.current.isStopped) {
-      console.log('next: ', importFields);
       gistUrlSubject.current.next(importFields);
     }
   }, [gistUrlSubject, importFields]);

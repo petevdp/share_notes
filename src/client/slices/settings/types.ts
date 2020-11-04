@@ -1,7 +1,11 @@
 import { createAction } from '@reduxjs/toolkit';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';
+import { log } from 'console';
+import produce from 'immer';
 import * as monaco from 'monaco-editor';
+
+import { currentRoomStateWithComputed, currentRoomStateWithComputedSelector } from '../room/types';
 
 export type theme = 'light' | 'dark';
 export type keyMap = 'regular' | 'vim';
@@ -12,6 +16,7 @@ interface individualEditorSettings {
   autoIndent: monaco.editor.IEditorOptions['autoIndent'];
   detectIndentation: monaco.editor.IGlobalEditorOptions['detectIndentation'];
   tabCompletion: boolean;
+  showMarkdownPreview: boolean;
 }
 
 export type individualEditorSettingsPartial = Partial<individualEditorSettings>;
@@ -41,7 +46,7 @@ export type globalEditorSetting = {
 };
 
 export type individualEditorSetting = {
-  key: keyof individualEditorSetting;
+  key: keyof individualEditorSettings;
   value: individualEditorSettings[keyof individualEditorSettings];
 };
 
@@ -52,7 +57,7 @@ export const settingsActions = {
   })),
   setIndividualEditorSetting: createAction(
     'setIndividualEditorSetting',
-    (editorSetting: individualEditorSetting, roomHashId, string, tabId: string) => ({
+    (editorSetting: individualEditorSetting, roomHashId: string, tabId: string) => ({
       payload: { setting: editorSetting, roomHashId, tabId },
     }),
   ),
@@ -62,17 +67,33 @@ export function settingsSelector(rootState: rootState) {
   return rootState.settings;
 }
 
-export function getSettingsForEditor(
+export function settingsForCurrentEditorSelector(rootState: rootState): settingsResolvedForEditor | undefined {
+  const currentRoom = currentRoomStateWithComputedSelector(rootState);
+  if (!currentRoom?.currentTabId) {
+    return;
+  }
+  const tabId = currentRoom.currentTabId;
+  const roomHashId = currentRoom.hashId;
+  return getSettingsForEditorWithComputed(rootState.settings, roomHashId, tabId, currentRoom.isCurrentFileMarkdown);
+}
+
+export function getSettingsForEditorWithComputed(
   settings: clientSettings,
   roomHashId: string,
   tabId: string,
+  filetypeIsMarkdown: boolean,
 ): settingsResolvedForEditor {
   if (settings.individualEditor[roomHashId][tabId]) {
+    const resolvedShowPreview =
+      filetypeIsMarkdown &&
+      (settings.individualEditor[roomHashId][tabId]?.showMarkdownPreview || settings.globalEditor.showMarkdownPreview);
     return {
-      ...settings.individualEditor[roomHashId][tabId],
       ...settings.globalEditor,
+      ...settings.individualEditor[roomHashId][tabId],
+      showMarkdownPreview: resolvedShowPreview,
     };
   } else {
-    return { ...settings.globalEditor };
+    const resolvedShowPreview = filetypeIsMarkdown && settings.globalEditor.showMarkdownPreview;
+    return { ...settings.globalEditor, showMarkdownPreview: resolvedShowPreview };
   }
 }

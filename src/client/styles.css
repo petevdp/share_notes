@@ -3,3 +3,22 @@ body {
   width: 100vw;
   overflow-x: hidden;
 }
+
+.markdown-preview {
+  padding-left: 10px;
+  padding-left: 10px;
+}
+
+.markdown-preview a {
+  color: #007acc;
+}
+
+.markdown-preview code {
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+.markdown-preview.dark {
+  color: white;
+  background-color: #1e1e1e;
+}

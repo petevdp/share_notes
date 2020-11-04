@@ -1,5 +1,5 @@
 import { createAction } from '@reduxjs/toolkit';
-import { globalAwareness } from 'Client/services/clientSideRoomManager';
+import { globalAwareness, tabToProvision } from 'Client/services/clientSideRoomManager';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';
 import { createRoomResponse } from 'Client/utils/queries';
@@ -28,23 +28,25 @@ export interface currentRename {
   userChangedNewFilename: boolean;
 }
 
-export type roomSliceState = {
-  currentRoom?: {
-    initializingRoom: boolean;
-    forkedGistDetails?: gistDetails;
-    hashId: string;
-    awareness?: globalAwareness;
-    loadedTabs: string[];
-    yjsClientId?: number;
-    roomDetails?: clientSideRoom;
-    roomSharedState: {
-      gistLoaded: boolean;
-      fileDetailsStates?: allBaseFileDetailsStates;
-    };
-    gistDetails?: gistDetails;
-    currentTabId?: string;
-    currentRename?: currentRename;
+interface currentRoomState {
+  initializingRoom: boolean;
+  forkedGistDetails?: gistDetails;
+  hashId: string;
+  awareness?: globalAwareness;
+  loadedTabs: string[];
+  yjsClientId?: number;
+  roomDetails?: clientSideRoom;
+  roomSharedState: {
+    gistLoaded: boolean;
+    fileDetailsStates?: allBaseFileDetailsStates;
   };
+  gistDetails?: gistDetails;
+  currentTabId?: string;
+  currentRename?: currentRename;
+}
+
+export type roomSliceState = {
+  currentRoom?: currentRoomState;
 };
 
 export const roomCreated = createAction('roomCreated', (data: createRoomResponse, forkDetails?: gistDetails) => ({
@@ -54,12 +56,9 @@ export const switchToRoom = createAction('switchToRoom', (hashId: string) => ({
   payload: hashId,
 }));
 
-export const provisionTab = createAction(
-  'provisionTab',
-  (tabId: string, containerElement: HTMLElement, vimStatusBarRef: HTMLElement) => ({
-    payload: { tabId, containerElement, vimStatusBarRef },
-  }),
-);
+export const provisionTab = createAction('provisionTab', (tabToProvision: tabToProvision) => ({
+  payload: tabToProvision,
+}));
 export const unprovisionTab = createAction('unprovisionTab', (tabId: string) => ({
   payload: { tabId },
 }));
@@ -165,4 +164,27 @@ export function roomUsersAwarenessDetailsSelector(rootState: rootState): roomMem
     ];
     return __uniqBy(roomMembers, (m) => m.userIdOrAnonID);
   }
+}
+
+export interface currentRoomStateWithComputed extends currentRoomState {
+  isCurrentFileMarkdown: boolean;
+}
+
+export function currentRoomStateWithComputedSelector(state: rootState): currentRoomStateWithComputed | undefined {
+  const currentRoom = state.room.currentRoom;
+  if (!currentRoom) {
+    return;
+  }
+
+  const isCurrentFileMarkdown = (() => {
+    if (!currentRoom.currentTabId || !currentRoom.roomSharedState.fileDetailsStates) {
+      return false;
+    }
+    return currentRoom.roomSharedState.fileDetailsStates[currentRoom.currentTabId].filetype === 'markdown';
+  })();
+
+  return {
+    ...currentRoom,
+    isCurrentFileMarkdown,
+  };
 }

@@ -11,6 +11,7 @@ export interface baseFileDetailsState {
   tabId: string;
   filename: string;
   deleted: boolean;
+  filetype?: string;
 }
 
 export type computedFileDetailsState = null;

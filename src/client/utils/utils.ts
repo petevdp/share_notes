@@ -50,9 +50,6 @@ export function octokitRequestWithAuth() {
 
 export function formatRoomVisitedTime(visitedDateStr: string) {
   const visitedDate = new Date(visitedDateStr);
-  console.log('date: ', typeof visitedDate);
-
-  console.log('visited: ', visitedDate);
 
   // const visitedDate = new Date(visitedDateStr);
   let user_date = new Date();

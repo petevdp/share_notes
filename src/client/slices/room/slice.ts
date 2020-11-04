@@ -93,25 +93,25 @@ export const roomSlice = createSlice({
       };
     });
 
-    builder.addCase(setFileDetailsState, (s, { payload: newFileDetails }) => {
-      if (!s?.currentRoom) {
+    builder.addCase(setFileDetailsState, (state, { payload: newFileDetails }) => {
+      if (!state?.currentRoom) {
         throw 'current room not set';
-      } else if (!s.currentRoom?.hashId) {
+      } else if (!state.currentRoom?.hashId) {
         throw 'hashId not set';
       }
       const newTabIds = Object.keys(newFileDetails);
 
       let currentTabId: string;
-      if (!s.currentRoom.roomSharedState.fileDetailsStates || !s.currentRoom.currentTabId) {
+      if (!state.currentRoom.roomSharedState.fileDetailsStates || !state.currentRoom.currentTabId) {
         // if there wasn't any existing file details or no current tab, select the first tab
         currentTabId = newTabIds[0];
-      } else if (newTabIds.includes(s.currentRoom.currentTabId)) {
+      } else if (newTabIds.includes(state.currentRoom.currentTabId)) {
         // if the current tab is still there, use it
-        currentTabId = s.currentRoom.currentTabId;
+        currentTabId = state.currentRoom.currentTabId;
       } else {
         // if the current tab was deleted, then select this tab's left neighbor, or the new first tab if the current tab is the first tab
-        const prevTabId = s.currentRoom.currentTabId || newTabIds[0];
-        const prevTabIds = Object.keys(s.currentRoom.roomSharedState.fileDetailsStates);
+        const prevTabId = state.currentRoom.currentTabId || newTabIds[0];
+        const prevTabIds = Object.keys(state.currentRoom.roomSharedState.fileDetailsStates);
         const prevTabIndex = prevTabIds.indexOf(prevTabId);
         if (prevTabIndex === 0) {
           currentTabId = newTabIds[0];
@@ -120,7 +120,7 @@ export const roomSlice = createSlice({
         }
       }
 
-      let loadedTabs = s.currentRoom.loadedTabs;
+      let loadedTabs = state.currentRoom.loadedTabs;
       // load new selected tab if it wasn't already
       if (currentTabId && !loadedTabs.includes(currentTabId)) {
         loadedTabs = [...loadedTabs, currentTabId];
@@ -129,9 +129,9 @@ export const roomSlice = createSlice({
       // filter out deleted tabs
       loadedTabs = loadedTabs.filter((tabId) => Object.keys(newFileDetails).includes(tabId));
 
-      s.currentRoom.loadedTabs = loadedTabs;
-      s.currentRoom.currentTabId = currentTabId;
-      s.currentRoom.roomSharedState.fileDetailsStates = newFileDetails;
+      state.currentRoom.loadedTabs = loadedTabs;
+      state.currentRoom.currentTabId = currentTabId;
+      state.currentRoom.roomSharedState.fileDetailsStates = newFileDetails;
     });
 
     builder.addCase(switchCurrentFile, (s, { payload: tabId }) => {

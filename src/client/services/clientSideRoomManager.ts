@@ -1,24 +1,34 @@
-import { clientSettings, getSettingsForEditor, settingsResolvedForEditor } from 'Client/slices/settings/types';
-import { DEBUG_FLAGS } from 'Client/utils/debugFlags';
+import {
+  clientSettings,
+  getSettingsForEditorWithComputed,
+  settingsResolvedForEditor,
+} from 'Client/slices/settings/types';
 import __isEqual from 'lodash/isEqual';
 import * as monaco from 'monaco-editor';
 import { initVimMode } from 'monaco-vim';
 import { BehaviorSubject } from 'rxjs/internal/BehaviorSubject';
 import { Observable } from 'rxjs/internal/Observable';
+import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { ConnectableObservable } from 'rxjs/internal/observable/ConnectableObservable';
+import { EMPTY } from 'rxjs/internal/observable/empty';
+import { merge } from 'rxjs/internal/observable/merge';
 import { distinctUntilChanged } from 'rxjs/internal/operators/distinctUntilChanged';
 import { filter } from 'rxjs/internal/operators/filter';
 import { first } from 'rxjs/internal/operators/first';
 import { map } from 'rxjs/internal/operators/map';
+import { mergeAll } from 'rxjs/internal/operators/mergeAll';
+import { mergeMap } from 'rxjs/internal/operators/mergeMap';
 import { publish } from 'rxjs/internal/operators/publish';
 import { takeUntil } from 'rxjs/internal/operators/takeUntil';
 import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
+import { scheduleArray } from 'rxjs/internal/scheduled/scheduleArray';
 import { Subject } from 'rxjs/internal/Subject';
 import { getYjsDocNameForRoom, YJS_WEBSOCKET_URL_WS } from 'Shared/environment';
 import { gistDetails } from 'Shared/githubTypes';
 import {
   allBaseFileDetailsStates,
   allComputedFileDetailsStates,
+  baseFileDetailsState,
   roomDetails,
   RoomManager,
   startingRoomDetails,
@@ -63,15 +73,24 @@ interface vimBindingState {
   statusElement: HTMLElement;
 }
 
+export interface tabToProvision {
+  tabId: string;
+  elements: {
+    editor: HTMLElement;
+    vimStatusBar: HTMLElement;
+    markdownPreview: HTMLElement;
+  };
+}
+
 export class ClientSideRoomManager extends RoomManager {
   static lastRoomManagerId = 0;
   localId: number;
   provider: WebsocketProvider;
-  bindings: BehaviorSubject<Map<string, MonacoBinding>>;
+  bindings$: BehaviorSubject<Map<string, MonacoBinding>>;
   vimBindings: Map<string, vimBindingState>;
   currentFile$$: BehaviorSubject<string | null>;
   availableColours$$: BehaviorSubject<string[] | null>;
-  tabsToProvision$$: Subject<{ tabId: string; editorContainer: HTMLElement; vimStatusBarContainer: HTMLElement }>;
+  tabsToProvision$$: Subject<tabToProvision>;
   providerSynced: Promise<true>;
   roomDetails$: ConnectableObservable<roomDetails>;
   fileDetails$: ConnectableObservable<allBaseFileDetailsStates>;
@@ -83,15 +102,23 @@ export class ClientSideRoomManager extends RoomManager {
     light: 'vs',
     dark: 'vs-dark',
   };
+  markdownPreviewElements: Map<string, HTMLElement>;
+  newEditorBindings$: Subject<[string, MonacoBinding]>;
 
-  constructor(private roomHashId: string, private settings$: Observable<clientSettings>) {
+  constructor(
+    private roomHashId: string,
+    private settings$: Observable<clientSettings>,
+    markdownPreviewToggle$: Observable<[string, boolean]>,
+  ) {
     super();
     this.localId = ClientSideRoomManager.lastRoomManagerId + 1;
     ClientSideRoomManager.lastRoomManagerId++;
     this.currentFile$$ = new BehaviorSubject(null);
     this.tabsToProvision$$ = new Subject();
-    this.bindings = new BehaviorSubject(new Map());
+    this.bindings$ = new BehaviorSubject(new Map());
+    this.newEditorBindings$ = new Subject();
     this.vimBindings = new Map();
+    this.markdownPreviewElements = new Map();
     this.provider = new WebsocketProvider(YJS_WEBSOCKET_URL_WS, getYjsDocNameForRoom(roomHashId), this.ydoc);
 
     /*
@@ -102,8 +129,15 @@ export class ClientSideRoomManager extends RoomManager {
 
     // listen for and apply settings changes to editors
     settings$.pipe(takeUntil(this.roomDestroyed$$)).subscribe((settings) => {
-      for (let [tabId, binding] of this.bindings.value.entries()) {
-        const settingsForEditor = getSettingsForEditor(settings, roomHashId, tabId);
+      const allDetails = this.getFileDetails();
+      for (let [tabId, binding] of this.bindings$.value.entries()) {
+        const details = allDetails[tabId];
+        const settingsForEditor = getSettingsForEditorWithComputed(
+          settings,
+          roomHashId,
+          tabId,
+          details.filetype === 'markdown',
+        );
         this.setEditorSettings(tabId, settingsForEditor, binding.getEditor());
         binding.getEditor().updateOptions({ theme: ClientSideRoomManager.themeMap[settings.theme] });
       }
@@ -141,15 +175,21 @@ export class ClientSideRoomManager extends RoomManager {
       }).pipe(distinctUntilChanged(__isEqual), publish()) as ConnectableObservable<globalAwareness>;
     })();
 
-    this.awareness$.subscribe((a) => {
-      console.log('awareness: ', a);
-    });
-
     this.roomDetails$ = this.yMapToObservable(this.yData.details, this.roomDestroyed$$).pipe(
       publish(),
     ) as ConnectableObservable<roomDetails>;
 
     this.fileDetails$ = this.yMapToObservable(this.yData.fileDetailsState, this.roomDestroyed$$).pipe(
+      map((state: allBaseFileDetailsStates) => {
+        const newState: allBaseFileDetailsStates = {};
+        for (let [tabId, details] of Object.entries(state)) {
+          newState[tabId] = {
+            ...details,
+            filetype: determineLanguage(details.filename)?.id,
+          };
+        }
+        return newState;
+      }),
       publish(),
     ) as ConnectableObservable<allBaseFileDetailsStates>;
 
@@ -162,27 +202,33 @@ export class ClientSideRoomManager extends RoomManager {
     let tabOrdinal = 1;
     this.tabsToProvision$$
       .pipe(withLatestFrom(this.settings$, this.fileDetails$))
-      .subscribe(async ([{ tabId, editorContainer, vimStatusBarContainer }, settings, fileDetails]) => {
-        this.vimBindings.set(tabId, { statusElement: vimStatusBarContainer });
+      .subscribe(async ([{ tabId, elements: tabElements }, settings, fileDetails]) => {
+        this.vimBindings.set(tabId, { statusElement: tabElements.vimStatusBar });
 
         const uri = monaco.Uri.file(this.localId + '-' + tabOrdinal + '-' + fileDetails[tabId].filename);
         tabOrdinal++;
-        console.log('uri: ', uri);
         const model = monaco.editor.createModel('', undefined, uri);
-        const editor = monaco.editor.create(editorContainer, {
+        const editor = monaco.editor.create(tabElements.editor, {
           value: '',
           model,
           theme: ClientSideRoomManager.themeMap[settings.theme],
           automaticLayout: true,
         });
-        const settingsForEditor = getSettingsForEditor(settings, roomHashId, tabId);
+        const settingsForEditor = getSettingsForEditorWithComputed(
+          settings,
+          roomHashId,
+          tabId,
+          fileDetails[tabId].filetype === 'markdown',
+        );
         this.setEditorSettings(tabId, settingsForEditor, editor);
-        console.log('model: ', editor.getModel());
         const content = this.yData.fileContents.get(tabId);
 
         if (!content) {
           throw 'tried to provision nonexistant editor';
         }
+
+        this.markdownPreviewElements.set(tabId, tabElements.markdownPreview);
+
         const binding = new MonacoBinding(
           content,
           model,
@@ -191,13 +237,14 @@ export class ClientSideRoomManager extends RoomManager {
           this.provider.awareness,
           this.awareness$,
         );
-        this.bindings.value.set(tabId, binding);
-        this.bindings.next(this.bindings.value);
+        this.bindings$.value.set(tabId, binding);
+        this.bindings$.next(this.bindings$.value);
+        this.newEditorBindings$.next([tabId, binding]);
       });
 
     this.fileDetails$.subscribe((state) => {
       for (let [id, { filename }] of Object.entries(state)) {
-        const binding = this.bindings.value.get(id);
+        const binding = this.bindings$.value.get(id);
         if (!binding) {
           continue;
         }
@@ -240,6 +287,68 @@ export class ClientSideRoomManager extends RoomManager {
       );
       return subject;
     })();
+
+    const newEditorBindingsWithPreview$: Observable<[string, boolean]> = this.newEditorBindings$.pipe(
+      withLatestFrom(this.settings$, this.fileDetails$),
+      map(([[tabId], settings, fileDetails]) => [
+        tabId,
+        getSettingsForEditorWithComputed(settings, roomHashId, tabId, fileDetails[tabId].filetype === 'markdown')
+          .showMarkdownPreview,
+      ]),
+    );
+
+    this.newEditorBindings$.subscribe((tabId) => {
+      console.log('new binding:  ', tabId);
+    });
+
+    const previewedContentChange$ = merge(markdownPreviewToggle$, newEditorBindingsWithPreview$).pipe(
+      filter(([, showPreview]) => {
+        console.log('preview: ', showPreview);
+        return showPreview;
+      }),
+      withLatestFrom(this.fileDetails$),
+      mergeMap(([[tabId], allFileDetails]) => {
+        const binding = this.bindings$.value.get(tabId);
+        const fileDetails = allFileDetails[tabId];
+        if (binding && fileDetails && determineLanguage(fileDetails.filename)?.id === 'markdown') {
+          const stopShowingPreview$ = combineLatest(markdownPreviewToggle$, this.fileDetails$).pipe(
+            filter(
+              ([[changedTabId, previewingMarkdown], fileDetails]) =>
+                (changedTabId == tabId && !previewingMarkdown) ||
+                determineLanguage(fileDetails[tabId].filename)?.id !== 'markdown',
+            ),
+          );
+          const content$ = new Observable<string>((s) => {
+            const disposable = binding.monacoModel.onDidChangeContent(() => {
+              const value = binding.monacoModel.getValue();
+              s.next(value);
+            });
+            binding.monacoModel.onWillDispose(() => {
+              s.complete();
+            });
+            s.next(binding.monacoModel.getValue());
+            return () => disposable.dispose();
+          });
+
+          return content$.pipe(
+            takeUntil(stopShowingPreview$),
+            mergeMap(async (content) => {
+              const { default: marked } = await import('marked');
+              return [tabId, marked(content)];
+            }),
+          );
+        } else {
+          return EMPTY;
+        }
+      }),
+    );
+
+    previewedContentChange$.subscribe(([tabId, htmlString]) => {
+      const element = this.markdownPreviewElements.get(tabId);
+      if (element) {
+        element.innerHTML = htmlString;
+      }
+    });
   }
 
   connect() {
@@ -251,16 +360,23 @@ export class ClientSideRoomManager extends RoomManager {
   }
 
   updateSettings(settings: clientSettings) {
-    for (let [tabId, binding] of this.bindings.value.entries()) {
-      const settingsForEditor = getSettingsForEditor(settings, this.roomHashId, tabId);
+    const allDetails = this.getFileDetails();
+    for (let [tabId, binding] of this.bindings$.value.entries()) {
+      const details = allDetails[tabId];
+      const settingsForEditor = getSettingsForEditorWithComputed(
+        settings,
+        this.roomHashId,
+        tabId,
+        details.filetype === 'markdown',
+      );
       this.setEditorSettings(tabId, settingsForEditor, binding.getEditor());
       binding.getEditor().updateOptions({ theme: ClientSideRoomManager.themeMap[settings.theme] });
     }
   }
 
-  async provisionTab(tabId: string, editorContainer: HTMLElement, vimStatusBarContainer: HTMLElement) {
+  async provisionTab(tabToProvision: tabToProvision) {
     await this.providerSynced;
-    this.tabsToProvision$$.next({ tabId, editorContainer, vimStatusBarContainer });
+    this.tabsToProvision$$.next(tabToProvision);
   }
 
   async setAwarenessUserDetails(input: roomMemberInput) {
@@ -289,17 +405,16 @@ export class ClientSideRoomManager extends RoomManager {
       color: availableColors[0],
       ...input,
     };
-    console.log('setting local state for user: ', userAwareness);
     this.provider.awareness.setLocalStateField('roomMemberDetails', userAwareness);
   }
 
   unprovisionTab(tabId: string) {
     console.log('unprovisioning ', tabId);
 
-    const binding = this.bindings.value.get(tabId);
+    const binding = this.bindings$.value.get(tabId);
     binding?.destroy();
-    this.bindings.value.delete(tabId);
-    this.bindings.next(this.bindings.value);
+    this.bindings$.value.delete(tabId);
+    this.bindings$.next(this.bindings$.value);
   }
 
   removeFile(tabId: string) {
@@ -315,7 +430,6 @@ export class ClientSideRoomManager extends RoomManager {
   updateGistDetails(details: gistDetails) {}
 
   destroy() {
-    console.log('destroying roomManager');
     super.destroy();
     this.provider.destroy();
     this.currentFile$$.complete();
@@ -324,12 +438,12 @@ export class ClientSideRoomManager extends RoomManager {
     this.availableColours$$.complete();
     this.remoteCursorStyleManager.destroy();
 
-    for (const binding of this.bindings.value.values()) {
+    for (const binding of this.bindings$.value.values()) {
       // disposing the model will also dispose the binding
       binding.monacoModel.dispose();
       binding.destroy();
     }
-    this.bindings.next(new Map());
+    this.bindings$.next(new Map());
   }
 
   setEditorSettings(tabId: string, settings: settingsResolvedForEditor, editor: monaco.editor.IStandaloneCodeEditor) {
@@ -369,6 +483,17 @@ export class ClientSideRoomManager extends RoomManager {
     return this.yData.details.toJSON() as roomDetails;
   }
 
+  getFileDetails(): allBaseFileDetailsStates {
+    const details = this.yData.fileDetailsState.toJSON() as allBaseFileDetailsStates;
+    return Object.keys(details).reduce(
+      (obj, tabId) => ({
+        ...obj,
+        [tabId]: { ...details[tabId], filetype: determineLanguage(details[tabId].filename)?.id },
+      }),
+      {} as allBaseFileDetailsStates,
+    );
+  }
+
   getAwarenessStates() {
     const globalAwarenessMap = this.provider.awareness.getStates() as globalAwarenessMap;
     const globalAwareness: globalAwareness = {};
@@ -382,11 +507,9 @@ export class ClientSideRoomManager extends RoomManager {
   }
 
   async setCurrentTab(tabId: string) {
-    console.log('tab: ', tabId);
-
     this.provider.awareness.setLocalStateField('currentTab', tabId);
     // the current implementation here to retrieve the binding assums that the tab for this tabid will at some point be provisioned. If it isn't this will never resolve.
-    const binding = await this.bindings
+    const binding = await this.bindings$
       .pipe(
         filter((bindings) => bindings.has(tabId)),
         map((bindings) => bindings.get(tabId) as MonacoBinding),
