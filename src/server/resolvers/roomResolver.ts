@@ -98,13 +98,6 @@ export class RoomResolver {
   @Mutation(() => ClientSideRoom)
   async createRoom(@Arg('data') userData: CreateRoomInput) {
     const owner = await this.userRepository.findOneOrFail({ id: parseInt(userData.ownerId) });
-    if (userData.createdGistUrl) {
-      fs.appendFile(CREATED_GISTS_LOG, userData.createdGistUrl + '\n', () => {
-        // wow math(this block can't be empty)
-        2 + 2 === 4;
-      });
-    }
-
     const room = new Room();
     room.createdAt = new Date();
     room.name = userData.name;

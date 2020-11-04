@@ -1,5 +1,6 @@
 import { request as octokitRequest } from '@octokit/request';
 import { IncomingMessage } from 'http';
+import __isEmpty from 'lodash/isEmpty';
 import path from 'path';
 import { Room } from 'Server/models/room';
 import { RoomVisit } from 'Server/models/roomVisit';
@@ -17,7 +18,18 @@ import * as Y from 'yjs';
 
 import { ClientSideRoomService } from './clientSideRoomService';
 import { TedisService, TOKEN_BY_USER_ID, USER_ID_BY_SESSION_KEY } from './tedisService';
-
+export interface startingRoomFiles {
+  [k: string]: {
+    filename?: string;
+    type?: string;
+    language?: string;
+    raw_url?: string;
+    size?: number;
+    truncated?: boolean;
+    content?: string;
+    [k: string]: unknown;
+  };
+}
 @Service()
 export class YjsService {
   readonly docs: Map<string, WSSharedDoc>;
@@ -106,15 +118,17 @@ export class YjsService {
           .then((res) => res.data);
       }
 
-      manager.populate(
-        {
-          gistName: clientSideRoom.gistName,
-          hashId: clientSideRoom.hashId,
-          id: clientSideRoom.id,
-          name: clientSideRoom.name,
-        },
-        details,
-      );
+      if (__isEmpty(manager.yData.details.toJSON())) {
+        manager.populate(
+          {
+            gistName: clientSideRoom.gistName,
+            hashId: clientSideRoom.hashId,
+            id: clientSideRoom.id,
+            name: clientSideRoom.name,
+          },
+          details,
+        );
+      }
     }
   }
 
@@ -124,7 +138,7 @@ export class YjsService {
 }
 
 export class ServerSideRoomManager extends RoomManager {
-  populate(startingRoomDetails: startingRoomDetails, gistDetails?: gistDetails) {
+  populate(startingRoomDetails: startingRoomDetails, files?: gistDetails) {
     const details: roomDetails = {
       ...startingRoomDetails,
       gistLoaded: true,
@@ -134,11 +148,19 @@ export class ServerSideRoomManager extends RoomManager {
       this.yData.details.set(key, detail);
     }
 
-    if (gistDetails) {
+    if (files) {
       this.ydoc.transact(() => {
-        for (let file of Object.values(gistDetails.files)) {
+        for (let file of Object.values(files)) {
           this.addNewFile({ filename: file.filename, content: file.content });
         }
+      });
+    } else {
+      this.ydoc.transact(() => {
+        const filename = startingRoomDetails.name.toLowerCase().split(' ').join('-');
+        this.addNewFile({
+          filename,
+          content: `# ${filename}`,
+        });
       });
     }
   }

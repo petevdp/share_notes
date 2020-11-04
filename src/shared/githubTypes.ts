@@ -12,6 +12,8 @@ export interface gistFileDetails {
 
 export type gistDetails = GistsGetResponseData;
 
+export type fileDetails = { filename: string } & gistDetails['files'][string];
+
 // export interface gistDetails {
 //   id: string;
 //   name: string;
