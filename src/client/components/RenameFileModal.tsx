@@ -3,6 +3,7 @@ import { FormControl } from 'baseui/form-control';
 import { Input } from 'baseui/input';
 import { Modal, ModalBody, ModalHeader } from 'baseui/modal';
 import {
+  addNewFile,
   currentFileRenameWithComputedSelector,
   fileRenamingActions,
   RenameError,
@@ -11,10 +12,10 @@ import {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';
 import { RoomModalZIndexOverride } from 'Client/utils/basewebUtils';
-import React, { useMemo } from 'react';
+import React, { ReactElement, ReactNode, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
-export function RenameFileModal() {
+export function RenameFileModal(): ReactElement | null {
   const dispatch = useDispatch();
   const fileDetails = useSelector((rootState: rootState) => {
     const currentRoom = rootState.room.currentRoom;
@@ -28,6 +29,9 @@ export function RenameFileModal() {
   const errorCodes = currentRename?.errors;
 
   const errorMessage = useMemo(() => {
+    if (!currentRename?.areErrorsVisible) {
+      return;
+    }
     return errorCodes
       ?.map((code) => RENAME_ERROR_MESSAGES.get(code))
       .filter(Boolean)
@@ -39,6 +43,10 @@ export function RenameFileModal() {
     dispatch(fileRenamingActions.setNewFileName(changedFilename));
   };
 
+  if (!currentRename) {
+    return null;
+  }
+
   return (
     <Modal
       isOpen={!!currentRename}
@@ -46,19 +54,26 @@ export function RenameFileModal() {
       unstable_ModalBackdropScroll={true}
       overrides={RoomModalZIndexOverride}
     >
-      <ModalHeader>Rename {fileDetails?.filename || 'File'}</ModalHeader>
+      <ModalHeader>
+        {currentRename?.type === 'nameForNewFile' && 'Add New File'}
+        {currentRename.type === 'renameExistingFile' && 'Rename File'}
+      </ModalHeader>
       <ModalBody>
         <form
           onSubmit={(e) => {
             e.preventDefault();
             if (currentRename?.isValid) {
-              dispatch(renameFile(currentRename.tabIdToRename, currentRename.newFilename));
+              if (currentRename.type === 'nameForNewFile') {
+                dispatch(addNewFile(currentRename.newFilename));
+              } else if (currentRename.type === 'renameExistingFile') {
+                dispatch(renameFile(currentRename.tabIdToRename, currentRename.newFilename));
+              }
             }
           }}
         >
           <FormControl error={errorMessage} label="New Filename">
             <Input
-              error={!currentRename?.isValid}
+              error={currentRename.areErrorsVisible}
               inputMode="inputmode"
               clearable
               value={currentRename?.newFilename || ''}

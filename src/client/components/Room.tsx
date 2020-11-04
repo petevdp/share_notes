@@ -70,7 +70,7 @@ export function Room() {
   }
 
   if (currentRoom?.gistDetails) {
-    actionItems = [...actionItems, { label: 'save back to gist', key: 'saveBackToGist' }];
+    actionItems = [...actionItems, { label: 'Save Back to Gist', key: 'saveBackToGist' }];
   }
 
   const onActionItemSelect = ({ item: { key } }: { item: { label: string; key: string } }) => {
@@ -127,7 +127,7 @@ export function Room() {
           <TabList />
           <Button
             key={addNewFileKey}
-            onClick={() => dispatch(addNewFile())}
+            onClick={() => dispatch(fileRenamingActions.promptNameForNewFile())}
             kind="tertiary"
             overrides={__merge<ButtonOverrides, ButtonOverrides>(
               {
@@ -162,7 +162,10 @@ export function Room() {
               checked={settingsForCurrentEditor?.showMarkdownPreview}
               labelPlacement="left"
               checkmarkType="toggle_round"
-              overrides={{ Label: { style: { fontSize: '15px', whiteSpace: 'nowrap' } } }}
+              overrides={{
+                Label: { style: { fontSize: '15px', whiteSpace: 'nowrap', paddingRight: '2px' } },
+                Root: { style: { marginRight: '4px' } },
+              }}
             >
               Toggle Markdown Preview
             </Checkbox>

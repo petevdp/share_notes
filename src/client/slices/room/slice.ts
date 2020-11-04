@@ -2,6 +2,7 @@ import { createSlice } from '@reduxjs/toolkit';
 
 import { roomUpdateActions } from '../roomUpdating/types';
 import {
+  addNewFile,
   fileRenamingActions,
   gistSaved,
   initRoom,
@@ -166,43 +167,58 @@ export const roomSlice = createSlice({
       },
     }));
 
+    builder.addCase(fileRenamingActions.promptNameForNewFile, (state) => {
+      if (!state.currentRoom) {
+        return;
+      }
+
+      state.currentRoom.currentRename = {
+        type: 'nameForNewFile',
+        newFilename: '',
+        userChangedNewFilename: false,
+      };
+    });
+
     builder.addCase(fileRenamingActions.startRenameCurrentFile, (state) => {
       if (!state.currentRoom) {
-        throw 'current room not set';
+        return;
       }
 
       const {
         roomSharedState: { fileDetailsStates },
         currentTabId,
       } = state.currentRoom;
+
       if (!currentTabId || !fileDetailsStates) {
-        throw 'current tab or file details not initialized';
+        return;
       }
 
-      return {
-        ...state,
-        currentRoom: {
-          ...state.currentRoom,
-          currentRename: {
-            tabIdToRename: currentTabId,
-            newFilename: fileDetailsStates[currentTabId].filename,
-            userChangedNewFilename: false,
-          },
-        },
+      state.currentRoom.currentRename = {
+        type: 'renameExistingFile',
+        tabIdToRename: currentTabId,
+        newFilename: fileDetailsStates[currentTabId].filename,
+        userChangedNewFilename: false,
       };
+    });
+    builder.addCase(addNewFile, (state) => {
+      if (!state.currentRoom) {
+        return;
+      }
+      delete state.currentRoom.currentRename;
     });
 
     builder.addCase(fileRenamingActions.startFileRename, (state, { payload: tabId }) => {
       if (!state.currentRoom) {
-        throw 'current room not set';
+        return;
       }
-      const {
-        roomSharedState: { fileDetailsStates },
-      } = state.currentRoom;
+
+      const fileDetailsStates = state.currentRoom.roomSharedState.fileDetailsStates;
       if (!fileDetailsStates) {
-        throw 'current tab or file details not initialized';
+        return;
       }
+
       state.currentRoom.currentRename = {
+        type: 'renameExistingFile',
         tabIdToRename: tabId,
         newFilename: fileDetailsStates[tabId].filename,
         userChangedNewFilename: false,
@@ -234,16 +250,10 @@ export const roomSlice = createSlice({
     {
       const closeFileRename = (state: roomSliceState) => {
         if (!state.currentRoom) {
-          throw 'current room not set';
+          return;
         }
 
-        return {
-          ...state,
-          currentRoom: {
-            ...state.currentRoom,
-            currentRename: undefined,
-          },
-        };
+        delete state.currentRoom.currentRename;
       };
 
       builder.addCase(fileRenamingActions.close, closeFileRename);

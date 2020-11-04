@@ -36,6 +36,7 @@ import {
   addNewFile,
   deleteRoom,
   destroyRoom,
+  fileRenamingActions,
   gistSaved,
   initRoom,
   leaveRoom,
@@ -178,8 +179,8 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
         const switchCurrentFileAfterAdded$ = action$.pipe(
           filter(addNewFile.match),
           takeUntil(manager.roomDestroyed$$),
-          map(() => {
-            const fileState = manager.addNewFile();
+          map(({ payload: fileInput }) => {
+            const fileState = manager.addNewFile(fileInput);
             return switchCurrentFile(fileState.tabId);
           }),
         );

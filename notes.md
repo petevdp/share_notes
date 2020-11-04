@@ -14,13 +14,11 @@ if gist already created:
 - soft delete room
 - loading and transitions
   - create room
-- force anonymous login
 - quick settings
+  - ???
 - icons for actions/move actions
-- fix rooms display
 - landing page
 - what's up with populate's transact?
-- anonymous room owner
 
 ## later
 
@@ -67,6 +65,7 @@ if gist already created:
 
 - there are some type mismatches for certain gql queries with overly generic response types
 - sometimes we get an error involving setting options on the editors when we create a room
+- some bad ambiguous type names
 
 # optional gists
 
@@ -78,8 +77,7 @@ if gist already created:
 
 # performance
 
-- editing markdown, no preview: 64% scripting
-- editing markdown, preview:
+# Issues
 
 emojis that might break things:
 

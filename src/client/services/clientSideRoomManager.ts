@@ -578,6 +578,9 @@ export class ClientSideRoomManager extends RoomManager {
 }
 
 function determineLanguage(filename: string) {
+  if (!filename) {
+    return;
+  }
   const extension = '.' + filename.split('.').pop();
   return monaco.languages.getLanguages().find((language) => language.extensions?.includes(extension));
 }

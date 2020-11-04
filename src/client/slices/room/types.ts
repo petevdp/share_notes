@@ -22,11 +22,18 @@ interface anonymousLogin {
   username: string;
 }
 
-export interface currentRename {
-  tabIdToRename: string;
-  newFilename: string;
-  userChangedNewFilename: boolean;
-}
+export type currentRename =
+  | {
+      type: 'renameExistingFile';
+      tabIdToRename: string;
+      newFilename: string;
+      userChangedNewFilename: boolean;
+    }
+  | {
+      type: 'nameForNewFile';
+      newFilename: string;
+      userChangedNewFilename: boolean;
+    };
 
 interface currentRoomState {
   initializingRoom: boolean;
@@ -76,7 +83,9 @@ export const roomInitialized = createAction('roomInitialized', (yjsClientId: num
 
 export const destroyRoom = createAction('destroyRoom');
 export const switchCurrentFile = createAction('switchCurrentFile', (tabId: string) => ({ payload: tabId }));
-export const addNewFile = createAction('addNewFile', (filename?: string) => ({ payload: filename }));
+export const addNewFile = createAction('addNewFile', (filename: string, content = '') => ({
+  payload: { filename, content },
+}));
 export const setCurrentFile = createAction('setCurrentFile', (id: string | number) => ({ payload: id }));
 export const renameFile = createAction('renameFile', (tabId: string | number, newFilename: string) => ({
   payload: { tabId, newFilename },
@@ -95,6 +104,7 @@ export const linkGist = createAction('linkGist', (gistId: string) => ({ payload:
 
 export const fileRenamingActions = {
   startRenameCurrentFile: createAction('startRenameCurrentFile'),
+  promptNameForNewFile: createAction('promptNameForNewFile'),
   startFileRename: createAction('startFileRename', (tabId: string) => ({ payload: tabId })),
   close: createAction('closeRenameFileModal'),
   setNewFileName: createAction('setNewFileName', (filename: string) => ({ payload: filename })),
@@ -113,10 +123,11 @@ export enum RenameError {
   Duplicate,
 }
 
-export interface currentRenameWithComputed extends currentRename {
+export type currentRenameWithComputed = currentRename & {
   errors: RenameError[];
   isValid: boolean;
-}
+  areErrorsVisible: boolean;
+};
 
 export function isLoggedInForRoomSelector(rootState: rootState) {
   return !!(rootState.session.token || rootState.session.anonymousRoomMember);
@@ -150,6 +161,7 @@ export function currentFileRenameWithComputedSelector(rootState: rootState): cur
   return {
     ...currentRename,
     errors,
+    areErrorsVisible: currentRename.userChangedNewFilename && errors.length > 0,
     isValid: errors.length === 0,
   };
 }
