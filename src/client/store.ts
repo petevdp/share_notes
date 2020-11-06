@@ -45,7 +45,7 @@ const rootReducer = combineReducers({
   currentUserDetails: currentUserDetailsSlice.reducer,
   roomCreation: roomCreationSlice.reducer,
   roomUpdating: roomUpdatingSlice.reducer,
-  ownedRooms: persistReducer({ key: 'ownedRooms', version: 1, storage }, ownedRoomsSlice.reducer),
+  ownedRooms: ownedRoomsSlice.reducer,
 });
 
 export type rootState = ReturnType<typeof rootReducer>;
