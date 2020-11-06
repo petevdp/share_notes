@@ -35,6 +35,7 @@ export function TabList() {
   const navStyles = css({
     display: 'flex',
     overflowX: 'auto',
+    gridArea: 'tabs',
   });
 
   if (!currentRoom || !currentRoom.roomSharedState.fileDetailsStates) {

@@ -93,7 +93,7 @@ export function GlobalHeader() {
   const containerStyles = css({
     boxSizing: 'border-box',
     width: '100%',
-    height: '72px',
+    height: 'min-content',
   });
 
   return (
