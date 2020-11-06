@@ -6,6 +6,7 @@ import {
 import __isEqual from 'lodash/isEqual';
 import * as monaco from 'monaco-editor';
 import { initVimMode } from 'monaco-vim';
+import { merge } from 'rxjs';
 import { BehaviorSubject } from 'rxjs/internal/BehaviorSubject';
 import { Observable } from 'rxjs/internal/Observable';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
@@ -78,6 +79,7 @@ export interface tabToProvision {
     editor: HTMLElement;
     vimStatusBar: HTMLElement;
     markdownPreview: HTMLElement;
+    diffViewer: HTMLElement;
   };
 }
 
@@ -102,13 +104,10 @@ export class ClientSideRoomManager extends RoomManager {
     dark: 'vs-dark',
   };
   markdownPreviewElements: Map<string, HTMLElement>;
+  diffViewerElements: Map<string, HTMLElement>;
   newEditorBindings$: Subject<[string, MonacoBinding]>;
 
-  constructor(
-    private roomHashId: string,
-    private settings$: Observable<clientSettings>,
-    markdownPreviewToggle$: Observable<[string, boolean]>,
-  ) {
+  constructor(private roomHashId: string, private settings$: Observable<clientSettings>) {
     super();
     this.localId = ClientSideRoomManager.lastRoomManagerId + 1;
     ClientSideRoomManager.lastRoomManagerId++;
@@ -118,6 +117,7 @@ export class ClientSideRoomManager extends RoomManager {
     this.newEditorBindings$ = new Subject();
     this.vimBindings = new Map();
     this.markdownPreviewElements = new Map();
+    this.diffViewerElements = new Map();
     this.provider = new WebsocketProvider(YJS_WEBSOCKET_URL_WS, getYjsDocNameForRoom(roomHashId), this.ydoc);
 
     /*
@@ -201,10 +201,10 @@ export class ClientSideRoomManager extends RoomManager {
     let tabOrdinal = 1;
     this.tabsToProvision$$
       .pipe(withLatestFrom(this.settings$, this.fileDetails$))
-      .subscribe(async ([{ tabId, elements: tabElements }, settings, fileDetails]) => {
+      .subscribe(async ([{ tabId, elements: tabElements }, settings, allFileDetails]) => {
         this.vimBindings.set(tabId, { statusElement: tabElements.vimStatusBar });
 
-        const uri = monaco.Uri.file(this.localId + '-' + tabOrdinal + '-' + fileDetails[tabId].filename);
+        const uri = monaco.Uri.file(this.localId + '-' + tabOrdinal + '-' + allFileDetails[tabId].filename);
         tabOrdinal++;
         const model = monaco.editor.createModel('', undefined, uri);
         const editor = monaco.editor.create(tabElements.editor, {
@@ -217,7 +217,7 @@ export class ClientSideRoomManager extends RoomManager {
           settings,
           roomHashId,
           tabId,
-          fileDetails[tabId].filetype === 'markdown',
+          allFileDetails[tabId].filetype === 'markdown',
         );
         this.setEditorSettings(tabId, settingsForEditor, editor);
         const content = this.yData.fileContents.get(tabId);
@@ -227,7 +227,9 @@ export class ClientSideRoomManager extends RoomManager {
         }
 
         this.markdownPreviewElements.set(tabId, tabElements.markdownPreview);
+        this.diffViewerElements.set(tabId, tabElements.diffViewer);
 
+        console.log('creating monaco binding for ', tabId);
         const binding = new MonacoBinding(
           content,
           model,
@@ -247,7 +249,7 @@ export class ClientSideRoomManager extends RoomManager {
         if (!binding) {
           continue;
         }
-        const editor: monaco.editor.IStandaloneCodeEditor = [...binding.editors.values()][0];
+        const editor: monaco.editor.IStandaloneCodeEditor = binding.getEditor();
         const model = editor.getModel();
 
         if (!model) {
@@ -309,7 +311,7 @@ export class ClientSideRoomManager extends RoomManager {
               tabId,
               details && details.filetype === 'markdown',
             );
-            const willShowMarkdownPreview = bindings.get(tabId) && settingsForEditor.showMarkdownPreview;
+            const willShowMarkdownPreview = bindings.get(tabId) && settingsForEditor.displayMode === 'markdownPreview';
             const didShowMarkdownPreview = acc.prevShowPreviewState.has(tabId);
             if (willShowMarkdownPreview) {
               showPreviewState.add(tabId);
@@ -359,6 +361,77 @@ export class ClientSideRoomManager extends RoomManager {
         );
       }),
     );
+
+    const provisionedDiffEditorDelta$ = combineLatest(this.bindings$, this.roomDetails$).pipe(
+      scan(
+        (acc, [bindings, roomDetails]) => {
+          const ids = new Set([...bindings.keys(), ...acc.prevShowDiffEditorState.keys()]);
+          let delta = new Map<string, boolean>();
+          let showDiffEditorState = new Set<string>();
+
+          for (let tabId of ids) {
+            const willProvisionDiffEditor = bindings.get(tabId) && roomDetails.gistLoaded;
+            const didProvisionDiffEditor = acc.prevShowDiffEditorState.has(tabId);
+            if (willProvisionDiffEditor) {
+              showDiffEditorState.add(tabId);
+              if (!didProvisionDiffEditor) {
+                delta.set(tabId, true);
+              }
+            } else if (!willProvisionDiffEditor && didProvisionDiffEditor) {
+              delta.set(tabId, false);
+            }
+          }
+
+          return { prevShowDiffEditorState: showDiffEditorState, delta };
+        },
+        { prevShowDiffEditorState: new Set<string>(), delta: new Map<string, boolean>() },
+      ),
+      concatMap(({ delta }) => from(delta.entries())),
+    );
+
+    provisionedDiffEditorDelta$.pipe(filter(([, shouldProvision]) => shouldProvision)).subscribe(([tabId]) => {
+      console.log('provisioning diff editor for ', tabId);
+      const binding = this.bindings$.value.get(tabId) as MonacoBinding;
+      const originalContent = this.getFileDetails()[tabId].gistContent || '';
+      const element = this.diffViewerElements.get(tabId) as HTMLElement;
+      console.log('element: ', element);
+      const editor = monaco.editor.createDiffEditor(element, { readOnly: true, automaticLayout: true });
+      const originalContentModel = monaco.editor.createModel(originalContent, undefined);
+      // console.log('monaco model value: ', binding.getEditor().getModel()?.getValue());
+      // console.log('original model value: ', binding.getEditor().getModel()?.getValue());
+      editor.setModel({
+        original: originalContentModel,
+        modified: binding.monacoModel,
+      });
+
+      console.log({ originalContentModel: originalContentModel.getValue(), modified: binding.monacoModel.getValue() });
+
+      const dispose$ = merge(
+        provisionedDiffEditorDelta$.pipe(
+          filter(([deltaTabId, shouldProvision]) => deltaTabId == tabId && !shouldProvision),
+          mapTo(true),
+        ),
+        this.roomDestroyed$$,
+      ).pipe(first());
+
+      this.fileDetails$
+        .pipe(
+          filter((allDetails) => typeof allDetails[tabId].gistContent === 'string'),
+          map((allDetails) => allDetails[tabId].gistContent),
+          distinctUntilChanged(),
+          takeUntil(dispose$),
+        )
+        .subscribe((content) => {
+          console.log('updated original content', content);
+          originalContentModel.setValue(content || '');
+        });
+
+      dispose$.toPromise().then(() => {
+        console.log('disposing diff editor for ', tabId);
+        editor.dispose();
+        originalContentModel.dispose();
+      });
+    });
 
     markdownPreview$.subscribe(([tabId, htmlString]) => {
       const element = this.markdownPreviewElements.get(tabId);

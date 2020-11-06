@@ -1,5 +1,6 @@
 import { useStyletron } from 'baseui';
 import { Button, ButtonOverrides } from 'baseui/button';
+import { ButtonGroup } from 'baseui/button-group';
 import { Checkbox, StyledCheckmark } from 'baseui/checkbox';
 import { ChevronDown, Plus } from 'baseui/icon';
 import { ItemT, StatefulMenu } from 'baseui/menu';
@@ -19,6 +20,7 @@ import {
   individualEditorSetting,
   settingsActions,
   settingsForCurrentEditorSelector,
+  settingsResolvedForEditor,
 } from 'Client/slices/settings/types';
 import { rootState } from 'Client/store';
 import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
@@ -97,6 +99,12 @@ export function Room() {
     }
   };
 
+  const selectDisplayMode = (mode: settingsResolvedForEditor['displayMode']) => {
+    dispatch(settingsActions.setGlobalEditorSetting({ key: 'displayMode', value: mode }));
+  };
+
+  const selectionOptions: settingsResolvedForEditor['displayMode'][] = ['regular', 'diffViewer', 'markdownPreview'];
+
   return (
     <div
       className={css({
@@ -147,28 +155,34 @@ export function Room() {
             alignItems: 'center',
           })}
         >
-          {currentRoom?.isCurrentFileMarkdown && (
-            <Checkbox
-              onChange={() => {
-                if (currentRoom?.hashId && currentRoom.currentTabId && settingsForCurrentEditor) {
-                  dispatch(
-                    settingsActions.setGlobalEditorSetting({
-                      key: 'showMarkdownPreview',
-                      value: !settingsForCurrentEditor.showMarkdownPreview,
-                    } as individualEditorSetting),
-                  );
-                }
-              }}
-              checked={settingsForCurrentEditor?.showMarkdownPreview}
-              labelPlacement="left"
-              checkmarkType="toggle_round"
-              overrides={{
-                Label: { style: { fontSize: '15px', whiteSpace: 'nowrap', paddingRight: '2px' } },
-                Root: { style: { marginRight: '4px' } },
-              }}
+          {currentRoom && (
+            <ButtonGroup
+              selected={settingsForCurrentEditor && selectionOptions.indexOf(settingsForCurrentEditor.displayMode)}
             >
-              Toggle Markdown Preview
-            </Checkbox>
+              <Button
+                isSelected={settingsForCurrentEditor?.displayMode === 'regular'}
+                key="regular"
+                onClick={() => selectDisplayMode('regular')}
+              >
+                Regular
+              </Button>
+              <Button
+                isSelected={settingsForCurrentEditor?.displayMode === 'diffViewer'}
+                key="diff"
+                onClick={() => selectDisplayMode('diffViewer')}
+              >
+                Diff
+              </Button>
+              {currentRoom.isCurrentFileMarkdown && (
+                <Button
+                  isSelected={settingsForCurrentEditor?.displayMode === 'markdownPreview'}
+                  key="markdownPreview"
+                  onClick={() => selectDisplayMode('markdownPreview')}
+                >
+                  Markdown Preview
+                </Button>
+              )}
+            </ButtonGroup>
           )}
           <StatefulPopover
             placement={'bottom'}

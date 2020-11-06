@@ -1,7 +1,9 @@
 import { useStyletron } from 'baseui';
+import { StyledIconsContainer } from 'baseui/select';
 import { provisionTab, unprovisionTab } from 'Client/slices/room/types';
 import { settingsForCurrentEditorSelector, settingsSelector } from 'Client/slices/settings/types';
 import { rootState } from 'Client/store';
+import { some } from 'lodash';
 import React, { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -25,6 +27,7 @@ function EditorTab({ tabId, visible }: { tabId: string; visible: boolean }) {
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
   const vimStatusBarRef = useRef<HTMLDivElement | null>(null);
   const markdownPreviewRef = useRef<HTMLDivElement | null>(null);
+  const diffViewerRef = useRef<HTMLDivElement | null>(null);
   const editorSettings = useSelector(settingsForCurrentEditorSelector);
   const settings = useSelector(settingsSelector);
   const [css, theme] = useStyletron();
@@ -33,14 +36,15 @@ function EditorTab({ tabId, visible }: { tabId: string; visible: boolean }) {
     (state: rootState) => !!state.room.currentRoom?.roomSharedState.fileDetailsStates,
   );
   useEffect(() => {
-    if (editorContainerRef.current && vimStatusBarRef.current && markdownPreviewRef.current) {
+    if (![editorContainerRef, vimStatusBarRef, markdownPreviewRef].some((ref) => !ref.current)) {
       dispatch(
         provisionTab({
           tabId,
           elements: {
-            editor: editorContainerRef.current,
-            vimStatusBar: vimStatusBarRef.current,
-            markdownPreview: markdownPreviewRef.current,
+            editor: editorContainerRef.current as HTMLElement,
+            vimStatusBar: vimStatusBarRef.current as HTMLElement,
+            markdownPreview: markdownPreviewRef.current as HTMLElement,
+            diffViewer: diffViewerRef.current as HTMLElement,
           },
         }),
       );
@@ -57,8 +61,8 @@ function EditorTab({ tabId, visible }: { tabId: string; visible: boolean }) {
           className={css({
             margin: '2px',
             height: `${EDITOR_HEIGHT} !important`,
-            width: editorSettings?.showMarkdownPreview ? '50%' : '100%',
-            display: visible ? 'block' : 'none',
+            width: editorSettings?.displayMode === 'markdownPreview' ? '50%' : '100%',
+            display: editorSettings?.displayMode !== 'diffViewer' ? 'block' : 'none',
           })}
         />
         <div
@@ -67,7 +71,7 @@ function EditorTab({ tabId, visible }: { tabId: string; visible: boolean }) {
             css({
               width: '50%',
               height: EDITOR_HEIGHT,
-              display: editorSettings?.showMarkdownPreview ? 'block' : 'none',
+              display: editorSettings?.displayMode === 'markdownPreview' ? 'block' : 'none',
               overflowY: 'scroll',
               whiteSpace: 'normal',
             }) +
@@ -75,6 +79,14 @@ function EditorTab({ tabId, visible }: { tabId: string; visible: boolean }) {
             settings.theme // we manually add styles to the html generated from the markup using this class
           }
         />
+        <div
+          ref={diffViewerRef}
+          className={css({
+            width: '100%',
+            height: `${EDITOR_HEIGHT} !important`,
+            display: editorSettings?.displayMode === 'diffViewer' ? 'block' : 'none',
+          })}
+        ></div>
       </span>
       <div ref={vimStatusBarRef}></div>
     </div>

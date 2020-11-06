@@ -12,6 +12,7 @@ export interface baseFileDetailsState {
   filename: string;
   deleted: boolean;
   filetype?: string;
+  gistContent?: string;
 }
 
 export type computedFileDetailsState = null;

@@ -16,7 +16,7 @@ interface individualEditorSettings {
   autoIndent: monaco.editor.IEditorOptions['autoIndent'];
   detectIndentation: monaco.editor.IGlobalEditorOptions['detectIndentation'];
   tabCompletion: boolean;
-  showMarkdownPreview: boolean;
+  displayMode: 'regular' | 'markdownPreview' | 'diffViewer';
 }
 
 export type individualEditorSettingsPartial = Partial<individualEditorSettings>;
@@ -83,17 +83,18 @@ export function getSettingsForEditorWithComputed(
   tabId: string,
   filetypeIsMarkdown: boolean,
 ): settingsResolvedForEditor {
-  if (settings.individualEditor[roomHashId][tabId]) {
-    const resolvedShowPreview =
-      filetypeIsMarkdown &&
-      (settings.individualEditor[roomHashId][tabId]?.showMarkdownPreview || settings.globalEditor.showMarkdownPreview);
-    return {
-      ...settings.globalEditor,
-      ...settings.individualEditor[roomHashId][tabId],
-      showMarkdownPreview: resolvedShowPreview,
-    };
+  const individualSettings = settings.individualEditor[roomHashId][tabId] || {};
+  const displayMode = individualSettings?.displayMode || settings.globalEditor.displayMode;
+  let resolvedDisplayMode: settingsResolvedForEditor['displayMode'];
+  if (filetypeIsMarkdown) {
+    resolvedDisplayMode = displayMode;
   } else {
-    const resolvedShowPreview = filetypeIsMarkdown && settings.globalEditor.showMarkdownPreview;
-    return { ...settings.globalEditor, showMarkdownPreview: resolvedShowPreview };
+    resolvedDisplayMode = displayMode === 'markdownPreview' ? 'markdownPreview' : displayMode;
   }
+
+  return {
+    ...settings.globalEditor,
+    ...individualSettings,
+    displayMode: resolvedDisplayMode,
+  };
 }

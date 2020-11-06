@@ -8,7 +8,7 @@ import { clientSettings, settingsActions } from './types';
 const initialState: clientSettings = {
   theme: 'light',
   globalEditor: {
-    showMarkdownPreview: false,
+    displayMode: 'regular',
     minimap: true,
     intellisense: true,
     lineNumbers: 'on',

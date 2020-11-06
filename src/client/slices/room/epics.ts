@@ -27,16 +27,14 @@ import { takeUntil } from 'rxjs/internal/operators/takeUntil';
 import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { GRAPHQL_URL } from 'Shared/environment';
 import { gistDetails } from 'Shared/githubTypes';
+import { roomMemberInput } from 'Shared/types/roomMemberAwarenessTypes';
+import { deleteRoomInput } from 'Shared/types/roomTypes';
 
-import { RoomManager } from '../../../../dist/src/shared/roomManager';
-import { roomMemberInput } from '../../../../dist/src/shared/types/roomMemberAwarenessTypes';
-import { deleteRoomInput } from '../../../shared/types/roomTypes';
 import { roomUpdateActions } from '../roomUpdating/types';
 import {
   addNewFile,
   deleteRoom,
   destroyRoom,
-  fileRenamingActions,
   gistSaved,
   initRoom,
   leaveRoom,
@@ -79,20 +77,7 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
           startWith(startingSettings),
         );
 
-        const togglePreviewMarkdown$: Observable<[string, boolean]> = action$.pipe(
-          filter(settingsActions.setIndividualEditorSetting.match),
-          filter(
-            ({
-              payload: {
-                setting: { key },
-                roomHashId: actionRoomHashId,
-              },
-            }) => roomHashId === actionRoomHashId && key === 'showMarkdownPreview',
-          ),
-          map(({ payload: { tabId, setting: { value } } }) => [tabId.toString(), value as boolean]),
-        );
-
-        const manager = new ClientSideRoomManager(roomHashId, settings$, togglePreviewMarkdown$);
+        const manager = new ClientSideRoomManager(roomHashId, settings$);
 
         const fileDetailsStateUpdateAction$ = manager.fileDetails$.pipe(
           map((fileDetails) => setFileDetailsState(fileDetails)),
@@ -208,13 +193,13 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
             if (!allFileDetails || !allFileContents || !originalFileData) {
               throw 'no file details or contents';
             }
-            const filesForGithub: any = {};
+            const filesForGithub: { [filename: string]: { filename: string; content: string } | null } = {};
             for (let key in allFileDetails) {
               const details = allFileDetails[key];
               const content = allFileContents[key];
               filesForGithub[details.filename] = {
                 filename: details.filename,
-                content,
+                content: content || details.filename,
               };
             }
 
@@ -224,6 +209,8 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
               .forEach((k) => {
                 filesForGithub[k] = null;
               });
+
+            console.log('files: ', filesForGithub);
 
             const updatedDetails: gistDetails = await octokitRequest('PATCH /gists/{id}', {
               id: gist.id,
