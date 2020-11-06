@@ -136,6 +136,8 @@ export function Room() {
             gridArea: 'tabs',
             display: 'flex',
             width: '100%',
+            overflowX: 'auto',
+            justifyContent: 'flex-start',
           })}
         >
           <TabList />

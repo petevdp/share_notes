@@ -21,7 +21,7 @@ export function TabContent() {
   return <div>{contentArr}</div>;
 }
 
-const EDITOR_HEIGHT = 'calc(100vh - (150px))';
+const EDITOR_HEIGHT = 'calc(100vh - (165px))';
 
 function EditorTab({ tabId, visible }: { tabId: string; visible: boolean }) {
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
