@@ -416,10 +416,10 @@ export class ClientSideRoomManager extends RoomManager {
 
       this.fileDetails$
         .pipe(
-          filter((allDetails) => typeof allDetails[tabId].gistContent === 'string'),
+          takeUntil(dispose$),
+          filter((allDetails) => allDetails[tabId] && typeof allDetails[tabId].gistContent === 'string'),
           map((allDetails) => allDetails[tabId].gistContent),
           distinctUntilChanged(),
-          takeUntil(dispose$),
         )
         .subscribe((content) => {
           console.log('updated original content', content);
