@@ -210,8 +210,6 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
                 filesForGithub[k] = null;
               });
 
-            console.log('files: ', filesForGithub);
-
             const updatedDetails: gistDetails = await octokitRequest('PATCH /gists/{id}', {
               id: gist.id,
               files: filesForGithub,

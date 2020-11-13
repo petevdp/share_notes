@@ -88,7 +88,7 @@ function EditorTab({ tabId, visible }: { tabId: string; visible: boolean }) {
           })}
         ></div>
       </span>
-      <div ref={vimStatusBarRef}></div>
+      <div ref={vimStatusBarRef} className={css({ color: theme.colors.foreground })}></div>
     </div>
   );
 }

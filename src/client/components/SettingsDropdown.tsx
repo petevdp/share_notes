@@ -6,6 +6,7 @@ import { ListItem } from 'baseui/list';
 import { ItemT, Menu, StatefulMenu } from 'baseui/menu';
 import { StatefulPopover } from 'baseui/popover';
 import { Select, StatefulSelect } from 'baseui/select';
+import SvgSettings from 'Client/generatedSvgComponents/Settings';
 import {
   globalEditorSetting,
   globalEditorSettings,
@@ -250,7 +251,7 @@ export function GlobalSettingsDropdown() {
       )}
     >
       <Button overrides={getTabButtonOverrides()} kind="tertiary" shape="round" size="compact">
-        <span className="material-icons">settings</span>
+        <SvgSettings fill={theme.colors.contentPrimary} />
       </Button>
     </StatefulPopover>
   );

@@ -1,11 +1,15 @@
+import 'prismjs/themes/prism-twilight.css';
+
 import {
   clientSettings,
   getSettingsForEditorWithComputed,
   settingsResolvedForEditor,
 } from 'Client/slices/settings/types';
 import __isEqual from 'lodash/isEqual';
+import marked from 'marked';
 import * as monaco from 'monaco-editor';
 import { initVimMode } from 'monaco-vim';
+// import { Prism, PrismAsync } from 'react-syntax-highlighter';
 import { merge } from 'rxjs';
 import { BehaviorSubject } from 'rxjs/internal/BehaviorSubject';
 import { Observable } from 'rxjs/internal/Observable';
@@ -184,7 +188,7 @@ export class ClientSideRoomManager extends RoomManager {
         for (let [tabId, details] of Object.entries(state)) {
           newState[tabId] = {
             ...details,
-            filetype: determineLanguage(details.filename)?.id,
+            filetype: determineLanguage(details.filename),
           };
         }
         return newState;
@@ -229,7 +233,6 @@ export class ClientSideRoomManager extends RoomManager {
         this.markdownPreviewElements.set(tabId, tabElements.markdownPreview);
         this.diffViewerElements.set(tabId, tabElements.diffViewer);
 
-        console.log('creating monaco binding for ', tabId);
         const binding = new MonacoBinding(
           content,
           model,
@@ -257,7 +260,7 @@ export class ClientSideRoomManager extends RoomManager {
         }
         const language = determineLanguage(filename);
         if (language) {
-          monaco.editor.setModelLanguage(model, language.id);
+          monaco.editor.setModelLanguage(model, language);
         }
       }
     });
@@ -333,34 +336,43 @@ export class ClientSideRoomManager extends RoomManager {
     // emits the html for previews for tabs that should be showing them
     const markdownPreview$ = showPreviewDelta$.pipe(
       filter(([, showPreview]) => showPreview),
-      mergeMap(([tabId]) => {
-        const stopPreview$ = showPreviewDelta$.pipe(
-          filter(([id, previewDelta]) => id === tabId && !previewDelta),
-          mapTo(true),
-          first(),
-        );
-        const binding = this.bindings$.value.get(tabId) as MonacoBinding;
-        const content$ = new Observable<string>((s) => {
-          const disposable = binding.monacoModel.onDidChangeContent(() => {
-            const value = binding.monacoModel.getValue();
-            s.next(value);
+      mergeMap(
+        ([tabId]): Observable<[string, string]> => {
+          const stopPreview$ = showPreviewDelta$.pipe(
+            filter(([id, previewDelta]) => id === tabId && !previewDelta),
+            mapTo(true),
+            first(),
+          );
+          const binding = this.bindings$.value.get(tabId) as MonacoBinding;
+          const content$ = new Observable<string>((s) => {
+            const disposable = binding.monacoModel.onDidChangeContent(() => {
+              const value = binding.monacoModel.getValue();
+              s.next(value);
+            });
+            binding.monacoModel.onWillDispose(() => {
+              s.complete();
+            });
+            s.next(binding.monacoModel.getValue());
+            return () => disposable.dispose();
           });
-          binding.monacoModel.onWillDispose(() => {
-            s.complete();
-          });
-          s.next(binding.monacoModel.getValue());
-          return () => disposable.dispose();
-        });
 
-        return content$.pipe(
-          takeUntil(stopPreview$),
-          mergeMap(async (content) => {
-            const { default: marked } = await import('marked');
-            return [tabId, marked(content)];
-          }),
-        );
-      }),
+          return content$.pipe(
+            takeUntil(stopPreview$),
+            map((content) => {
+              const markedContent = marked(content, { sanitize: true });
+              return [tabId, markedContent];
+            }),
+          );
+        },
+      ),
     );
+
+    markdownPreview$.subscribe(([tabId, htmlString]) => {
+      const element = this.markdownPreviewElements.get(tabId);
+      if (element) {
+        element.innerHTML = htmlString;
+      }
+    });
 
     const provisionedDiffEditorDelta$ = combineLatest(this.bindings$, this.roomDetails$).pipe(
       scan(
@@ -390,21 +402,15 @@ export class ClientSideRoomManager extends RoomManager {
     );
 
     provisionedDiffEditorDelta$.pipe(filter(([, shouldProvision]) => shouldProvision)).subscribe(([tabId]) => {
-      console.log('provisioning diff editor for ', tabId);
       const binding = this.bindings$.value.get(tabId) as MonacoBinding;
       const originalContent = this.getFileDetails()[tabId].gistContent || '';
       const element = this.diffViewerElements.get(tabId) as HTMLElement;
-      console.log('element: ', element);
       const editor = monaco.editor.createDiffEditor(element, { readOnly: true, automaticLayout: true });
       const originalContentModel = monaco.editor.createModel(originalContent, undefined);
-      // console.log('monaco model value: ', binding.getEditor().getModel()?.getValue());
-      // console.log('original model value: ', binding.getEditor().getModel()?.getValue());
       editor.setModel({
         original: originalContentModel,
         modified: binding.monacoModel,
       });
-
-      console.log({ originalContentModel: originalContentModel.getValue(), modified: binding.monacoModel.getValue() });
 
       const dispose$ = merge(
         provisionedDiffEditorDelta$.pipe(
@@ -422,22 +428,13 @@ export class ClientSideRoomManager extends RoomManager {
           distinctUntilChanged(),
         )
         .subscribe((content) => {
-          console.log('updated original content', content);
           originalContentModel.setValue(content || '');
         });
 
       dispose$.toPromise().then(() => {
-        console.log('disposing diff editor for ', tabId);
         editor.dispose();
         originalContentModel.dispose();
       });
-    });
-
-    markdownPreview$.subscribe(([tabId, htmlString]) => {
-      const element = this.markdownPreviewElements.get(tabId);
-      if (element) {
-        element.innerHTML = htmlString;
-      }
     });
   }
 
@@ -576,7 +573,7 @@ export class ClientSideRoomManager extends RoomManager {
     return Object.keys(details).reduce(
       (obj, tabId) => ({
         ...obj,
-        [tabId]: { ...details[tabId], filetype: determineLanguage(details[tabId].filename)?.id },
+        [tabId]: { ...details[tabId], filetype: determineLanguage(details[tabId].filename) },
       }),
       {} as allBaseFileDetailsStates,
     );
@@ -635,5 +632,5 @@ function determineLanguage(filename: string) {
     return;
   }
   const extension = '.' + filename.split('.').pop();
-  return monaco.languages.getLanguages().find((language) => language.extensions?.includes(extension));
+  return monaco.languages.getLanguages().find((language) => language.extensions?.includes(extension))?.id || 'markdown';
 }

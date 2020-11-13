@@ -2,21 +2,14 @@ import { useStyletron } from 'baseui';
 import { Button } from 'baseui/button';
 import { Card } from 'baseui/card';
 import { FormControl } from 'baseui/form-control';
-import { StyledLink } from 'baseui/link';
 import { StatefulPopover } from 'baseui/popover';
-import { StyledSpinnerNext as Spinner } from 'baseui/spinner';
-import { Tag } from 'baseui/tag';
-import { StatefulTooltip, Tooltip } from 'baseui/tooltip';
-import { Label3 } from 'baseui/typography';
+import GithubIcon from 'Client/generatedSvgComponents/Github';
 import { rootState } from 'Client/store';
-import React, { ReactNode, useEffect, useMemo, useState } from 'react';
+import React, { ReactNode, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vsDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { vs, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { fileDetails, gistDetails } from 'Shared/githubTypes';
-
-import GithubIcon from './generatedSvgComponents/Github';
 
 export function GistCard({ details, title }: { title?: ReactNode; details: gistDetails }) {
   const [css, theme] = useStyletron();
@@ -52,9 +45,8 @@ function FileContentPreview({ file }: { file: fileDetails }) {
         .then((content) => setRetreivedContent(content));
     }
   }, [file.raw_url, file.content]);
-  const [css] = useStyletron();
+  const [] = useStyletron();
   const theme = useSelector((state: rootState) => state.settings.theme);
-  console.log('file: ', file);
   return (
     <StatefulPopover
       triggerType="hover"

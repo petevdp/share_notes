@@ -1,36 +1,29 @@
 import { useStyletron } from 'baseui';
-import { Button, ButtonOverrides, ButtonProps, StyledBaseButton } from 'baseui/button';
+import { Button, ButtonOverrides } from 'baseui/button';
 import { ButtonGroup } from 'baseui/button-group';
-import { Checkbox, StyledCheckmark } from 'baseui/checkbox';
 import { ChevronDown, Plus } from 'baseui/icon';
 import { ItemT, StatefulMenu } from 'baseui/menu';
 import { StatefulPopover } from 'baseui/popover';
 import { useSnackbar } from 'baseui/snackbar';
 import { Label3 } from 'baseui/typography';
 import {
-  addNewFile,
-  currentFileRenameWithComputedSelector,
   currentRoomStateWithComputedSelector,
   destroyRoom,
   fileRenamingActions,
   initRoom,
-  isLoggedInForRoomSelector,
   saveBackToGist,
 } from 'Client/slices/room/types';
 import { roomUpdateActions } from 'Client/slices/roomUpdating/types';
 import {
-  individualEditorSetting,
   settingsActions,
   settingsForCurrentEditorSelector,
   settingsResolvedForEditor,
 } from 'Client/slices/settings/types';
-import { rootState } from 'Client/store';
 import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
 import __merge from 'lodash/merge';
-import React, { ReactElement, ReactNode, useEffect } from 'react';
+import React, { ReactNode, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
-import { withStyle } from 'styletron-react';
 
 import { AnonymousLoginModal } from './AnonymousLoginModal';
 import { EditRoomModal } from './EditRoomModal';
@@ -119,14 +112,11 @@ export function Room() {
         className={css({
           display: 'grid',
           gridTemplateAreas: `'emptytitle displaymodetitle empty empty' 'tabs displaymode actions settings'`,
-          width: '100%',
           gridTemplateColumns: 'auto min-content min-content min-content',
           gridTemplateRows: '16 40',
-          gridGap: '2px',
-          // justifyContent: 'space-between',
-          // alignContent: 'center',
-          // paddingLeft: '1em',
-          // paddingRight: '1em',
+          columnGap: '8px',
+          paddingLeft: '8px',
+          paddingRight: '8px',
           paddingTop: '.25em',
           paddingBottom: '.25em',
         })}
@@ -162,7 +152,7 @@ export function Room() {
         </Label3>
         {currentRoom && (
           <ButtonGroup
-            overrides={{ Root: { style: { gridArea: 'displaymode' } } }}
+            overrides={{ Root: { style: { gridArea: 'displaymode', borderRadius: '38px', overflow: 'hidden' } } }}
             selected={settingsForCurrentEditor && selectionOptions.indexOf(settingsForCurrentEditor.displayMode)}
           >
             <DiffSelectionButton

@@ -37,7 +37,7 @@ const config: webpack.Configuration = {
   },
   plugins: [
     new MonacoWebpackPlugin(),
-    new FaviconsWebpackPlugin({ logo: './src/client/assets/logo.svg' }),
+    new FaviconsWebpackPlugin({ logo: './src/client/assets/svgs/logo.svg' }),
     new HtmlWebPackPlugin({
       title: 'Share Notes',
       template: path.join(CLIENT_ROOT, 'index.html'),

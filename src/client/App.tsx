@@ -15,6 +15,7 @@ import { AuthGuardedRoute } from './components/AuthGuard';
 import { RoomCreation } from './components/CreateRoom';
 import { GlobalHeader } from './components/GlobalHeader';
 import { Home } from './components/Home';
+import { LandingPage } from './components/LandingPage';
 import { Room } from './components/Room';
 import { settingsSelector } from './slices/settings/types';
 import { persistor, store } from './store';
@@ -101,10 +102,10 @@ function Routes() {
   return (
     <Switch>
       <Route exact path="/">
-        <Home />
+        <LandingPage />
       </Route>
       <Route exact path="/rooms">
-        <Redirect to="/"></Redirect>
+        <Home />
       </Route>
       <AuthGuardedRoute exact path="/rooms/new">
         <RoomCreation />
@@ -128,7 +129,7 @@ function Background({ children }: React.Props<unknown>) {
           backgroundColor: theme.colors.backgroundPrimary,
           display: 'flex',
           flexDirection: 'column',
-          width: '100%',
+          width: '100vw',
           minHeight: '100vh',
         })}
       >

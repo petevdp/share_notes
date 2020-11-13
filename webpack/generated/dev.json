@@ -558,7 +558,7 @@
         "inject": true,
         "favicons": {},
         "prefix": "assets/",
-        "logo": "./src/client/assets/logo.svg"
+        "logo": "./src/client/assets/svgs/logo.svg"
       }
     },
     {

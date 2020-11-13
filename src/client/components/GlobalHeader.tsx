@@ -9,11 +9,12 @@ import { StyledLink } from 'baseui/link';
 import { ItemT, StatefulMenu, StyledList, StyledListItem } from 'baseui/menu';
 import { StatefulPopover } from 'baseui/popover';
 import { LabelMedium } from 'baseui/typography';
-import SvgGithub from 'Client/components/generatedSvgComponents/Github';
-import { loginWithGithub } from 'Client/slices/session/epics';
+import SvgGithub from 'Client/generatedSvgComponents/Github';
+import { getLoginWithGithubHref, loginWithGithub } from 'Client/slices/session/epics';
 import { loggedInStatusSelector, LoginStatus, logOut } from 'Client/slices/session/types';
 import { settingsActions } from 'Client/slices/settings/types';
 import { rootState } from 'Client/store';
+import { REGULAR_PAGE_FLOW_MAX_WIDTH } from 'Client/styleConstants';
 import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
 import { log } from 'console';
 import React, { useState } from 'react';
@@ -74,12 +75,15 @@ export function GlobalHeader() {
   const githubLogin = currentUser.userDetails?.githubLogin;
   const avatarUrl = currentUser.githubUserDetails?.avatarUrl;
 
-  let userNav: ItemT[] = [
-    { label: 'Log Out', key: 'logOut' },
-    { label: themeSetting === 'dark' ? `Toggle Light Mode` : 'Toggle Dark Mode', key: 'toggleTheme' },
-  ];
+  const toggleModeItem = {
+    label: themeSetting === 'dark' ? `Toggle Light Mode` : 'Toggle Dark Mode',
+    key: 'toggleTheme',
+  };
 
-  const onUserNavItemSelect = (item: ItemT) => {
+  const loggedInNav: ItemT[] = [{ label: 'Log Out', key: 'logOut' }, toggleModeItem];
+  const loggedOutNav = [toggleModeItem];
+
+  const onNavItemSelect = (item: ItemT) => {
     switch (item.item.key) {
       case 'logOut':
         dispatch(logOut());
@@ -92,8 +96,11 @@ export function GlobalHeader() {
 
   const containerStyles = css({
     boxSizing: 'border-box',
-    width: '100%',
+    width: '100vw',
     height: 'min-content',
+    borderBottomColor: 'rgb(203, 203, 203)',
+    borderBottomStyle: 'solid',
+    borderBottomWidth: '1px',
   });
 
   return (
@@ -105,6 +112,8 @@ export function GlobalHeader() {
               backgroundColor: theme.colors.backgroundPrimary,
               paddingTop: '0px',
               paddingBottom: '0px',
+              borderBottomWidth: '0px',
+              margin: 'auto',
               paddingLeft: '8px',
               paddingRight: '8px',
             },
@@ -138,6 +147,11 @@ export function GlobalHeader() {
           <BrandLink $as={Link} to="/">
             Share Notes
           </BrandLink>
+          {location.pathname.startsWith('/rooms') && (
+            <StyledLink $as={Link} to="/rooms">
+              rooms
+            </StyledLink>
+          )}
           {currentRoomDetails && <span>{currentRoomDetails.name}</span>}
           {location.pathname === '/rooms/new' && <span>New Room</span>}
         </Breadcrumbs>
@@ -188,8 +202,8 @@ export function GlobalHeader() {
                           }),
                         },
                       }}
-                      onItemSelect={onUserNavItemSelect}
-                      items={userNav}
+                      onItemSelect={onNavItemSelect}
+                      items={loggedInNav}
                     />
                   )}
                 >
@@ -214,16 +228,30 @@ export function GlobalHeader() {
               </StyledNavigationItem>
             </>
           ) : (
-            <StyledNavigationItem>
-              <Button
-                shape="pill"
-                kind="tertiary"
-                onClick={() => loginWithGithub()}
-                startEnhancer={<SvgGithub height="20" />}
-              >
-                Log In
-              </Button>
-            </StyledNavigationItem>
+            <>
+              <StyledNavigationItem>
+                <Button
+                  $as="a"
+                  href={getLoginWithGithubHref()}
+                  shape="pill"
+                  kind="tertiary"
+                  onClick={() => loginWithGithub()}
+                  startEnhancer={<SvgGithub height="20" />}
+                >
+                  Log In
+                </Button>
+              </StyledNavigationItem>
+              <StyledNavigationItem>
+                <StatefulPopover
+                  placement="bottom"
+                  content={() => <StatefulMenu items={loggedOutNav} onItemSelect={onNavItemSelect} />}
+                >
+                  <Button kind="tertiary" shape="round">
+                    <ChevronDown />
+                  </Button>
+                </StatefulPopover>
+              </StyledNavigationItem>
+            </>
           )}
         </StyledNavigationList>
       </HeaderNavigation>

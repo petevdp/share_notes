@@ -9,8 +9,7 @@ if gist already created:
 
 # TODOs
 
-## now
-
+- clean up session storage, logout action
 - soft delete room
 - loading and transitions
   - create room
@@ -18,6 +17,8 @@ if gist already created:
   - ???
 - icons for actions/move actions
 - landing page
+  - basic structure DONE
+  - images and styling
 - what's up with populate's transact?
 
 ## later
@@ -32,7 +33,6 @@ if gist already created:
 - add titles for routes
 - style scrollbar
 - create new gist
-- diff viewer
 - saving
   - add save action persist editor to db on save
   - file clean/dirty edit state/last saved indicator
@@ -53,7 +53,6 @@ if gist already created:
 
 ## discovery
 
-- diff viewer
 - gen-env-types
 - dokku
 

@@ -13,6 +13,10 @@ body {
   color: #007acc;
 }
 
+a {
+  color: #007acc;
+}
+
 .markdown-preview code {
   white-space: normal;
   word-wrap: break-word;
