@@ -64,8 +64,17 @@ export class YjsService {
     const url = req.url as string;
     const roomHashId = path.basename(url.slice(1).split('?')[0]);
     const docName = getYjsDocNameForRoom(roomHashId);
-    let newDoc = !this.docs.has(docName);
+    let isNewDoc = !this.docs.has(docName);
     setupWSConnection(conn, req, { gc: true, docName: docName });
+    conn.addEventListener('close', () => {
+      const doc = this.docs.get(docName);
+      if (doc) {
+        const ids = doc.conns.get(conn);
+        if (!ids || ids.size === 0) {
+          const data = JSON.stringify(doc.toJSON());
+        }
+      }
+    });
 
     if (!req.headers.cookie) {
       return;
@@ -100,7 +109,7 @@ export class YjsService {
     if (!doc) {
       throw 'y no doc';
     }
-    if (newDoc) {
+    if (isNewDoc) {
       const manager = new ServerSideRoomManager(doc);
       const clientSideRoom = this.clientSideRoomService.getClientSideRoom(await roomPromise);
       if (!clientSideRoom) {

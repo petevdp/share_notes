@@ -2,6 +2,7 @@ import { Observable } from 'rxjs/internal/Observable';
 import { ConnectableObservable } from 'rxjs/internal/observable/ConnectableObservable';
 import { publish } from 'rxjs/internal/operators/publish';
 import { Subject } from 'rxjs/internal/Subject';
+import { v4 as uuidv4 } from 'uuid';
 import * as Y from 'yjs';
 
 import { fileDetails, gistDetails } from './githubTypes';
@@ -86,12 +87,7 @@ export abstract class RoomManager {
   addNewFile(detailsInput?: { filename?: string; content?: string }) {
     const fileDetails = new Y.Map();
     const text = new Y.Text();
-    const highestId = getKeysForMap(this.yData.fileDetailsState).reduce(
-      (max, id) => (Number(id) > max ? Number(id) : max),
-      0,
-    );
-
-    const tabId = (Number(highestId) + 1).toString();
+    const tabId = uuidv4();
     fileDetails.set('tabId', tabId);
     fileDetails.set('deleted', false);
     if (detailsInput) {

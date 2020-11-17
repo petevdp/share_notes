@@ -87,12 +87,17 @@ export interface tabToProvision {
   };
 }
 
+interface provisionedTab extends tabToProvision {
+  monacoBinding: MonacoBinding;
+  vimMode?: vimMode;
+  tabOrdinal: number;
+}
+
 export class ClientSideRoomManager extends RoomManager {
   static lastRoomManagerId = 0;
   localId: number;
   provider: WebsocketProvider;
-  bindings$: BehaviorSubject<Map<string, MonacoBinding>>;
-  vimBindings: Map<string, vimBindingState>;
+  provisionedTabs$$: BehaviorSubject<Map<string, provisionedTab>>;
   currentFile$$: BehaviorSubject<string | null>;
   availableColours$$: BehaviorSubject<string[] | null>;
   tabsToProvision$$: Subject<tabToProvision>;
@@ -107,9 +112,7 @@ export class ClientSideRoomManager extends RoomManager {
     light: 'vs',
     dark: 'vs-dark',
   };
-  markdownPreviewElements: Map<string, HTMLElement>;
-  diffViewerElements: Map<string, HTMLElement>;
-  newEditorBindings$: Subject<[string, MonacoBinding]>;
+  newProvisionedTabs: Subject<[string, provisionedTab]>;
 
   constructor(private roomHashId: string, private settings$: Observable<clientSettings>) {
     super();
@@ -117,11 +120,15 @@ export class ClientSideRoomManager extends RoomManager {
     ClientSideRoomManager.lastRoomManagerId++;
     this.currentFile$$ = new BehaviorSubject(null);
     this.tabsToProvision$$ = new Subject();
-    this.bindings$ = new BehaviorSubject(new Map());
-    this.newEditorBindings$ = new Subject();
-    this.vimBindings = new Map();
-    this.markdownPreviewElements = new Map();
-    this.diffViewerElements = new Map();
+    this.provisionedTabs$$ = new BehaviorSubject(new Map());
+    this.newProvisionedTabs = new Subject();
+
+    this.newProvisionedTabs.subscribe(([tabId, tab]) => {
+      const tabs = this.provisionedTabs$$.getValue();
+      tabs.set(tabId, tab);
+      this.provisionedTabs$$.next(tabs);
+    });
+
     this.provider = new WebsocketProvider(YJS_WEBSOCKET_URL_WS, getYjsDocNameForRoom(roomHashId), this.ydoc);
 
     /*
@@ -133,7 +140,7 @@ export class ClientSideRoomManager extends RoomManager {
     // listen for and apply settings changes to editors
     settings$.pipe(takeUntil(this.roomDestroyed$$)).subscribe((settings) => {
       const allDetails = this.getFileDetails();
-      for (let [tabId, binding] of this.bindings$.value.entries()) {
+      for (let [tabId, tab] of this.provisionedTabs$$.value.entries()) {
         const details = allDetails[tabId];
         const settingsForEditor = getSettingsForEditorWithComputed(
           settings,
@@ -141,8 +148,8 @@ export class ClientSideRoomManager extends RoomManager {
           tabId,
           details.filetype === 'markdown',
         );
-        this.setEditorSettings(tabId, settingsForEditor, binding.getEditor());
-        binding.getEditor().updateOptions({ theme: ClientSideRoomManager.themeMap[settings.theme] });
+        this.setEditorSettings(tabId, settingsForEditor, tab.monacoBinding.getEditor());
+        tab.monacoBinding.getEditor().updateOptions({ theme: ClientSideRoomManager.themeMap[settings.theme] });
       }
     });
 
@@ -205,11 +212,9 @@ export class ClientSideRoomManager extends RoomManager {
     let tabOrdinal = 1;
     this.tabsToProvision$$
       .pipe(withLatestFrom(this.settings$, this.fileDetails$))
-      .subscribe(async ([{ tabId, elements: tabElements }, settings, allFileDetails]) => {
-        this.vimBindings.set(tabId, { statusElement: tabElements.vimStatusBar });
-
-        const uri = monaco.Uri.file(this.localId + '-' + tabOrdinal + '-' + allFileDetails[tabId].filename);
-        tabOrdinal++;
+      .subscribe(async ([tabToProvision, settings, allFileDetails]) => {
+        const { tabId, elements: tabElements } = tabToProvision;
+        const uri = monaco.Uri.file('regular-' + tabId);
         const model = monaco.editor.createModel('', undefined, uri);
         const editor = monaco.editor.create(tabElements.editor, {
           value: '',
@@ -230,9 +235,6 @@ export class ClientSideRoomManager extends RoomManager {
           throw 'tried to provision nonexistant editor';
         }
 
-        this.markdownPreviewElements.set(tabId, tabElements.markdownPreview);
-        this.diffViewerElements.set(tabId, tabElements.diffViewer);
-
         const binding = new MonacoBinding(
           content,
           model,
@@ -241,18 +243,22 @@ export class ClientSideRoomManager extends RoomManager {
           this.provider.awareness,
           this.awareness$,
         );
-        this.bindings$.value.set(tabId, binding);
-        this.bindings$.next(this.bindings$.value);
-        this.newEditorBindings$.next([tabId, binding]);
+        const tab: provisionedTab = {
+          ...tabToProvision,
+          monacoBinding: binding,
+          tabOrdinal,
+        };
+        this.newProvisionedTabs.next([tabId, tab]);
+        tabOrdinal++;
       });
 
     this.fileDetails$.subscribe((state) => {
       for (let [id, { filename }] of Object.entries(state)) {
-        const binding = this.bindings$.value.get(id);
-        if (!binding) {
+        const tab = this.provisionedTabs$$.value.get(id);
+        if (!tab) {
           continue;
         }
-        const editor: monaco.editor.IStandaloneCodeEditor = binding.getEditor();
+        const editor: monaco.editor.IStandaloneCodeEditor = tab.monacoBinding.getEditor();
         const model = editor.getModel();
 
         if (!model) {
@@ -299,7 +305,7 @@ export class ClientSideRoomManager extends RoomManager {
      * - markdown preview setting resolved for the tab must be on
      * - must be displaying a markdown file
      */
-    const showPreviewDelta$ = combineLatest(this.fileDetails$, this.settings$, this.bindings$).pipe(
+    const showPreviewDelta$ = combineLatest(this.fileDetails$, this.settings$, this.provisionedTabs$$).pipe(
       scan(
         (acc, [allDetails, settings, bindings]) => {
           const ids = new Set([...bindings.keys(), ...acc.prevShowPreviewState.keys()]);
@@ -343,7 +349,7 @@ export class ClientSideRoomManager extends RoomManager {
             mapTo(true),
             first(),
           );
-          const binding = this.bindings$.value.get(tabId) as MonacoBinding;
+          const binding = this.provisionedTabs$$.value.get(tabId)?.monacoBinding as MonacoBinding;
           const content$ = new Observable<string>((s) => {
             const disposable = binding.monacoModel.onDidChangeContent(() => {
               const value = binding.monacoModel.getValue();
@@ -368,13 +374,15 @@ export class ClientSideRoomManager extends RoomManager {
     );
 
     markdownPreview$.subscribe(([tabId, htmlString]) => {
-      const element = this.markdownPreviewElements.get(tabId);
-      if (element) {
-        element.innerHTML = htmlString;
+      const tab = this.provisionedTabs$$.value.get(tabId);
+      if (!tab) {
+        console.warn('tried to set markdown preview for unprovisioned tab ', tabId);
+        return;
       }
+      tab.elements.markdownPreview.innerHTML = htmlString;
     });
 
-    const provisionedDiffEditorDelta$ = combineLatest(this.bindings$, this.roomDetails$).pipe(
+    const provisionedDiffEditorDelta$ = combineLatest(this.provisionedTabs$$, this.roomDetails$).pipe(
       scan(
         (acc, [bindings, roomDetails]) => {
           const ids = new Set([...bindings.keys(), ...acc.prevShowDiffEditorState.keys()]);
@@ -402,14 +410,18 @@ export class ClientSideRoomManager extends RoomManager {
     );
 
     provisionedDiffEditorDelta$.pipe(filter(([, shouldProvision]) => shouldProvision)).subscribe(([tabId]) => {
-      const binding = this.bindings$.value.get(tabId) as MonacoBinding;
+      const tab = this.provisionedTabs$$.value.get(tabId);
+      if (!tab) {
+        console.warn('tried to get unprovisioned tab ', tabId);
+        return;
+      }
+
       const originalContent = this.getFileDetails()[tabId].gistContent || '';
-      const element = this.diffViewerElements.get(tabId) as HTMLElement;
-      const editor = monaco.editor.createDiffEditor(element, { readOnly: true, automaticLayout: true });
+      const editor = monaco.editor.createDiffEditor(tab.elements.diffViewer, { readOnly: true, automaticLayout: true });
       const originalContentModel = monaco.editor.createModel(originalContent, undefined);
       editor.setModel({
         original: originalContentModel,
-        modified: binding.monacoModel,
+        modified: tab.monacoBinding.monacoModel,
       });
 
       const dispose$ = merge(
@@ -448,7 +460,7 @@ export class ClientSideRoomManager extends RoomManager {
 
   updateSettings(settings: clientSettings) {
     const allDetails = this.getFileDetails();
-    for (let [tabId, binding] of this.bindings$.value.entries()) {
+    for (let [tabId, binding] of this.provisionedTabs$$.value.entries()) {
       const details = allDetails[tabId];
       const settingsForEditor = getSettingsForEditorWithComputed(
         settings,
@@ -456,8 +468,8 @@ export class ClientSideRoomManager extends RoomManager {
         tabId,
         details.filetype === 'markdown',
       );
-      this.setEditorSettings(tabId, settingsForEditor, binding.getEditor());
-      binding.getEditor().updateOptions({ theme: ClientSideRoomManager.themeMap[settings.theme] });
+      this.setEditorSettings(tabId, settingsForEditor, binding.monacoBinding.getEditor());
+      binding.monacoBinding.getEditor().updateOptions({ theme: ClientSideRoomManager.themeMap[settings.theme] });
     }
   }
 
@@ -496,10 +508,10 @@ export class ClientSideRoomManager extends RoomManager {
   }
 
   unprovisionTab(tabId: string) {
-    const binding = this.bindings$.value.get(tabId);
+    const binding = this.provisionedTabs$$.value.get(tabId)?.monacoBinding;
     binding?.destroy();
-    this.bindings$.value.delete(tabId);
-    this.bindings$.next(this.bindings$.value);
+    this.provisionedTabs$$.value.delete(tabId);
+    this.provisionedTabs$$.next(this.provisionedTabs$$.value);
   }
 
   removeFile(tabId: string) {
@@ -523,27 +535,34 @@ export class ClientSideRoomManager extends RoomManager {
     this.availableColours$$.complete();
     this.remoteCursorStyleManager.destroy();
 
-    for (const binding of this.bindings$.value.values()) {
+    for (const tab of this.provisionedTabs$$.value.values()) {
       // disposing the model will also dispose the binding
-      binding.monacoModel.dispose();
-      binding.destroy();
+      tab.monacoBinding.monacoModel.dispose();
+      tab.monacoBinding.destroy();
     }
-    this.bindings$.next(new Map());
+    this.provisionedTabs$$.next(new Map());
   }
 
   setEditorSettings(tabId: string, settings: settingsResolvedForEditor, editor: monaco.editor.IStandaloneCodeEditor) {
     const updates: monaco.editor.IEditorOptions & monaco.editor.IGlobalEditorOptions = {};
-    const vimBindingState = this.vimBindings.get(tabId) as vimBindingState;
+    const tabs = this.provisionedTabs$$.getValue();
+    const tab = tabs.get(tabId);
+    if (!tab) {
+      console.warn('tried to set editor settings for undefined tabid ', tabId);
+      return;
+    }
     for (let option of Object.entries(settings)) {
       const key = option[0] as keyof settingsResolvedForEditor;
       const value = option[1] as settingsResolvedForEditor[keyof settingsResolvedForEditor];
       if (key === 'keyMap') {
-        if (value === 'vim' && !vimBindingState.vimMode) {
-          const vimMode = initVimMode(editor, vimBindingState.statusElement);
-          this.vimBindings.set(tabId, { ...vimBindingState, vimMode });
-        } else if (value === 'regular' && vimBindingState.vimMode) {
-          vimBindingState.vimMode.dispose();
-          delete vimBindingState.vimMode;
+        if (value === 'vim' && !tab.vimMode) {
+          const vimMode = initVimMode(editor, tab.elements.vimStatusBar);
+          tabs.set(tabId, { ...tab, vimMode });
+          this.provisionedTabs$$.next(tabs);
+        } else if (value === 'regular' && tab.vimMode) {
+          tab.vimMode.dispose();
+          delete tab.vimMode;
+          this.provisionedTabs$$.next(tabs);
         }
       } else if (key === 'lineWrapping') {
         updates['wordWrap'] = value ? 'on' : 'off';
@@ -594,10 +613,10 @@ export class ClientSideRoomManager extends RoomManager {
   async setCurrentTab(tabId: string) {
     this.provider.awareness.setLocalStateField('currentTab', tabId);
     // the current implementation here to retrieve the binding assums that the tab for this tabid will at some point be provisioned. If it isn't this will never resolve.
-    const binding = await this.bindings$
+    const binding = await this.provisionedTabs$$
       .pipe(
-        filter((bindings) => bindings.has(tabId)),
-        map((bindings) => bindings.get(tabId) as MonacoBinding),
+        filter((tabs) => tabs.has(tabId)),
+        map((tabs) => tabs.get(tabId)?.monacoBinding as MonacoBinding),
         first(),
       )
       .toPromise();
