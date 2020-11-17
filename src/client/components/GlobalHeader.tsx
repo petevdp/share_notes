@@ -1,5 +1,5 @@
 import { styled, useStyletron, withStyle } from 'baseui';
-import { UserNavItemT } from 'baseui/app-nav-bar';
+import { NavItemT } from 'baseui/app-nav-bar';
 import { Avatar } from 'baseui/avatar';
 import { Breadcrumbs } from 'baseui/breadcrumbs';
 import { Button } from 'baseui/button';
@@ -15,11 +15,10 @@ import { loggedInStatusSelector, LoginStatus, logOut } from 'Client/slices/sessi
 import { settingsActions } from 'Client/slices/settings/types';
 import { rootState } from 'Client/store';
 import { REGULAR_PAGE_FLOW_MAX_WIDTH } from 'Client/styleConstants';
-import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
-import { log } from 'console';
+import { BrandRouterLink, RoomPopoverZIndexOverride, StyledRouterLink } from 'Client/utils/basewebUtils';
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { AUTH_REDIRECT_URL, GITHUB_0AUTH_URL, GITHUB_CLIENT_ID } from 'Shared/environment';
 
 import { RoomMemberDisplay } from './RoomMemberDisplay';
@@ -70,7 +69,7 @@ export function GlobalHeader() {
   const loginStatus = useSelector(loggedInStatusSelector);
   const dispatch = useDispatch();
   const [] = useState(false);
-  const [] = useState(undefined as undefined | UserNavItemT);
+  const [] = useState(undefined as undefined | NavItemT);
 
   const githubLogin = currentUser.userDetails?.githubLogin;
   const avatarUrl = currentUser.githubUserDetails?.avatarUrl;
@@ -144,14 +143,8 @@ export function GlobalHeader() {
             },
           }}
         >
-          <BrandLink $as={Link} to="/">
-            Share Notes
-          </BrandLink>
-          {location.pathname.startsWith('/rooms') && (
-            <StyledLink $as={Link} to="/rooms">
-              rooms
-            </StyledLink>
-          )}
+          <BrandRouterLink to="/">Share Notes</BrandRouterLink>
+          {location.pathname.startsWith('/rooms') && <StyledRouterLink to="/rooms">Rooms</StyledRouterLink>}
           {currentRoomDetails && <span>{currentRoomDetails.name}</span>}
           {location.pathname === '/rooms/new' && <span>New Room</span>}
         </Breadcrumbs>
@@ -166,9 +159,7 @@ export function GlobalHeader() {
           {loginStatus === LoginStatus.LoggedIn && currentUser.userDetails ? (
             <>
               <StyledNavigationItem>
-                <StyledLink $as={Link} to="/rooms/new">
-                  Create Room
-                </StyledLink>
+                <StyledRouterLink to="/rooms/new">Create Room</StyledRouterLink>
               </StyledNavigationItem>
               <StyledNavigationItem>
                 <StatefulPopover

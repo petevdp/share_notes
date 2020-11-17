@@ -4,10 +4,11 @@ import { Card, StyledAction, StyledBody } from 'baseui/card';
 import { FormControl } from 'baseui/form-control';
 import { Heading, HeadingLevel } from 'baseui/heading';
 import { Input } from 'baseui/input';
+import { StyledLink } from 'baseui/link';
 import { FILL, Tab, Tabs } from 'baseui/tabs-motion';
+import { StatefulTooltip } from 'baseui/tooltip';
 import { currentUser } from 'Client/slices/currentUserDetails/types';
 import { fetchCurrentUsersGists, useFetchImportableGistDetails } from 'Client/slices/roomCreation/epics';
-import { initialState, roomCreationSlice } from 'Client/slices/roomCreation/slice';
 import {
   computedRoomCreationSliceStateSelector,
   getComputedRoomCreationSliceState,
@@ -15,9 +16,8 @@ import {
   roomCreationActions,
   RoomCreationFormType,
 } from 'Client/slices/roomCreation/types';
-import { ROOM_UPDATE_ACTION_NAMESPACE } from 'Client/slices/roomUpdating/types';
 import { rootState } from 'Client/store';
-import React, { useEffect, useReducer } from 'react';
+import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Redirect } from 'react-router-dom';
 
@@ -95,28 +95,39 @@ function RoomCreationForm({ currentUserDetails }: { currentUserDetails: currentU
             onChange={(e) => dispatch(roomCreationActions.setRoomName(e.currentTarget.value))}
           />
         </FormControl>
-        <Tabs
-          fill={FILL.fixed}
-          activeKey={roomCreation.formSelected}
-          onChange={(e) => {
-            dispatch(roomCreationActions.setActiveForm(Number(e.activeKey)));
-          }}
+        <FormControl
+          label={() => (
+            <>
+              Gist Configuration{'   '}
+              <StatefulTooltip content="Create a Github gist to save your notes, or import an existing gist.">
+                <StyledLink>?</StyledLink>
+              </StatefulTooltip>
+            </>
+          )}
         >
-          <Tab title="No Gist" key={RoomCreationFormType.NoGist}></Tab>
-          <Tab title="Import Existing Gist" key={RoomCreationFormType.Import}>
-            <GistImportFields
-              actionNamespace={ROOM_CREATION_ACTION_NAMESPACE}
-              fields={roomCreation.gistImportFields}
-              gistSelectionOptions={roomCreation.gistSelectionOptions}
-            />
-          </Tab>
-          <Tab title="Create New Gist" key={RoomCreationFormType.Creation}>
-            <GistCreationFields
-              fields={roomCreation.gistCreationFields}
-              actionNamespace={ROOM_CREATION_ACTION_NAMESPACE}
-            />
-          </Tab>
-        </Tabs>
+          <Tabs
+            fill={FILL.fixed}
+            activeKey={roomCreation.formSelected}
+            onChange={(e) => {
+              dispatch(roomCreationActions.setActiveForm(Number(e.activeKey)));
+            }}
+          >
+            <Tab title="No Gist" key={RoomCreationFormType.NoGist}></Tab>
+            <Tab title="Import Existing Gist" key={RoomCreationFormType.Import}>
+              <GistImportFields
+                actionNamespace={ROOM_CREATION_ACTION_NAMESPACE}
+                fields={roomCreation.gistImportFields}
+                gistSelectionOptions={roomCreation.gistSelectionOptions}
+              />
+            </Tab>
+            <Tab title="Create New Gist" key={RoomCreationFormType.Creation}>
+              <GistCreationFields
+                fields={roomCreation.gistCreationFields}
+                actionNamespace={ROOM_CREATION_ACTION_NAMESPACE}
+              />
+            </Tab>
+          </Tabs>
+        </FormControl>
       </StyledBody>
       <StyledAction>
         <Button
@@ -129,6 +140,7 @@ function RoomCreationForm({ currentUserDetails }: { currentUserDetails: currentU
           }}
           type="submit"
           disabled={!roomCreation.canSubmit}
+          isLoading={roomCreation.submitted}
         >
           Create
         </Button>

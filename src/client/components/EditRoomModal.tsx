@@ -201,11 +201,13 @@ export function EditRoomModal() {
           )}
         </ModalBody>
         <ModalFooter>
-          <span className={css({ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' })}>
-            <SubmitButtonWithSpinner disabled={!state.canSubmit} loading={state.submitted}>
-              Save
-            </SubmitButtonWithSpinner>
-          </span>
+          <Button
+            disabled={!state.canSubmit}
+            isLoading={state.submitted}
+            overrides={{ Root: { style: { width: '100%' } } }}
+          >
+            Save
+          </Button>
         </ModalFooter>
       </form>
     </Modal>

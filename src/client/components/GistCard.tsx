@@ -10,6 +10,7 @@ import { useSelector } from 'react-redux';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vs, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { fileDetails, gistDetails } from 'Shared/githubTypes';
+import { StyleObject } from 'styletron-react';
 
 export function GistCard({ details, title }: { title?: ReactNode; details: gistDetails }) {
   const [css, theme] = useStyletron();
@@ -25,10 +26,10 @@ export function GistCard({ details, title }: { title?: ReactNode; details: gistD
           {details.description || '(empty)'}
         </div>
       </FormControl>
-      <FormControl label={() => 'Files'}>
+      <FormControl label={() => 'Files'} caption="(hover to view file contents)">
         <span>
           {Object.entries(details.files).map(([filename, file]) => (
-            <FileContentPreview key={filename} file={{ ...file, filename }} />
+            <FileContentPreview key={filename} file={{ ...file, filename }} buttonStyle={{ marginRight: '4px' }} />
           ))}
         </span>
       </FormControl>
@@ -36,7 +37,7 @@ export function GistCard({ details, title }: { title?: ReactNode; details: gistD
   );
 }
 
-function FileContentPreview({ file }: { file: fileDetails }) {
+function FileContentPreview({ file, buttonStyle }: { file: fileDetails; buttonStyle: StyleObject }) {
   const [retreivedContent, setRetreivedContent] = useState<undefined | string>();
   useEffect(() => {
     if (file.raw_url && !file.content) {
@@ -45,20 +46,23 @@ function FileContentPreview({ file }: { file: fileDetails }) {
         .then((content) => setRetreivedContent(content));
     }
   }, [file.raw_url, file.content]);
-  const [] = useStyletron();
-  const theme = useSelector((state: rootState) => state.settings.theme);
+  const [css] = useStyletron();
+  const themeSetting = useSelector((state: rootState) => state.settings.theme);
   return (
     <StatefulPopover
       triggerType="hover"
       placement="top"
+      overrides={{ Body: { style: { zIndex: 4 } } }}
       key={file.filename as string}
       content={() => (
-        <SyntaxHighlighter language={file.language?.toLowerCase()} style={theme === 'dark' ? vscDarkPlus : vs}>
-          {file.content || retreivedContent}
-        </SyntaxHighlighter>
+        <div className={css({ maxHeight: '60vh', overflowY: 'scroll' })}>
+          <SyntaxHighlighter language={file.language?.toLowerCase()} style={themeSetting === 'dark' ? vscDarkPlus : vs}>
+            {file.content || retreivedContent}
+          </SyntaxHighlighter>
+        </div>
       )}
     >
-      <Button kind="secondary" shape="pill" size="mini">
+      <Button overrides={{ Root: { style: buttonStyle } }} kind="secondary" shape="pill" size="mini">
         {file.filename}
       </Button>
     </StatefulPopover>

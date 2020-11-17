@@ -1,11 +1,13 @@
-import { useStyletron } from 'baseui';
-import { Button, ButtonOverrides } from 'baseui/button';
+import { styled, useStyletron } from 'baseui';
+import { Button, ButtonOverrides, ButtonProps } from 'baseui/button';
 import { ButtonGroup } from 'baseui/button-group';
-import { ChevronDown, Plus } from 'baseui/icon';
-import { ItemT, StatefulMenu } from 'baseui/menu';
-import { StatefulPopover } from 'baseui/popover';
+import { Plus } from 'baseui/icon';
+import { ItemT } from 'baseui/menu';
 import { useSnackbar } from 'baseui/snackbar';
+import { StatefulTooltip } from 'baseui/tooltip';
 import { Label3 } from 'baseui/typography';
+import SvgPencil from 'Client/generatedSvgComponents/Pencil';
+import SvgSave from 'Client/generatedSvgComponents/Save';
 import {
   currentRoomStateWithComputedSelector,
   destroyRoom,
@@ -19,9 +21,8 @@ import {
   settingsForCurrentEditorSelector,
   settingsResolvedForEditor,
 } from 'Client/slices/settings/types';
-import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
 import __merge from 'lodash/merge';
-import React, { ReactNode, useEffect } from 'react';
+import React, { forwardRef, ReactNode, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 
@@ -30,7 +31,41 @@ import { EditRoomModal } from './EditRoomModal';
 import { RenameFileModal } from './RenameFileModal';
 import { GlobalSettingsDropdown } from './SettingsDropdown';
 import { TabContent } from './TabContent';
-import { getTabButtonOverrides, TabList } from './Tabs';
+import { getTabButtonOverrides, getTabIconActionButtonOverrides, TabList } from './Tabs';
+
+const RoomContainer = styled('div', {
+  width: '100%',
+  height: '100%',
+});
+
+const CONTROL_PANEL_GRID_AREA = [
+  ['.', 'display-mode-title', '.', '.', '.'],
+  ['tabs', 'display-mode', 'edit-details', 'save-to-gist', 'settings'],
+]
+  .map((s) => `"${s.join(' ')}"`)
+  .join(' ');
+
+const ControlPanel = styled('div', {
+  display: 'grid',
+  gridTemplateAreas: CONTROL_PANEL_GRID_AREA,
+  gridTemplateColumns: 'auto repeat(4, min-content)',
+  gridTemplateRows: '16 40',
+  columnGap: '8px',
+  paddingLeft: '8px',
+  paddingRight: '8px',
+  paddingTop: '.25em',
+  paddingBottom: '.25em',
+});
+
+const TabControls = styled('span', {
+  gridArea: 'tabs',
+  display: 'flex',
+  width: '100%',
+  overflowX: 'auto',
+  justifyContent: 'flex-start',
+});
+
+console.log({ CONTROL_PANEL_GRID_AREA });
 
 export function Room() {
   const [css] = useStyletron();
@@ -71,30 +106,6 @@ export function Room() {
     actionItems = [...actionItems, { label: 'Save Back to Gist', key: 'saveBackToGist' }];
   }
 
-  const onActionItemSelect = ({ item: { key } }: { item: { label: string; key: string } }) => {
-    switch (key) {
-      case 'saveBackToGist':
-        dispatch(saveBackToGist());
-        break;
-      case 'editRoom':
-        if (currentRoom?.roomDetails && !currentRoom.roomDetails.gistName) {
-          dispatch(roomUpdateActions.initialize({ roomDetails: currentRoom.roomDetails }));
-        } else if (currentRoom?.roomDetails && currentRoom.gistDetails) {
-          dispatch(
-            roomUpdateActions.initialize({
-              roomDetails: currentRoom.roomDetails,
-              gistDetails: currentRoom.gistDetails,
-            }),
-          );
-        }
-        break;
-      case 'renameFile':
-        if (currentRoom?.currentTabId) {
-          dispatch(fileRenamingActions.startRenameCurrentFile());
-        }
-    }
-  };
-
   const selectDisplayMode = (mode: settingsResolvedForEditor['displayMode']) => {
     dispatch(settingsActions.setGlobalEditorSetting({ key: 'displayMode', value: mode }));
   };
@@ -102,34 +113,9 @@ export function Room() {
   const selectionOptions: settingsResolvedForEditor['displayMode'][] = ['regular', 'diffViewer', 'markdownPreview'];
 
   return (
-    <div
-      className={css({
-        width: '100%',
-        height: '100%',
-      })}
-    >
-      <div
-        className={css({
-          display: 'grid',
-          gridTemplateAreas: `'emptytitle displaymodetitle empty empty' 'tabs displaymode actions settings'`,
-          gridTemplateColumns: 'auto min-content min-content min-content',
-          gridTemplateRows: '16 40',
-          columnGap: '8px',
-          paddingLeft: '8px',
-          paddingRight: '8px',
-          paddingTop: '.25em',
-          paddingBottom: '.25em',
-        })}
-      >
-        <span
-          className={css({
-            gridArea: 'tabs',
-            display: 'flex',
-            width: '100%',
-            overflowX: 'auto',
-            justifyContent: 'flex-start',
-          })}
-        >
+    <RoomContainer className={css({})}>
+      <ControlPanel>
+        <TabControls>
           <TabList />
           <Button
             key={addNewFileKey}
@@ -146,13 +132,13 @@ export function Room() {
           >
             <Plus />
           </Button>
-        </span>
-        <Label3 className={css({ gridArea: 'displaymodetitle', width: '100%', textAlign: 'center' })}>
-          Display Mode
+        </TabControls>
+        <Label3 as="label" className={css({ gridArea: 'display-mode-title', width: '100%', textAlign: 'center' })}>
+          Display
         </Label3>
         {currentRoom && (
           <ButtonGroup
-            overrides={{ Root: { style: { gridArea: 'displaymode', borderRadius: '38px', overflow: 'hidden' } } }}
+            overrides={{ Root: { style: { gridArea: 'display-mode', borderRadius: '38px', overflow: 'hidden' } } }}
             selected={settingsForCurrentEditor && selectionOptions.indexOf(settingsForCurrentEditor.displayMode)}
           >
             <DiffSelectionButton
@@ -180,34 +166,38 @@ export function Room() {
             )}
           </ButtonGroup>
         )}
-        <span className={css({ gridArea: 'actions' })}>
-          <StatefulPopover
-            placement={'bottom'}
-            content={() => <StatefulMenu onItemSelect={onActionItemSelect} items={actionItems}></StatefulMenu>}
-            overrides={RoomPopoverZIndexOverride}
-          >
-            <Button
-              overrides={__merge<ButtonOverrides, ButtonOverrides>(
-                { Root: { style: { marginRight: '4px' } }, EndEnhancer: { style: { marginLeft: '2px' } } },
-                getTabButtonOverrides(),
-              )}
-              kind="secondary"
-              shape="pill"
-              endEnhancer={() => <ChevronDown />}
-            >
-              Actions
-            </Button>
-          </StatefulPopover>
-        </span>
+        <ControlPanelButtonWithTooltip
+          onClick={() => {
+            if (currentRoom?.roomDetails && !currentRoom.roomDetails.gistName) {
+              dispatch(roomUpdateActions.initialize({ roomDetails: currentRoom.roomDetails }));
+            } else if (currentRoom?.roomDetails && currentRoom.gistDetails) {
+              dispatch(
+                roomUpdateActions.initialize({
+                  roomDetails: currentRoom.roomDetails,
+                  gistDetails: currentRoom.gistDetails,
+                }),
+              );
+            }
+          }}
+          Icon={SvgPencil}
+          tooltip="Edit Room Details"
+          gridArea="edit-details"
+        />
+        <ControlPanelButtonWithTooltip
+          Icon={SvgSave}
+          tooltip={'Save changes to Gist'}
+          onClick={() => dispatch(saveBackToGist())}
+          gridArea="save-to-gist"
+        />
         <span className={css({ gridArea: 'settings' })}>
           <GlobalSettingsDropdown />
         </span>
-      </div>
+      </ControlPanel>
       <TabContent />
       <RenameFileModal />
       <AnonymousLoginModal />
       <EditRoomModal />
-    </div>
+    </RoomContainer>
   );
 }
 
@@ -230,5 +220,63 @@ function DiffSelectionButton({
     >
       {children}
     </Button>
+  );
+}
+
+interface controlPanelButtonProps {
+  Icon: (props: React.SVGProps<SVGSVGElement>) => JSX.Element;
+  onClick?: () => void;
+  gridArea?: string;
+  buttonProps?: ButtonProps & React.RefAttributes<HTMLButtonElement>;
+  iconProps?: React.SVGProps<SVGSVGElement>;
+  buttonRef?: React.RefObject<HTMLButtonElement>;
+}
+
+export function ControlPanelButton({
+  Icon,
+  onClick,
+  gridArea,
+  buttonRef,
+  buttonProps = {},
+  iconProps = {},
+}: controlPanelButtonProps) {
+  const [, theme] = useStyletron();
+  return (
+    <Button
+      ref={buttonRef}
+      shape="pill"
+      kind="tertiary"
+      onClick={() => onClick && onClick()}
+      overrides={getTabIconActionButtonOverrides(gridArea)}
+      {...buttonProps}
+    >
+      <Icon fill={theme.colors.contentPrimary} {...iconProps} />
+    </Button>
+  );
+}
+
+export function ControlPanelButtonWithTooltip({
+  tooltip,
+  Icon,
+  onClick,
+  gridArea,
+  buttonRef,
+  buttonProps = {},
+  iconProps = {},
+}: controlPanelButtonProps & { tooltip: ReactNode }) {
+  const [, theme] = useStyletron();
+  return (
+    <StatefulTooltip content={tooltip} placement="bottom">
+      <Button
+        ref={buttonRef}
+        shape="pill"
+        kind="tertiary"
+        onClick={() => onClick && onClick()}
+        overrides={getTabIconActionButtonOverrides(gridArea)}
+        {...buttonProps}
+      >
+        <Icon fill={theme.colors.contentPrimary} {...iconProps} />
+      </Button>
+    </StatefulTooltip>
   );
 }

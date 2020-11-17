@@ -1,33 +1,25 @@
 import { useStyletron } from 'baseui';
-import { Button } from 'baseui/button';
+import { Button, StyledBaseButton } from 'baseui/button';
 import { Card } from 'baseui/card';
-import { Heading, HeadingLevel } from 'baseui/heading';
 import { Delete } from 'baseui/icon';
 import { StyledLink } from 'baseui/link';
 import { ListItem } from 'baseui/list';
+import { Paragraph1 } from 'baseui/typography';
 import { ownedRoomsActions } from 'Client/slices/ownedRooms/types';
 import { deleteRoom } from 'Client/slices/room/types';
 import { rootState } from 'Client/store';
+import { RouterLinkButton, StyledRouterLink } from 'Client/utils/basewebUtils';
 import { roomWithVisited } from 'Client/utils/queries';
 import { formatRoomVisitedTime } from 'Client/utils/utils';
-import { request as gqlRequest } from 'graphql-request';
-import { last } from 'lodash';
-import React, { useEffect, useState } from 'react';
+import React, { ReactNode, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { clientSideRoom } from 'Shared/types/roomTypes';
-import { roomVisit } from 'Shared/types/roomVisitTypes';
 
 export function Home() {
   const [css] = useStyletron();
   const dispatch = useDispatch();
   const currentUser = useSelector((state: rootState) => state.currentUserDetails);
   const ownedRooms = useSelector((state: rootState) => state.ownedRooms?.allRooms);
-
-  // const [recentRooms, setRecentRooms] = useState<clientSideRoom[] | null>(null);
-  // useEffect(() => {
-  //   gqlRequest()
-  // }, []);
 
   useEffect(() => {
     if (!currentUser.userDetails?.id) {
@@ -42,7 +34,7 @@ export function Home() {
     <div
       className={css({
         width: 'min(100%, 700px)',
-        marginTop: '0px',
+        marginTop: '20px',
         marginLeft: 'auto',
         marginRight: 'auto',
       })}
@@ -53,9 +45,22 @@ export function Home() {
           gridGap: '8px',
         })}
       >
-        <Card title="Your Rooms">
-          <ul>{ownedRoomElements}</ul>
-        </Card>
+        <span className={css({ margin: 'auto' })}>
+          <RouterLinkButton to="/rooms/new" buttonProps={{ kind: 'secondary' }}>
+            Create New Room
+          </RouterLinkButton>
+        </span>
+        {ownedRoomElements && ownedRoomElements.length > 0 ? (
+          <Card title="Your Rooms">
+            <ul>{ownedRoomElements}</ul>
+          </Card>
+        ) : (
+          <Paragraph1 className={css({ textAlign: 'center' })} as="p">
+            {"You don't currently have any rooms."}
+            <br />
+            {"When you create rooms, they'll appear here."}
+          </Paragraph1>
+        )}
       </div>
     </div>
   );
@@ -93,9 +98,7 @@ function RoomListElement({ room }: { room: roomWithVisited }) {
         </>
       )}
     >
-      <StyledLink $as={Link} to={`/rooms/${room.hashId}`}>
-        {room.name}
-      </StyledLink>
+      <StyledRouterLink to={`/rooms/${room.hashId}`}>{room.name}</StyledRouterLink>
     </ListItem>
   );
 }

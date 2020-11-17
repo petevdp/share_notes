@@ -1,10 +1,59 @@
-import { useStyletron, withStyle } from 'baseui';
-import { Button } from 'baseui/button';
+import { withStyle } from 'baseui';
+import { Button, ButtonProps } from 'baseui/button';
+import { StyledLink } from 'baseui/link';
 import { ModalOverrides } from 'baseui/modal';
 import { Override } from 'baseui/overrides';
-import { PopoverOverrides } from 'baseui/popover';
 import { StyledSpinnerNext as Spinner } from 'baseui/spinner';
+import { BrandLink } from 'Client/components/GlobalHeader';
 import React, { Props, ReactNode } from 'react';
+import { Link, LinkProps, useHistory } from 'react-router-dom';
+
+export function RouterLinkButton({
+  to,
+  children,
+  buttonProps,
+}: {
+  to: string;
+  children: ReactNode;
+  buttonProps?: ButtonProps;
+}) {
+  const history = useHistory();
+  const onClick = (e: React.MouseEvent<HTMLButtonElement, globalThis.MouseEvent>): any => {
+    e.preventDefault();
+    history.push(to);
+  };
+  return (
+    <Button $as="a" {...buttonProps} href={to} onClick={onClick}>
+      {children}
+    </Button>
+  );
+}
+
+export function StyledRouterLink({ to, children }: { to: string; children: ReactNode }) {
+  const history = useHistory();
+  const onClick = (e: React.MouseEvent<HTMLAnchorElement, globalThis.MouseEvent>): any => {
+    e.preventDefault();
+    history.push(to);
+  };
+  return (
+    <StyledLink $as="a" href={to} onClick={onClick}>
+      {children}
+    </StyledLink>
+  );
+}
+
+export function BrandRouterLink({ to, children }: { to: string; children: ReactNode }) {
+  const history = useHistory();
+  const onClick = (e: React.MouseEvent<HTMLAnchorElement, globalThis.MouseEvent>): any => {
+    e.preventDefault();
+    history.push(to);
+  };
+  return (
+    <BrandLink $as="a" href={to} onClick={onClick}>
+      {children}
+    </BrandLink>
+  );
+}
 
 export function getOverrideProps<T>(override: Override<T>) {
   if (override && typeof override === 'object') {
@@ -81,7 +130,6 @@ export function SubmitButtonWithSpinner({
   disabled: boolean;
   loading: boolean;
 } & Props<unknown>) {
-  const [css, theme] = useStyletron();
   return (
     <>
       {loading && <RestyledSpinner />}

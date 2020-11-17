@@ -19,7 +19,7 @@ export function GistCreationFields({
   const { setGistName, setGistDescription, setIsGistPrivate } = createGistCreationFieldsActions(actionNamespace);
   return (
     <>
-      <FormControl label="starting filename">
+      <FormControl label="Starting Filename">
         <Input value={form.name} onChange={(e) => dispatch(setGistName(e.currentTarget.value))} />
       </FormControl>
       <FormControl label="Gist Description">

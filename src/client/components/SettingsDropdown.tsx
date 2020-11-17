@@ -14,9 +14,10 @@ import {
   settingsSelector,
 } from 'Client/slices/settings/types';
 import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
+import { ControlPanelButton } from './Room';
 import { getTabButtonOverrides } from './Tabs';
 
 interface globalSettingsItem<K extends keyof globalEditorSettings> extends ItemT {

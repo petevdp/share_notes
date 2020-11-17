@@ -9,8 +9,10 @@ if gist already created:
 
 # TODOs
 
+- handle room content changes better
 - clean up session storage, logout action
 - soft delete room
+- diff display mode visible with no gist attached
 - loading and transitions
   - create room
 - quick settings

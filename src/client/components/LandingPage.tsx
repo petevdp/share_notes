@@ -2,7 +2,7 @@ import { useStyletron } from 'baseui';
 import { AspectRatioBox, AspectRatioBoxBody } from 'baseui/aspect-ratio-box';
 import { Button } from 'baseui/button';
 import { Heading, HeadingLevel } from 'baseui/heading';
-import { Label1, LabelLarge } from 'baseui/typography';
+import { Label1, LabelLarge, Paragraph1 } from 'baseui/typography';
 import LightScreenshot1 from 'Client/assets/images/preview2.png';
 import SvgGithub from 'Client/generatedSvgComponents/Github';
 import SvgLogo from 'Client/generatedSvgComponents/Logo';
@@ -56,9 +56,10 @@ export function LandingPage() {
               marginRight: '8px',
             })}
           >
-            <Heading styleLevel={2} className={css({ textAlign: 'center' })}>
+            <Heading styleLevel={1} className={css({ textAlign: 'center' })}>
               Take notes in real time.
             </Heading>
+            <Paragraph1 as="p">This is another blurb to fill in later. It should be like two sentences.</Paragraph1>
             <span className={css({ display: 'flex', alignItems: 'center' })}>
               <Label1 as="label" className={css({ marginBottom: '4px', marginRight: '5px' })}>
                 Login with Github to start
@@ -68,9 +69,9 @@ export function LandingPage() {
           </span>
           <img
             className={css({
-              // height: '500px',
+              height: '600px',
               // width: '1000px',
-              width: '90vw',
+              // width: '90vw',
               padding: '7px',
               backgroundColor: theme.colors.backgroundAlt,
               marginLeft: 'auto',
@@ -99,19 +100,19 @@ export function LandingPage() {
           Features
         </Heading>
         <HeadingLevel>
-          <FeatureSection id="yjs" label="Real time editing powered by YJS">
+          <FeatureSection imageSide="left" id="yjs" label="Real time editing powered by YJS">
             Edit the same file at the same file with your collaborators using{' '}
             <a href="https://github.com/yjs/yjs">YJS</a>. YJS is a very fast CRDT implementation which allows Share
             Notes to maintain low latency and jumps during editing.
           </FeatureSection>
-          <FeatureSection id="markdown-preview" label="Markdown Preview">
+          <FeatureSection imageSide="right" id="markdown-preview" label="Markdown Preview">
             Real time markdown previews using <a href="https://marked.js.org">Marked</a>
           </FeatureSection>
-          <FeatureSection id="github-integrations" label="Github Integrations">
+          <FeatureSection imageSide="left" id="github-integrations" label="Github Integrations">
             Easily save your notes to a <a href="https://gist.github.com/">github gist</a>, or load an existing gist
             into share notes.
           </FeatureSection>
-          <FeatureSection id="monaco-editor" label="Monaco Editor">
+          <FeatureSection imageSide="right" id="monaco-editor" label="Monaco Editor">
             {
               "Takes advantage of microsoft's Monaco editor; an embeddable extract of the popular Visual Studio Code editor."
             }
@@ -153,15 +154,39 @@ function FeatureListItem({
   );
 }
 
-function FeatureSection({ label, children, id }: { label: ReactNode; children: ReactNode; id: string }) {
+function FeatureSection({
+  label,
+  children,
+  id,
+  imageSide,
+}: {
+  label: ReactNode;
+  children: ReactNode;
+  id: string;
+  imageSide: 'left' | 'right';
+}) {
   const [css, theme] = useStyletron();
+  const paragraph = <p>{children}</p>;
+  const image = (
+    <div className={css({ backgroundColor: theme.colors.backgroundInversePrimary, width: '500px', height: '600px' })} />
+  );
   return (
     <>
       <h1 id={id} className={css({ color: theme.colors.contentPrimary })}>
         {label}
       </h1>
       <section className={css({ color: theme.colors.contentPrimary })}>
-        <p>{children}</p>
+        {imageSide === 'left' ? (
+          <>
+            {image}
+            {paragraph}
+          </>
+        ) : (
+          <>
+            {paragraph}
+            {image}
+          </>
+        )}
       </section>
     </>
   );

@@ -178,3 +178,10 @@ export const getTabButtonOverrides = (): ButtonOverrides => ({
     },
   },
 });
+
+export const getTabIconActionButtonOverrides = (gridArea?: string): ButtonOverrides =>
+  __merge<ButtonOverrides, ButtonOverrides>(getTabButtonOverrides(), {
+    BaseButton: { style: { gridArea }, props: { kind: 'tertiary', shape: 'pill' } },
+  });
+
+console.log({ overrides: getTabIconActionButtonOverrides('the-grid-area') });
