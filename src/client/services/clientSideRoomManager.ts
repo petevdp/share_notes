@@ -1,5 +1,6 @@
 import 'prismjs/themes/prism-twilight.css';
 
+import { getAssignedColors } from 'Client/slices/room/types';
 import {
   clientSettings,
   getSettingsForEditorWithComputed,
@@ -37,12 +38,16 @@ import {
   RoomManager,
   startingRoomDetails,
 } from 'Shared/roomManager';
-import { clientAwareness, roomMemberInput, roomMemberWithColor } from 'Shared/types/roomMemberAwarenessTypes';
+import {
+  globalAwareness,
+  globalAwarenessMap,
+  roomMember,
+  roomMemberInput,
+} from 'Shared/types/roomMemberAwarenessTypes';
 import { getKeysForMap } from 'Shared/ydocUtils';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 
-import { allColors } from './awarenessColors';
 import { MonacoBinding, RemoteCursorStyleManager } from './monacoBinding';
 
 export interface langaugeDetectInput {
@@ -60,9 +65,6 @@ export interface languageDetectState {
   input: langaugeDetectInput;
   outputMode?: string;
 }
-
-export type globalAwarenessMap = Map<number, clientAwareness>;
-export type globalAwareness = { [id: string]: clientAwareness };
 
 export type sharedRoomDetails = {
   assignedColours: { [cliendId: string]: string };
@@ -94,18 +96,16 @@ interface provisionedTab extends tabToProvision {
 }
 
 export class ClientSideRoomManager extends RoomManager {
-  static lastRoomManagerId = 0;
-  localId: number;
   provider: WebsocketProvider;
   provisionedTabs$$: BehaviorSubject<Map<string, provisionedTab>>;
   currentFile$$: BehaviorSubject<string | null>;
-  availableColours$$: BehaviorSubject<string[] | null>;
   tabsToProvision$$: Subject<tabToProvision>;
   providerSynced: Promise<true>;
   roomDetails$: ConnectableObservable<roomDetails>;
   fileDetails$: ConnectableObservable<allBaseFileDetailsStates>;
   computedFileDetails$: ConnectableObservable<allComputedFileDetailsStates>;
   awareness$: ConnectableObservable<globalAwareness>;
+  orderedClientID$: Observable<string[]>;
   remoteCursorStyleManager: RemoteCursorStyleManager;
 
   static themeMap = {
@@ -116,8 +116,6 @@ export class ClientSideRoomManager extends RoomManager {
 
   constructor(private roomHashId: string, private settings$: Observable<clientSettings>) {
     super();
-    this.localId = ClientSideRoomManager.lastRoomManagerId + 1;
-    ClientSideRoomManager.lastRoomManagerId++;
     this.currentFile$$ = new BehaviorSubject(null);
     this.tabsToProvision$$ = new Subject();
     this.provisionedTabs$$ = new BehaviorSubject(new Map());
@@ -185,11 +183,11 @@ export class ClientSideRoomManager extends RoomManager {
       }).pipe(distinctUntilChanged(__isEqual), publish()) as ConnectableObservable<globalAwareness>;
     })();
 
-    this.roomDetails$ = this.yMapToObservable(this.yData.details, this.roomDestroyed$$).pipe(
+    this.roomDetails$ = this.yjsTypeToObservable(this.yData.details, this.roomDestroyed$$).pipe(
       publish(),
     ) as ConnectableObservable<roomDetails>;
 
-    this.fileDetails$ = this.yMapToObservable(this.yData.fileDetailsState, this.roomDestroyed$$).pipe(
+    this.fileDetails$ = this.yjsTypeToObservable(this.yData.fileDetailsState, this.roomDestroyed$$).pipe(
       map((state: allBaseFileDetailsStates) => {
         const newState: allBaseFileDetailsStates = {};
         for (let [tabId, details] of Object.entries(state)) {
@@ -203,7 +201,7 @@ export class ClientSideRoomManager extends RoomManager {
       publish(),
     ) as ConnectableObservable<allBaseFileDetailsStates>;
 
-    this.computedFileDetails$ = this.yMapToObservable<allComputedFileDetailsStates>(
+    this.computedFileDetails$ = this.yjsTypeToObservable<allComputedFileDetailsStates>(
       this.yData.computedFileDetails,
       this.roomDestroyed$$,
     ).pipe(publish()) as ConnectableObservable<allComputedFileDetailsStates>;
@@ -270,33 +268,6 @@ export class ClientSideRoomManager extends RoomManager {
         }
       }
     });
-
-    // determine current available colors and pipe into available colors subject
-    this.availableColours$$ = (() => {
-      const subject: BehaviorSubject<null | string[]> = new BehaviorSubject(null);
-      this.awareness$
-        .pipe(
-          map((awareness) => {
-            if (Object.keys(awareness).length === 0) {
-              return allColors;
-            }
-            const takenColors = Object.values(awareness)
-              .filter((u) => !!u?.roomMemberDetails?.color)
-              .map((u) => u?.roomMemberDetails?.color as string);
-
-            return allColors.filter((color) => !takenColors.includes(color));
-          }),
-          distinctUntilChanged(__isEqual),
-        )
-        .subscribe(subject);
-
-      this.remoteCursorStyleManager = new RemoteCursorStyleManager(
-        this.provider.awareness,
-        this.awareness$,
-        this.ydoc.clientID,
-      );
-      return subject;
-    })();
 
     /**
      * Emits changes to the set of tabs that should be showing previews.
@@ -448,6 +419,14 @@ export class ClientSideRoomManager extends RoomManager {
         originalContentModel.dispose();
       });
     });
+
+    // this.orderedClientID$ = this.yjsTypeToObservable<string[]>(this.yData.orderedUserIDs, this.roomDestroyed$$);
+    this.remoteCursorStyleManager = new RemoteCursorStyleManager(
+      this.provider.awareness,
+      this.awareness$,
+      this.ydoc.clientID,
+      this.awareness$.pipe(map(getAssignedColors)),
+    );
   }
 
   connect() {
@@ -479,32 +458,24 @@ export class ClientSideRoomManager extends RoomManager {
   }
 
   async setAwarenessUserDetails(input: roomMemberInput) {
-    if (input.userIdOrAnonID) {
-      const awarenessState = this.getAwarenessStates();
-      const existingClientForUser = Object.values(awarenessState)
-        .map((userAwareness) => userAwareness.roomMemberDetails)
-        .find(
-          (roomMemberDetails) =>
-            roomMemberDetails?.userIdOrAnonID && roomMemberDetails.userIdOrAnonID === input.userIdOrAnonID,
-        );
+    let roomMember: roomMember;
+    const awarenessState = this.getAwarenessStates();
+    const existingClientForUser = Object.values(awarenessState)
+      .map((userAwareness) => userAwareness.roomMemberDetails)
+      .find(
+        (roomMemberDetails) =>
+          roomMemberDetails?.userIdOrAnonID && roomMemberDetails.userIdOrAnonID === input.userIdOrAnonID,
+      );
 
-      if (existingClientForUser) {
-        // the user has this room open elsewhere, so we can just copy his details from there.
-        this.provider.awareness.setLocalStateField('roomMemberDetails', existingClientForUser);
-        return;
-      }
+    if (existingClientForUser) {
+      // the user has this room open elsewhere, so we can just copy his details from there.
+      roomMember = existingClientForUser;
+    } else {
+      roomMember = input;
+      this.provider.awareness.setLocalStateField('timeJoined', Date.now());
     }
-    const availableColors = (await this.availableColours$$
-      .pipe(
-        filter((s) => !!s),
-        first(),
-      )
-      .toPromise()) as string[];
-    const userAwareness: roomMemberWithColor = {
-      color: availableColors[0],
-      ...input,
-    };
-    this.provider.awareness.setLocalStateField('roomMemberDetails', userAwareness);
+
+    this.provider.awareness.setLocalStateField('roomMemberDetails', roomMember);
   }
 
   unprovisionTab(tabId: string) {
@@ -523,16 +494,12 @@ export class ClientSideRoomManager extends RoomManager {
     this.yData.fileContents.delete(tabId);
   }
 
-  setRoomDetails(details: startingRoomDetails) {}
-  updateGistDetails(details: gistDetails) {}
-
   destroy() {
     super.destroy();
     this.provider.destroy();
     this.currentFile$$.complete();
     this.roomDestroyed$$.next(true);
     this.roomDestroyed$$.complete();
-    this.availableColours$$.complete();
     this.remoteCursorStyleManager.destroy();
 
     for (const tab of this.provisionedTabs$$.value.values()) {
@@ -599,12 +566,13 @@ export class ClientSideRoomManager extends RoomManager {
   }
 
   getAwarenessStates() {
-    const globalAwarenessMap = this.provider.awareness.getStates() as globalAwarenessMap;
+    const awarenessMap = this.provider.awareness.getStates() as globalAwarenessMap;
     const globalAwareness: globalAwareness = {};
-    for (let [i, v] of globalAwarenessMap.entries()) {
+    for (let [i, v] of awarenessMap.entries()) {
       globalAwareness[i.toString()] = {
         currentTab: v.currentTab,
         roomMemberDetails: v.roomMemberDetails,
+        timeJoined: v.timeJoined,
       };
     }
     return globalAwareness;
@@ -631,15 +599,15 @@ export class ClientSideRoomManager extends RoomManager {
     ClientSideRoomManager.setAllEditorSettings(settings, roomHashId, editors);
   }
 
-  yMapToObservable<V>(map: Y.Map<unknown>, roomDestroyed$$: Observable<boolean>) {
+  yjsTypeToObservable<V>(type: Y.Map<unknown> | Y.Array<unknown>, roomDestroyed$$: Observable<boolean>) {
     return new Observable<V>((subscriber) => {
       const listener = () => {
-        subscriber.next(map.toJSON() as V);
+        subscriber.next(type.toJSON() as V);
       };
-      map.observeDeep(listener);
-      this.providerSynced.then(() => subscriber.next(map.toJSON() as V));
+      type.observeDeep(listener);
+      this.providerSynced.then(() => subscriber.next(type.toJSON() as V));
       roomDestroyed$$.subscribe(() => {
-        map.unobserveDeep(listener);
+        type.unobserveDeep(listener);
         subscriber.complete();
       });
     });

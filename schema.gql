@@ -52,7 +52,6 @@ input RoomInput {
 
 type RoomMember {
   avatarUrl: String
-  color: String!
   name: String!
   profileUrl: String!
   type: String!

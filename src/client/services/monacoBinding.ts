@@ -1,3 +1,4 @@
+import { getColorForUserId } from 'Client/slices/room/types';
 import { styletronEngine } from 'Client/styletronEngine';
 import * as error from 'lib0/error.js';
 import { createMutex } from 'lib0/mutex.js';
@@ -5,14 +6,15 @@ import * as monaco from 'monaco-editor';
 import { Observable } from 'rxjs/internal/Observable';
 import { fromArray } from 'rxjs/internal/observable/fromArray';
 import { concatMap } from 'rxjs/internal/operators/concatMap';
+import { map } from 'rxjs/internal/operators/map';
 import { startWith } from 'rxjs/internal/operators/startWith';
+import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { Subscription } from 'rxjs/internal/Subscription';
-import { clientAwareness } from 'Shared/types/roomMemberAwarenessTypes';
+import { clientAwareness, globalAwareness } from 'Shared/types/roomMemberAwarenessTypes';
 import { Awareness } from 'y-protocols/awareness.js';
 import * as Y from 'yjs';
 
 import { lighterColors } from './awarenessColors';
-import { globalAwareness } from './clientSideRoomManager';
 
 class RelativeSelection {
   /**
@@ -291,7 +293,12 @@ export class RemoteCursorStyleManager {
   stylesheet: CSSStyleSheet;
   includedClientStyles: Map<number, { selectionHead: string; selectionBody: string }>;
   awarenessSubscription: Subscription;
-  constructor(awareness: Awareness, awareness$: Observable<globalAwareness>, clientID: number) {
+  constructor(
+    awareness: Awareness,
+    awareness$: Observable<globalAwareness>,
+    clientID: number,
+    assignedColor$: Observable<Map<string, string>>,
+  ) {
     this.element = document.createElement('style');
     this.element.id = 'extra-selection-styles';
     this.includedClientStyles = new Map();
@@ -302,6 +309,7 @@ export class RemoteCursorStyleManager {
       globalAwareness[i.toString()] = {
         currentTab: v.currentTab,
         roomMemberDetails: v.user,
+        timeJoined: v.timeJoined,
       };
     }
     this.awarenessSubscription = awareness$
@@ -317,25 +325,31 @@ export class RemoteCursorStyleManager {
 
           return fromArray(newEntries);
         }),
+        withLatestFrom(assignedColor$),
+        map(([args, assignedColors]): [number, clientAwareness, string] => {
+          const awareness = args[1];
+          const color = getColorForUserId(awareness.roomMemberDetails?.userIdOrAnonID as string, assignedColors);
+          return [...args, color];
+        }),
       )
-      .subscribe((args) => {
-        this.setAwarenessStyle(...args);
+      .subscribe(([clientID, userAwareness, assignedColor]) => {
+        this.setAwarenessStyle(clientID, userAwareness, assignedColor);
       });
   }
-  setAwarenessStyle(clientID: number, userAwareness: clientAwareness) {
+  setAwarenessStyle(clientID: number, userAwareness: clientAwareness, userColor: string) {
     if (this.includedClientStyles.has(clientID) || !userAwareness.roomMemberDetails) {
       return;
     }
     const selectionHeadClass = styletronEngine.renderStyle({
       position: 'absolute',
-      borderLeft: `${userAwareness.roomMemberDetails.color} solid 2px`,
-      borderTop: `${userAwareness.roomMemberDetails.color} solid 2px`,
-      borderBottom: `${userAwareness.roomMemberDetails.color} solid 2px`,
+      borderLeft: `${userColor} solid 2px`,
+      borderTop: `${userColor} solid 2px`,
+      borderBottom: `${userColor} solid 2px`,
       height: '100%',
       boxSizing: 'border-box',
     });
     const selectionBodyClass = styletronEngine.renderStyle({
-      backgroundColor: lighterColors[userAwareness.roomMemberDetails.color],
+      backgroundColor: lighterColors[userColor],
     });
     const selectionHeadClassForClientID = `selection-head-${clientID}`;
     const selectionBodyClassForClientID = `selection-body-${clientID}`;
@@ -345,7 +359,7 @@ export class RemoteCursorStyleManager {
         position: absolute;
         height: min-content;
         width: min-content;
-        background-color: ${userAwareness.roomMemberDetails.color};
+        background-color: ${userColor};
         padding: 1px;
         top: -22px;
         content: '${userAwareness.roomMemberDetails.name}';

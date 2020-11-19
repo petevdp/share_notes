@@ -1,12 +1,18 @@
 import { createAction } from '@reduxjs/toolkit';
-import { globalAwareness, tabToProvision } from 'Client/services/clientSideRoomManager';
+import { allColors } from 'Client/services/awarenessColors';
+import { tabToProvision } from 'Client/services/clientSideRoomManager';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';
 import { createRoomResponse } from 'Client/utils/queries';
 import __uniqBy from 'lodash/uniqBy';
 import { gistDetails } from 'Shared/githubTypes';
 import { allBaseFileDetailsStates } from 'Shared/roomManager';
-import { roomMember, roomMemberWithColor } from 'Shared/types/roomMemberAwarenessTypes';
+import {
+  clientAwareness,
+  globalAwareness,
+  roomMember,
+  roomMemberWithComputed,
+} from 'Shared/types/roomMemberAwarenessTypes';
 import { clientSideRoom } from 'Shared/types/roomTypes';
 import * as Y from 'yjs';
 
@@ -63,8 +69,8 @@ export const switchToRoom = createAction('switchToRoom', (hashId: string) => ({
   payload: hashId,
 }));
 
-export const provisionTab = createAction('provisionTab', (tabToProvision: tabToProvision) => ({
-  payload: tabToProvision,
+export const provisionTab = createAction('provisionTab', (tab: tabToProvision) => ({
+  payload: tab,
 }));
 export const unprovisionTab = createAction('unprovisionTab', (tabId: string) => ({
   payload: { tabId },
@@ -101,7 +107,6 @@ export const saveBackToGist = createAction('saveBackToGist');
 export const gistSaved = createAction('gistSaved', (updatedDetails: gistDetails) => ({ payload: updatedDetails }));
 
 export const linkGist = createAction('linkGist', (gistId: string) => ({ payload: gistId }));
-
 export const fileRenamingActions = {
   startRenameCurrentFile: createAction('startRenameCurrentFile'),
   promptNameForNewFile: createAction('promptNameForNewFile'),
@@ -166,20 +171,67 @@ export function currentFileRenameWithComputedSelector(rootState: rootState): cur
   };
 }
 
-export function roomUsersAwarenessDetailsSelector(rootState: rootState): roomMemberWithColor[] | undefined {
+export function roomUsersAwarenessDetailsSelector(rootState: rootState): roomMemberWithComputed[] | undefined {
   const awareness = rootState.room.currentRoom?.awareness;
+  if (!awareness) {
+    return;
+  }
+  const assignedColors = getAssignedColors(awareness);
   if (awareness) {
     const roomMembers = [
       ...Object.values(awareness)
         .filter((a) => !!a.roomMemberDetails)
-        .map((s) => s.roomMemberDetails as roomMemberWithColor),
+        .map((s) => ({
+          ...(s.roomMemberDetails as roomMember),
+          color: assignedColors.get(s.roomMemberDetails?.userIdOrAnonID as string) as string,
+        })),
     ];
     return __uniqBy(roomMembers, (m) => m.userIdOrAnonID);
   }
 }
 
+export interface clientAwarenessWithComputed extends clientAwareness {
+  color: string;
+  clientID: string;
+  roomMemberDetails: roomMemberWithComputed;
+}
+
+export type globalAwarenessMapWithComputedByUserID = Map<string, clientAwarenessWithComputed>;
+
 export interface currentRoomStateWithComputed extends currentRoomState {
   isCurrentFileMarkdown: boolean;
+  awarenessWithComputed?: globalAwarenessMapWithComputedByUserID;
+}
+
+export function getColorForUserId(userID: string, assignedColors: Map<string, string>) {
+  return assignedColors.get(userID) || 'black';
+}
+
+export function getAssignedColors(awareness: globalAwareness) {
+  const sortedClientAwareness = Object.values(awareness).sort((a, b) => a.timeJoined - b.timeJoined);
+  const assignedColors = new Map<string, string>();
+
+  sortedClientAwareness.forEach((client, index) => {
+    if (client.roomMemberDetails) {
+      assignedColors.set(client.roomMemberDetails?.userIdOrAnonID, allColors[index % allColors.length]);
+    }
+  });
+  return assignedColors;
+}
+
+export function getAwarenessWithComputed(awareness: globalAwareness, assignedColors: Map<string, string>) {
+  const awarenessMap: globalAwarenessMapWithComputedByUserID = new Map();
+  for (let [id, clientAwareness] of Object.entries(awareness)) {
+    const roomMember = clientAwareness.roomMemberDetails;
+    if (roomMember) {
+      const userID = roomMember.userIdOrAnonID;
+      const color = assignedColors.get(userID);
+      if (color) {
+        awarenessMap.set(userID, { ...clientAwareness, roomMemberDetails: roomMember, color, clientID: id });
+      }
+    }
+  }
+  return awarenessMap;
 }
 
 export function currentRoomStateWithComputedSelector(state: rootState): currentRoomStateWithComputed | undefined {
@@ -198,5 +250,8 @@ export function currentRoomStateWithComputedSelector(state: rootState): currentR
   return {
     ...currentRoom,
     isCurrentFileMarkdown,
+    awarenessWithComputed:
+      state.room.currentRoom?.awareness &&
+      getAwarenessWithComputed(state.room.currentRoom.awareness, getAssignedColors(state.room.currentRoom.awareness)),
   };
 }

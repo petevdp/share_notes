@@ -1,13 +1,8 @@
-import { fork } from 'child_process';
-import { log } from 'console';
-import fs from 'fs';
-import pipe from 'lodash/fp/pipe';
 import { AuthorizedContext } from 'Server/context';
 import {
   CreateRoomInput,
   DeleteRoomInput,
   RoomInput,
-  UpdateRoomGistInput,
   UpdateRoomInput,
   validateUpdateRoomGistInput,
 } from 'Server/inputs/roomInputs';
@@ -15,9 +10,8 @@ import { ClientSideRoom, Room } from 'Server/models/room';
 import { RoomMember } from 'Server/models/roomMember';
 import { RoomVisit } from 'Server/models/roomVisit';
 import { User } from 'Server/models/user';
-import { CREATED_GISTS_LOG } from 'Server/paths';
 import { ClientSideRoomService } from 'Server/services/clientSideRoomService';
-import { TedisService, USER_ID_BY_SESSION_KEY } from 'Server/services/tedisService';
+import { TedisService } from 'Server/services/tedisService';
 import { YjsService } from 'Server/services/yjsService';
 import { githubRequestWithAuth } from 'Server/utils/githubUtils';
 import { GistUpdateType } from 'Shared/types/roomTypes';

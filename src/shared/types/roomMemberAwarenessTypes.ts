@@ -24,13 +24,17 @@ export type roomMemberInput = anonymousRoomMemberInput | githubRoomMemberInput;
 
 export type roomMember = anonymousRoomMember | githubRoomMember;
 
-export type roomMemberWithColor = roomMember & { color: string };
+export type roomMemberWithComputed = roomMember;
 
 export interface clientAwareness {
-  roomMemberDetails?: roomMemberWithColor;
+  roomMemberDetails?: roomMember;
+  timeJoined: number;
   selection?: {
     anchor: Y.RelativePosition;
     head: Y.RelativePosition;
   };
   currentTab?: string;
 }
+
+export type globalAwarenessMap = Map<number, clientAwareness>;
+export type globalAwareness = { [id: string]: clientAwareness };

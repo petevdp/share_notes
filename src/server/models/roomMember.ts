@@ -1,12 +1,5 @@
-import {
-  clientAwareness,
-  roomMember,
-  roomMemberType,
-  roomMemberWithColor,
-} from 'Shared/types/roomMemberAwarenessTypes.ts';
-import { Field, Int, ObjectType } from 'type-graphql';
-
-import { User } from './user';
+import { roomMemberType } from 'Shared/types/roomMemberAwarenessTypes.ts';
+import { Field, ObjectType } from 'type-graphql';
 
 @ObjectType()
 export class RoomMember {
@@ -15,9 +8,6 @@ export class RoomMember {
 
   @Field(() => String)
   name: string;
-
-  @Field(() => String)
-  color: string;
 
   @Field(() => String, { nullable: true })
   userIdOrAnonID: string;

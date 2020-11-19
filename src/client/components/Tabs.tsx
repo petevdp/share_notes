@@ -1,10 +1,14 @@
-import { ThemeProvider, useStyletron } from 'baseui';
+import { useStyletron } from 'baseui';
 import { Button, ButtonOverrides } from 'baseui/button';
 import { Delete } from 'baseui/icon';
 import { StatefulMenu } from 'baseui/menu';
 import { Popover } from 'baseui/popover';
-import { fileRenamingActions, removeFile, switchCurrentFile } from 'Client/slices/room/types';
-import { rootState } from 'Client/store';
+import {
+  currentRoomStateWithComputedSelector,
+  fileRenamingActions,
+  removeFile,
+  switchCurrentFile,
+} from 'Client/slices/room/types';
 import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
 import __merge from 'lodash/merge';
 import __uniqBy from 'lodash/uniqBy';
@@ -13,10 +17,10 @@ import { useDispatch, useSelector } from 'react-redux';
 
 export function TabList() {
   const dispatch = useDispatch();
-  const currentRoom = useSelector((s: rootState) => s.room.currentRoom);
+  const currentRoom = useSelector(currentRoomStateWithComputedSelector);
   const [openTabContextMenus, setOpenTabContextMenu] = useState(new Set<string>());
 
-  const [css, theme] = useStyletron();
+  const [css] = useStyletron();
 
   const openTabContextMenu = (tabId: string) =>
     setOpenTabContextMenu((s) => {
@@ -116,20 +120,20 @@ export function TabList() {
                 })}
               >
                 <span className={css({ display: 'flex', justifyContent: 'flex-start', height: '6px' })}>
-                  {currentRoom.awareness &&
+                  {currentRoom.awarenessWithComputed &&
                     __uniqBy(
-                      Object.values(currentRoom.awareness).filter(
-                        (a) => a.currentTab && a.roomMemberDetails && a.currentTab === tabState.tabId,
+                      [...currentRoom.awarenessWithComputed.entries()].filter(
+                        ([, a]) => a.currentTab && a.roomMemberDetails && a.currentTab === tabState.tabId,
                       ),
-                      (a) => a.roomMemberDetails?.userIdOrAnonID,
-                    ).map((a) => (
+                      ([, a]) => a.roomMemberDetails.userIdOrAnonID,
+                    ).map(([, a]) => (
                       <svg
-                        key={a.roomMemberDetails?.userIdOrAnonID}
+                        key={a.roomMemberDetails.userIdOrAnonID}
                         className={css({ width: '4px', height: '4px', marginRight: '2px' })}
                         viewBox="0 0 100 100"
                         xmlns="http://www.w3.org/2000/svg"
                       >
-                        <circle fill={a.roomMemberDetails?.color} cx="50" cy="50" r="50" />
+                        <circle fill={a.color} cx="50" cy="50" r="50" />
                       </svg>
                     ))}
                 </span>

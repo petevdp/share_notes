@@ -236,7 +236,7 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
             if (roomDetails.gistName && existingDetails.gistName !== roomDetails.gistName) {
               manager.populate({ ...roomDetails, id: roomDetails.id }, gistDetails?.files);
             } else {
-              manager.setRoomDetails(roomDetails);
+              manager.populate({ ...roomDetails, id: roomDetails.id });
             }
           });
 

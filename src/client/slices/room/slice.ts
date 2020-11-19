@@ -61,6 +61,7 @@ export const roomSlice = createSlice({
     builder.addCase(initRoom, (state, { payload: { roomHashId } }) => ({
       ...state,
       currentRoom: {
+        orderedUserIDs: [],
         initializingRoom: true,
         hashId: roomHashId,
         loadedTabs: [],
@@ -157,6 +158,7 @@ export const roomSlice = createSlice({
       ...s,
       currentRoom: {
         initializingRoom: true,
+        orderedUserIDs: [],
         loadedTabs: [],
         forkedGistDetails: forkDetails,
         hashId: data.createRoom.hashId,

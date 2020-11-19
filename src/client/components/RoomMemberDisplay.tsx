@@ -1,12 +1,12 @@
 import { styled, useStyletron } from 'baseui';
-import { Avatar, AvatarOverrides, StyleProps } from 'baseui/avatar';
+import { Avatar } from 'baseui/avatar';
 import { Button } from 'baseui/button';
 import { ChevronDown } from 'baseui/icon';
 import { ListItem, ListItemLabel } from 'baseui/list';
 import { StatefulMenu } from 'baseui/menu';
 import { StatefulPopover } from 'baseui/popover';
 import { expandBorderStyles } from 'baseui/styles';
-import { roomUsersAwarenessDetailsSelector } from 'Client/slices/room/types';
+import { currentRoomStateWithComputedSelector } from 'Client/slices/room/types';
 import { RoomPopoverZIndexOverride } from 'Client/utils/basewebUtils';
 import React, { Ref } from 'react';
 import { useSelector } from 'react-redux';
@@ -26,7 +26,7 @@ const ColorSwatch = styled('div', (props: any) => {
     height: props.$theme.sizing.scale300,
     marginRight: props.$theme.sizing.scale200,
     display: 'inline-block',
-    backgroundColor: props.$color,
+    backgroundColor: props.color,
     verticalAlign: 'baseline',
     ...expandBorderStyles(props.$theme.borders.border400),
   };
@@ -34,18 +34,18 @@ const ColorSwatch = styled('div', (props: any) => {
 
 export function RoomMemberDisplay() {
   const [, theme] = useStyletron();
-  const usersAwareness = useSelector(roomUsersAwarenessDetailsSelector);
+  const currentRoom = useSelector(currentRoomStateWithComputedSelector);
 
-  if (!usersAwareness) {
+  if (!currentRoom || !currentRoom.awarenessWithComputed) {
     return null;
   }
-  const items = usersAwareness.map((u) => ({
-    title: u.name,
-    key: u.userIdOrAnonID,
+  const items = [...currentRoom.awarenessWithComputed.entries()].map(([userId, u]) => ({
+    title: u.roomMemberDetails.name,
+    key: userId,
     color: u.color,
-    profileUrl: u.type === 'github' && u.profileUrl,
-    imgUrl: u.type === 'github' && u.avatarUrl,
-    name: u.name,
+    profileUrl: u.roomMemberDetails.type === 'github' && u.roomMemberDetails.profileUrl,
+    imgUrl: u.roomMemberDetails.type === 'github' && u.roomMemberDetails.avatarUrl,
+    name: u.roomMemberDetails.name,
     body: "hi I'm the body",
   }));
   return (
@@ -115,9 +115,9 @@ export function RoomMemberDisplay() {
           },
         }}
       >
-        {usersAwareness.map((u) => {
+        {[...currentRoom.awarenessWithComputed.entries()].map(([userId, u]) => {
           const overrides =
-            u.type === 'github'
+            u.roomMemberDetails.type === 'github'
               ? {
                   Root: {
                     style: {
@@ -137,9 +137,9 @@ export function RoomMemberDisplay() {
           return (
             <Avatar
               size={theme.sizing.scale800}
-              key={u.userIdOrAnonID}
-              name={u.name}
-              src={u.type === 'github' ? u.avatarUrl : undefined}
+              key={u.roomMemberDetails.userIdOrAnonID}
+              name={u.roomMemberDetails.name}
+              src={u.roomMemberDetails.type === 'github' ? u.roomMemberDetails.avatarUrl : undefined}
               overrides={overrides}
             />
           );

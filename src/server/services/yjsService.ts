@@ -2,13 +2,25 @@ import { request as octokitRequest } from '@octokit/request';
 import { IncomingMessage } from 'http';
 import __isEmpty from 'lodash/isEmpty';
 import path from 'path';
+import { Observable } from 'rxjs/internal/Observable';
+import { fromArray } from 'rxjs/internal/observable/fromArray';
+import { concatMap } from 'rxjs/internal/operators/concatMap';
+import { map } from 'rxjs/internal/operators/map';
+import { scan } from 'rxjs/internal/operators/scan';
+import { tap } from 'rxjs/internal/operators/tap';
 import { Room } from 'Server/models/room';
 import { RoomVisit } from 'Server/models/roomVisit';
 import { User } from 'Server/models/user';
 import { getYjsDocNameForRoom } from 'Shared/environment';
 import { fileDetails, gistDetails } from 'Shared/githubTypes';
 import { roomDetails, RoomManager, startingRoomDetails } from 'Shared/roomManager';
-import { clientAwareness, roomMember, roomMemberWithColor } from 'Shared/types/roomMemberAwarenessTypes';
+import {
+  clientAwareness,
+  globalAwareness,
+  globalAwarenessMap,
+  roomMember,
+  roomMemberWithComputed,
+} from 'Shared/types/roomMemberAwarenessTypes';
 import { Service } from 'typedi';
 import { Repository } from 'typeorm';
 import { InjectRepository } from 'typeorm-typedi-extensions';
@@ -57,7 +69,7 @@ export class YjsService {
     }
     return ([...doc.awareness.getStates().values()] as clientAwareness[])
       .map((memberAwareness) => memberAwareness.roomMemberDetails)
-      .filter(Boolean) as roomMemberWithColor[];
+      .filter(Boolean) as roomMemberWithComputed[];
   }
 
   async setupWsConnection(conn: WebSocket, req: IncomingMessage) {
@@ -147,6 +159,54 @@ export class YjsService {
 }
 
 export class ServerSideRoomManager extends RoomManager {
+  constructor(public ydoc: WSSharedDoc) {
+    super(ydoc);
+
+    const idDelta$ = new Observable<globalAwarenessMap>((observer) => {
+      const listener = () => {
+        console.log('listener fired');
+        console.log(ydoc.awareness.getStates());
+        observer.next(ydoc.awareness.getStates() as globalAwarenessMap);
+      };
+      ydoc.awareness.on('change', listener);
+      this.roomDestroyed$$.subscribe(() => {
+        this.ydoc.awareness.off('change', listener);
+        observer.complete();
+      });
+      console.log({ initialState: ydoc.awareness.getStates() });
+
+      return () => ydoc.awareness.off('change', listener);
+    }).pipe(
+      scan<
+        globalAwarenessMap,
+        { deltas: { clientID: number; userID: string; deltaValue: boolean }[]; prevIDs: Set<string> }
+      >(
+        ({ prevIDs }, awarenessMap) => {
+          const currIDs = new Set(
+            [...awarenessMap.values()].map((client) => client.roomMemberDetails?.userIdOrAnonID).filter(Boolean),
+          ) as Set<string>;
+          const deltas: { clientID: number; userID: string; deltaValue: boolean }[] = [];
+          for (let userID of [...new Set([...currIDs, ...prevIDs])]) {
+            console.log('testing id: ', userID);
+            const [clientID] = [...awarenessMap.entries()].find(
+              ([, client]) =>
+                client.roomMemberDetails?.userIdOrAnonID && client.roomMemberDetails.userIdOrAnonID === userID,
+            ) as [number, clientAwareness];
+            if (!prevIDs.has(userID) && currIDs.has(userID)) {
+              deltas.push({ clientID, userID, deltaValue: true });
+            } else if (prevIDs.has(userID) && !currIDs.has(userID)) {
+              deltas.push({ clientID, userID, deltaValue: true });
+            }
+          }
+          console.log({ deltas });
+          return { deltas, prevIDs: currIDs };
+        },
+        { deltas: [], prevIDs: new Set<string>() },
+      ),
+      concatMap(({ deltas }) => fromArray(deltas)),
+    );
+  }
+
   populate(startingRoomDetails: startingRoomDetails, files?: { [key: string]: fileDetails }) {
     const details: roomDetails = {
       ...startingRoomDetails,

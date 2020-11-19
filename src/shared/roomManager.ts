@@ -1,11 +1,8 @@
-import { Observable } from 'rxjs/internal/Observable';
-import { ConnectableObservable } from 'rxjs/internal/observable/ConnectableObservable';
-import { publish } from 'rxjs/internal/operators/publish';
 import { Subject } from 'rxjs/internal/Subject';
 import { v4 as uuidv4 } from 'uuid';
 import * as Y from 'yjs';
 
-import { fileDetails, gistDetails } from './githubTypes';
+import { fileDetails } from './githubTypes';
 import { getKeysForMap } from './ydocUtils';
 
 export interface baseFileDetailsState {
@@ -52,6 +49,7 @@ export abstract class RoomManager {
     fileContents: Y.Map<Y.Text>;
     // for now just contains an object with details, there's probably a better way to do this though
     details: Y.Map<any>;
+    orderedUserIDs: Y.Array<string>;
   };
   roomDestroyed$$: Subject<boolean>;
 
@@ -62,6 +60,9 @@ export abstract class RoomManager {
       computedFileDetails: ydoc.getMap(`computedFileDetails`),
       fileContents: ydoc.getMap(`fileContents`),
       details: ydoc.getMap(`details`),
+
+      // Used to apply colors to clients consistently for this room based on their position in the array.
+      orderedUserIDs: ydoc.getArray(),
     };
   }
 
