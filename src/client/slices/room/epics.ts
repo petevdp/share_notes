@@ -123,9 +123,11 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
         action$
           .pipe(filter(renameFile.match), takeUntil(manager.roomDestroyed$$))
           .subscribe(({ payload: { tabId, newFilename } }) => {
-            const detailsMap = manager.yData.fileDetailsState.get(tabId.toString());
-            if (detailsMap) {
-              detailsMap.set('filename', newFilename);
+            const details = manager.yData.fileDetails.get(tabId.toString());
+            if (details) {
+              manager.yData.fileDetails.set(tabId.toString(), { ...details, filename: newFilename });
+            } else {
+              console.warn(`tried to rename file at ${tabId}, but no such tab exists`);
             }
           });
 

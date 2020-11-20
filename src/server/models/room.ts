@@ -20,7 +20,8 @@ export class Room {
   @Column({ type: 'timestamp' })
   createdAt: Date;
 
-  savedRoomData?: string;
+  @Column({ nullable: true })
+  savedFileContentsAndDetails?: string;
 
   @ManyToOne(() => User, (user) => user.ownedRooms)
   owner: Promise<User>;

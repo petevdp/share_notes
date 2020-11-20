@@ -1,4 +1,3 @@
-import { log } from 'console';
 import { gql } from 'graphql-request';
 
 import { roomVisit } from './roomVisitTypes';

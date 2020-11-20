@@ -3,9 +3,9 @@ import { v4 as uuidv4 } from 'uuid';
 import * as Y from 'yjs';
 
 import { fileDetails } from './githubTypes';
-import { getKeysForMap } from './ydocUtils';
+import { getKeysForMap } from './utils/ydocUtils';
 
-export interface baseFileDetailsState {
+export interface baseFileDetails {
   tabId: string;
   filename: string;
   deleted: boolean;
@@ -15,10 +15,14 @@ export interface baseFileDetailsState {
 
 export type computedFileDetailsState = null;
 
-export type unifiedFileDetailsState = baseFileDetailsState & computedFileDetailsState;
+export type unifiedFileDetailsState = baseFileDetails & computedFileDetailsState;
+
+export interface allFileContentsState {
+  [tabId: string]: string;
+}
 
 export interface allBaseFileDetailsStates {
-  [id: string]: baseFileDetailsState;
+  [id: string]: baseFileDetails;
 }
 
 export interface allComputedFileDetailsStates {
@@ -43,26 +47,20 @@ export interface roomDetails extends startingRoomDetails {
 export abstract class RoomManager {
   yData: {
     // storing file text and details separately as a performance optimization
-    fileDetailsState: Y.Map<Y.Map<any>>;
+    fileDetails: Y.Map<baseFileDetails>;
     // supplied by server, consumed by clients
-    computedFileDetails: Y.Map<Y.Map<any | undefined>>;
     fileContents: Y.Map<Y.Text>;
     // for now just contains an object with details, there's probably a better way to do this though
     details: Y.Map<any>;
-    orderedUserIDs: Y.Array<string>;
   };
   roomDestroyed$$: Subject<boolean>;
 
-  constructor(public ydoc = new Y.Doc()) {
+  constructor(protected roomHashId: string, public ydoc = new Y.Doc()) {
     this.roomDestroyed$$ = new Subject<boolean>();
     this.yData = {
-      fileDetailsState: ydoc.getMap(`fileDetails`),
-      computedFileDetails: ydoc.getMap(`computedFileDetails`),
+      fileDetails: ydoc.getMap(`fileDetails`),
       fileContents: ydoc.getMap(`fileContents`),
       details: ydoc.getMap(`details`),
-
-      // Used to apply colors to clients consistently for this room based on their position in the array.
-      orderedUserIDs: ydoc.getArray(),
     };
   }
 
@@ -82,39 +80,67 @@ export abstract class RoomManager {
           this.addNewFile({ filename: file.filename, content: file.content });
         }
       });
+    } else {
+      this.ydoc.transact(() => {
+        const filename = startingRoomDetails.name.toLowerCase().split(' ').join('-');
+        this.addNewFile({
+          filename,
+          content: `# ${filename}`,
+        });
+      });
     }
   }
 
   addNewFile(detailsInput?: { filename?: string; content?: string }) {
-    const fileDetails = new Y.Map();
     const text = new Y.Text();
     const tabId = uuidv4();
-    fileDetails.set('tabId', tabId);
-    fileDetails.set('deleted', false);
+
+    let filename: string | undefined;
     if (detailsInput) {
       text.insert(0, detailsInput.content || '');
       this.yData.fileContents.set(tabId, new Y.Text());
-      fileDetails.set('filename', detailsInput.filename);
-    } else {
-      fileDetails.set('filename', `new-file-${tabId}`);
+      filename = detailsInput.filename;
     }
-    this.yData.fileDetailsState.set(tabId, fileDetails);
+
+    if (!filename) {
+      filename = `new-file-${tabId}`;
+    }
+
+    const fileDetails: baseFileDetails = {
+      filename,
+      tabId,
+      deleted: false,
+    };
+    this.yData.fileDetails.set(tabId, fileDetails);
     this.yData.fileContents.set(tabId, text);
-    return fileDetails.toJSON() as baseFileDetailsState;
+    return fileDetails;
   }
 
   removeFile(tabId: string) {
-    const ids = getKeysForMap(this.yData.fileDetailsState);
+    const ids = getKeysForMap(this.yData.fileDetails);
     if (ids.length === 1) {
       throw 'handle no files left case better';
     }
-    this.yData.fileDetailsState.delete(tabId);
+    this.yData.fileDetails.delete(tabId);
     this.yData.fileContents.delete(tabId);
   }
 
   destroy() {
+    console.log('destroying room ', this.roomHashId);
     this.ydoc.destroy();
     this.roomDestroyed$$.next(true);
     this.roomDestroyed$$.complete();
+  }
+
+  getAllFileContents() {
+    return this.yData.fileContents.toJSON() as allFileContentsState;
+  }
+
+  getRoomDetails() {
+    return this.yData.details.toJSON() as roomDetails;
+  }
+
+  getFileDetails(): allBaseFileDetailsStates {
+    return this.yData.fileDetails.toJSON() as allBaseFileDetailsStates;
   }
 }

@@ -30,21 +30,14 @@ import { takeUntil } from 'rxjs/internal/operators/takeUntil';
 import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { Subject } from 'rxjs/internal/Subject';
 import { getYjsDocNameForRoom, YJS_WEBSOCKET_URL_WS } from 'Shared/environment';
-import { gistDetails } from 'Shared/githubTypes';
-import {
-  allBaseFileDetailsStates,
-  allComputedFileDetailsStates,
-  roomDetails,
-  RoomManager,
-  startingRoomDetails,
-} from 'Shared/roomManager';
+import { allBaseFileDetailsStates, allComputedFileDetailsStates, roomDetails, RoomManager } from 'Shared/roomManager';
 import {
   globalAwareness,
   globalAwarenessMap,
   roomMember,
   roomMemberInput,
 } from 'Shared/types/roomMemberAwarenessTypes';
-import { getKeysForMap } from 'Shared/ydocUtils';
+import { getKeysForMap } from 'Shared/utils/ydocUtils';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 
@@ -74,11 +67,6 @@ interface vimMode {
   dispose(): boolean;
 }
 
-interface vimBindingState {
-  vimMode?: vimMode;
-  statusElement: HTMLElement;
-}
-
 export interface tabToProvision {
   tabId: string;
   elements: {
@@ -103,7 +91,6 @@ export class ClientSideRoomManager extends RoomManager {
   providerSynced: Promise<true>;
   roomDetails$: ConnectableObservable<roomDetails>;
   fileDetails$: ConnectableObservable<allBaseFileDetailsStates>;
-  computedFileDetails$: ConnectableObservable<allComputedFileDetailsStates>;
   awareness$: ConnectableObservable<globalAwareness>;
   orderedClientID$: Observable<string[]>;
   remoteCursorStyleManager: RemoteCursorStyleManager;
@@ -114,8 +101,8 @@ export class ClientSideRoomManager extends RoomManager {
   };
   newProvisionedTabs: Subject<[string, provisionedTab]>;
 
-  constructor(private roomHashId: string, private settings$: Observable<clientSettings>) {
-    super();
+  constructor(roomHashId: string, private settings$: Observable<clientSettings>) {
+    super(roomHashId);
     this.currentFile$$ = new BehaviorSubject(null);
     this.tabsToProvision$$ = new Subject();
     this.provisionedTabs$$ = new BehaviorSubject(new Map());
@@ -137,7 +124,7 @@ export class ClientSideRoomManager extends RoomManager {
 
     // listen for and apply settings changes to editors
     settings$.pipe(takeUntil(this.roomDestroyed$$)).subscribe((settings) => {
-      const allDetails = this.getFileDetails();
+      const allDetails = this.getFileDetailsWithComputed();
       for (let [tabId, tab] of this.provisionedTabs$$.value.entries()) {
         const details = allDetails[tabId];
         const settingsForEditor = getSettingsForEditorWithComputed(
@@ -187,24 +174,19 @@ export class ClientSideRoomManager extends RoomManager {
       publish(),
     ) as ConnectableObservable<roomDetails>;
 
-    this.fileDetails$ = this.yjsTypeToObservable(this.yData.fileDetailsState, this.roomDestroyed$$).pipe(
+    this.fileDetails$ = this.yjsTypeToObservable(this.yData.fileDetails, this.roomDestroyed$$).pipe(
       map((state: allBaseFileDetailsStates) => {
         const newState: allBaseFileDetailsStates = {};
         for (let [tabId, details] of Object.entries(state)) {
           newState[tabId] = {
             ...details,
-            filetype: determineLanguage(details.filename),
+            filetype: ClientSideRoomManager.determineLanguage(details.filename),
           };
         }
         return newState;
       }),
       publish(),
     ) as ConnectableObservable<allBaseFileDetailsStates>;
-
-    this.computedFileDetails$ = this.yjsTypeToObservable<allComputedFileDetailsStates>(
-      this.yData.computedFileDetails,
-      this.roomDestroyed$$,
-    ).pipe(publish()) as ConnectableObservable<allComputedFileDetailsStates>;
 
     // initialize provisioned tabs
     let tabOrdinal = 1;
@@ -262,7 +244,7 @@ export class ClientSideRoomManager extends RoomManager {
         if (!model) {
           continue;
         }
-        const language = determineLanguage(filename);
+        const language = ClientSideRoomManager.determineLanguage(filename);
         if (language) {
           monaco.editor.setModelLanguage(model, language);
         }
@@ -433,7 +415,6 @@ export class ClientSideRoomManager extends RoomManager {
     this.awareness$.connect();
     this.roomDetails$.connect();
     this.fileDetails$.connect();
-    this.computedFileDetails$.connect();
     this.provider.connect();
   }
 
@@ -458,7 +439,7 @@ export class ClientSideRoomManager extends RoomManager {
   }
 
   async setAwarenessUserDetails(input: roomMemberInput) {
-    let roomMember: roomMember;
+    let member: roomMember;
     const awarenessState = this.getAwarenessStates();
     const existingClientForUser = Object.values(awarenessState)
       .map((userAwareness) => userAwareness.roomMemberDetails)
@@ -469,13 +450,13 @@ export class ClientSideRoomManager extends RoomManager {
 
     if (existingClientForUser) {
       // the user has this room open elsewhere, so we can just copy his details from there.
-      roomMember = existingClientForUser;
+      member = existingClientForUser;
     } else {
-      roomMember = input;
+      member = input;
       this.provider.awareness.setLocalStateField('timeJoined', Date.now());
     }
 
-    this.provider.awareness.setLocalStateField('roomMemberDetails', roomMember);
+    this.provider.awareness.setLocalStateField('roomMemberDetails', member);
   }
 
   unprovisionTab(tabId: string) {
@@ -486,11 +467,11 @@ export class ClientSideRoomManager extends RoomManager {
   }
 
   removeFile(tabId: string) {
-    const ids = getKeysForMap(this.yData.fileDetailsState);
+    const ids = getKeysForMap(this.yData.fileDetails);
     if (ids.length === 1) {
       throw 'handle no files left case better';
     }
-    this.yData.fileDetailsState.delete(tabId);
+    this.yData.fileDetails.delete(tabId);
     this.yData.fileContents.delete(tabId);
   }
 
@@ -546,25 +527,6 @@ export class ClientSideRoomManager extends RoomManager {
     editor.updateOptions({ ...updates });
   }
 
-  getAllFileContents() {
-    return this.yData.fileContents.toJSON() as { [tabId: string]: string };
-  }
-
-  getRoomDetails() {
-    return this.yData.details.toJSON() as roomDetails;
-  }
-
-  getFileDetails(): allBaseFileDetailsStates {
-    const details = this.yData.fileDetailsState.toJSON() as allBaseFileDetailsStates;
-    return Object.keys(details).reduce(
-      (obj, tabId) => ({
-        ...obj,
-        [tabId]: { ...details[tabId], filetype: determineLanguage(details[tabId].filename) },
-      }),
-      {} as allBaseFileDetailsStates,
-    );
-  }
-
   getAwarenessStates() {
     const awarenessMap = this.provider.awareness.getStates() as globalAwarenessMap;
     const globalAwareness: globalAwareness = {};
@@ -612,12 +574,25 @@ export class ClientSideRoomManager extends RoomManager {
       });
     });
   }
-}
 
-function determineLanguage(filename: string) {
-  if (!filename) {
-    return;
+  getFileDetailsWithComputed(): allBaseFileDetailsStates {
+    const details = this.getFileDetails();
+    return Object.keys(details).reduce(
+      (obj, tabId) => ({
+        ...obj,
+        [tabId]: { ...details[tabId], filetype: ClientSideRoomManager.determineLanguage(details[tabId].filename) },
+      }),
+      {} as allBaseFileDetailsStates,
+    );
   }
-  const extension = '.' + filename.split('.').pop();
-  return monaco.languages.getLanguages().find((language) => language.extensions?.includes(extension))?.id || 'markdown';
+
+  static determineLanguage(filename: string) {
+    if (!filename) {
+      return;
+    }
+    const extension = '.' + filename.split('.').pop();
+    return (
+      monaco.languages.getLanguages().find((language) => language.extensions?.includes(extension))?.id || 'markdown'
+    );
+  }
 }

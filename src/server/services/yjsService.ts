@@ -1,26 +1,28 @@
 import { request as octokitRequest } from '@octokit/request';
 import { IncomingMessage } from 'http';
+import _ from 'lodash';
 import __isEmpty from 'lodash/isEmpty';
 import path from 'path';
 import { Observable } from 'rxjs/internal/Observable';
 import { fromArray } from 'rxjs/internal/observable/fromArray';
+import { of } from 'rxjs/internal/observable/of';
+import { race } from 'rxjs/internal/observable/race';
 import { concatMap } from 'rxjs/internal/operators/concatMap';
+import { delay } from 'rxjs/internal/operators/delay';
+import { filter } from 'rxjs/internal/operators/filter';
+import { first } from 'rxjs/internal/operators/first';
 import { map } from 'rxjs/internal/operators/map';
+import { mapTo } from 'rxjs/internal/operators/mapTo';
 import { scan } from 'rxjs/internal/operators/scan';
 import { tap } from 'rxjs/internal/operators/tap';
+import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { Room } from 'Server/models/room';
 import { RoomVisit } from 'Server/models/roomVisit';
 import { User } from 'Server/models/user';
 import { getYjsDocNameForRoom } from 'Shared/environment';
-import { fileDetails, gistDetails } from 'Shared/githubTypes';
-import { roomDetails, RoomManager, startingRoomDetails } from 'Shared/roomManager';
-import {
-  clientAwareness,
-  globalAwareness,
-  globalAwarenessMap,
-  roomMember,
-  roomMemberWithComputed,
-} from 'Shared/types/roomMemberAwarenessTypes';
+import { gistDetails } from 'Shared/githubTypes';
+import { allBaseFileDetailsStates, allFileContentsState, RoomManager } from 'Shared/roomManager';
+import { clientAwareness, globalAwarenessMap, roomMemberWithComputed } from 'Shared/types/roomMemberAwarenessTypes';
 import { Service } from 'typedi';
 import { Repository } from 'typeorm';
 import { InjectRepository } from 'typeorm-typedi-extensions';
@@ -30,6 +32,7 @@ import * as Y from 'yjs';
 
 import { ClientSideRoomService } from './clientSideRoomService';
 import { TedisService, TOKEN_BY_USER_ID, USER_ID_BY_SESSION_KEY } from './tedisService';
+
 export interface startingRoomFiles {
   [k: string]: {
     filename?: string;
@@ -42,9 +45,15 @@ export interface startingRoomFiles {
     [k: string]: unknown;
   };
 }
+
+interface combinedFilesState {
+  fileContents: allFileContentsState;
+  fileDetails: allBaseFileDetailsStates;
+}
+
 @Service()
 export class YjsService {
-  readonly docs: Map<string, WSSharedDoc>;
+  readonly roomManagers: Map<string, ServerSideRoomManager>;
   constructor(
     private readonly clientSideRoomService: ClientSideRoomService,
     private readonly tedisService: TedisService,
@@ -52,45 +61,45 @@ export class YjsService {
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     @InjectRepository(RoomVisit) private readonly roomVisitRepository: Repository<RoomVisit>,
   ) {
-    this.docs = docs;
+    this.roomManagers = new Map();
   }
 
-  addDoc(docName: string) {
-    const doc = new WSSharedDoc(docName);
-    this.docs.set(docName, doc);
-    return doc;
-  }
+  // unsure if we still need this method, safe to delete
+  // addRoom(roomId: number) {
+  //   const doc = new WSSharedDoc(docName);
+  //   const roomManager = new ServerSideRoomManager(doc);
+  //   this.roomManagers.set(docName, roomManager);
+  //   return roomManager;
+  // }
 
   activeRoomMembers(roomHashId: string) {
     const docName = getYjsDocNameForRoom(roomHashId);
-    const doc = this.docs.get(docName);
-    if (!doc) {
+    const manager = this.roomManagers.get(docName);
+    if (!manager) {
       return [];
     }
-    return ([...doc.awareness.getStates().values()] as clientAwareness[])
-      .map((memberAwareness) => memberAwareness.roomMemberDetails)
-      .filter(Boolean) as roomMemberWithComputed[];
+
+    return manager.activeRoomMembers();
   }
 
   async setupWsConnection(conn: WebSocket, req: IncomingMessage) {
     const url = req.url as string;
     const roomHashId = path.basename(url.slice(1).split('?')[0]);
+    // conn.addEventListener('close', () => {
+    //   if (manager) {
+    //     const ids = manager.ydoc.conns.get(conn);
+    //     if (!ids || ids.size === 0) {
+    //       // persist some doc data if
+    //     }
+    //   }
+    // });
     const docName = getYjsDocNameForRoom(roomHashId);
-    let isNewDoc = !this.docs.has(docName);
     setupWSConnection(conn, req, { gc: true, docName: docName });
-    conn.addEventListener('close', () => {
-      const doc = this.docs.get(docName);
-      if (doc) {
-        const ids = doc.conns.get(conn);
-        if (!ids || ids.size === 0) {
-          const data = JSON.stringify(doc.toJSON());
-        }
-      }
-    });
 
     if (!req.headers.cookie) {
       return;
     }
+
     const userToken = getCookie('session-token', req.headers.cookie);
     if (!userToken) {
       return;
@@ -99,6 +108,9 @@ export class YjsService {
     if (!userId) {
       throw "user isn't logged in or doesn't exist";
     }
+
+    // setupWSConnection will create the doc for us
+    const doc = docs.get(docName) as WSSharedDoc;
 
     const userPromise = this.userRepository.findOneOrFail(userId);
     const roomId = this.clientSideRoomService.getIdFromHashId(roomHashId);
@@ -117,16 +129,19 @@ export class YjsService {
       console.log(err);
     }
 
-    const doc = this.docs.get(docName);
-    if (!doc) {
-      throw 'y no doc';
-    }
-    if (isNewDoc) {
-      const manager = new ServerSideRoomManager(doc);
-      const clientSideRoom = this.clientSideRoomService.getClientSideRoom(await roomPromise);
+    const isNewRoom = !this.roomManagers.has(docName);
+    if (isNewRoom) {
+      console.log('new room, popoulating');
+      const room = await roomPromise;
+      const clientSideRoom = this.clientSideRoomService.getClientSideRoom(room);
       if (!clientSideRoom) {
         throw "couldn't find clintsideroom";
       }
+      const manager = new ServerSideRoomManager(doc, roomId, clientSideRoom.hashId, this.roomRepository);
+      this.roomManagers.set(docName, manager);
+      manager.roomDestroyed$$.subscribe(() => {
+        this.roomManagers.delete(docName);
+      });
 
       const token = await this.tedisService.tedis.hget(TOKEN_BY_USER_ID, (await clientSideRoom.owner).id.toString());
 
@@ -140,32 +155,41 @@ export class YjsService {
       }
 
       if (__isEmpty(manager.yData.details.toJSON())) {
-        manager.populate(
-          {
-            gistName: clientSideRoom.gistName,
-            hashId: clientSideRoom.hashId,
-            id: clientSideRoom.id,
-            name: clientSideRoom.name,
-          },
-          details?.files,
-        );
+        if (room.savedFileContentsAndDetails) {
+          manager.loadSavedDocumentContentsIntoYjs();
+        } else {
+          manager.populate(
+            {
+              gistName: clientSideRoom.gistName,
+              hashId: clientSideRoom.hashId,
+              id: clientSideRoom.id,
+              name: clientSideRoom.name,
+            },
+            details?.files,
+          );
+        }
       }
     }
   }
 
   getDocForRoom(roomHashId: string) {
-    return this.docs.get(getYjsDocNameForRoom(roomHashId));
+    return this.roomManagers.get(getYjsDocNameForRoom(roomHashId));
   }
 }
 
 export class ServerSideRoomManager extends RoomManager {
-  constructor(public ydoc: WSSharedDoc) {
-    super(ydoc);
+  constructor(
+    public ydoc: WSSharedDoc,
+    private roomId: number,
+    roomHashId: string,
+    private roomRepository: Repository<Room>,
+  ) {
+    super(roomHashId, ydoc);
 
-    const idDelta$ = new Observable<globalAwarenessMap>((observer) => {
+    const awareness$ = new Observable<globalAwarenessMap>((observer) => {
       const listener = () => {
         console.log('listener fired');
-        console.log(ydoc.awareness.getStates());
+        // console.log(ydoc.awareness.getStates());
         observer.next(ydoc.awareness.getStates() as globalAwarenessMap);
       };
       ydoc.awareness.on('change', listener);
@@ -173,29 +197,29 @@ export class ServerSideRoomManager extends RoomManager {
         this.ydoc.awareness.off('change', listener);
         observer.complete();
       });
-      console.log({ initialState: ydoc.awareness.getStates() });
-
       return () => ydoc.awareness.off('change', listener);
-    }).pipe(
-      scan<
-        globalAwarenessMap,
-        { deltas: { clientID: number; userID: string; deltaValue: boolean }[]; prevIDs: Set<string> }
-      >(
-        ({ prevIDs }, awarenessMap) => {
-          const currIDs = new Set(
-            [...awarenessMap.values()].map((client) => client.roomMemberDetails?.userIdOrAnonID).filter(Boolean),
-          ) as Set<string>;
-          const deltas: { clientID: number; userID: string; deltaValue: boolean }[] = [];
+    });
+
+    const userId$ = awareness$.pipe(map((awareness) => [...awareness.keys()]));
+
+    const userIdDelta$ = awareness$.pipe(
+      map(
+        (awareness) =>
+          new Set(
+            [...awareness.values()].map((client) => client.roomMemberDetails?.userIdOrAnonID).filter(Boolean),
+          ) as Set<string>,
+      ),
+      tap((ids) => console.log({ ids })),
+      scan<Set<string>, { deltas: { userID: string; deltaValue: boolean }[]; prevIDs: Set<string> }>(
+        ({ prevIDs }, currIDs) => {
+          const deltas: { userID: string; deltaValue: boolean }[] = [];
           for (let userID of [...new Set([...currIDs, ...prevIDs])]) {
-            console.log('testing id: ', userID);
-            const [clientID] = [...awarenessMap.entries()].find(
-              ([, client]) =>
-                client.roomMemberDetails?.userIdOrAnonID && client.roomMemberDetails.userIdOrAnonID === userID,
-            ) as [number, clientAwareness];
             if (!prevIDs.has(userID) && currIDs.has(userID)) {
-              deltas.push({ clientID, userID, deltaValue: true });
-            } else if (prevIDs.has(userID) && !currIDs.has(userID)) {
-              deltas.push({ clientID, userID, deltaValue: true });
+              deltas.push({ userID, deltaValue: true });
+            }
+
+            if (prevIDs.has(userID) && !currIDs.has(userID)) {
+              deltas.push({ userID, deltaValue: false });
             }
           }
           console.log({ deltas });
@@ -205,34 +229,73 @@ export class ServerSideRoomManager extends RoomManager {
       ),
       concatMap(({ deltas }) => fromArray(deltas)),
     );
-  }
 
-  populate(startingRoomDetails: startingRoomDetails, files?: { [key: string]: fileDetails }) {
-    const details: roomDetails = {
-      ...startingRoomDetails,
-      gistLoaded: true,
-    };
+    userIdDelta$
+      .pipe(
+        filter(({ deltaValue }) => !deltaValue),
+        withLatestFrom(userId$),
+        tap(([, userIds]) => console.log({ userIds })),
+        filter(([, userIds]) => userIds.length === 0),
+      )
+      .subscribe(async () => {
+        const fileContents = this.getAllFileContents();
+        const fileDetails = this.getFileDetails();
 
-    for (let [key, detail] of Object.entries(details)) {
-      this.yData.details.set(key, detail);
-    }
+        const combinedFilesState: combinedFilesState = { fileContents, fileDetails };
 
-    if (files) {
-      this.ydoc.transact(() => {
-        Object.entries(files);
-        for (let [filename, file] of Object.entries(files)) {
-          this.addNewFile({ filename, content: file.content || filename });
+        // after 1000 seconds
+        const shouldSuspendRoom = await race(
+          userIdDelta$.pipe(
+            filter(({ deltaValue }) => deltaValue),
+            first(),
+            mapTo(false),
+          ),
+          of(true).pipe(delay(1000)),
+        ).toPromise();
+
+        if (shouldSuspendRoom) {
+          this.roomRepository
+            .createQueryBuilder('room')
+            .update(Room)
+            .set({ savedFileContentsAndDetails: JSON.stringify(combinedFilesState) })
+            .where('id = :id', { id: this.roomId })
+            .execute();
+
+          this.destroy();
         }
       });
-    } else {
-      this.ydoc.transact(() => {
-        const filename = startingRoomDetails.name.toLowerCase().split(' ').join('-');
-        this.addNewFile({
-          filename,
-          content: `# ${filename}`,
-        });
-      });
+  }
+
+  async loadSavedDocumentContentsIntoYjs() {
+    const combinedContents = await this.getSavedCombinedFileContents();
+    if (!combinedContents) {
+      return;
     }
+    this.ydoc.transact(() => {
+      Object.entries(combinedContents.fileDetails).forEach(([tabId, details]) => {
+        this.yData.fileDetails.set(tabId, details);
+      });
+
+      Object.entries(combinedContents.fileContents).forEach(([tabId, contents]) => {
+        this.yData.fileContents.set(tabId, new Y.Text(contents));
+      });
+    });
+  }
+
+  async getSavedCombinedFileContents() {
+    const room = await this.roomRepository.findOneOrFail(this.roomId);
+
+    if (!room.savedFileContentsAndDetails) {
+      return;
+    }
+
+    return JSON.parse(room.savedFileContentsAndDetails) as combinedFilesState;
+  }
+
+  activeRoomMembers() {
+    return ([...this.ydoc.awareness.getStates().values()] as clientAwareness[])
+      .map((memberAwareness) => memberAwareness.roomMemberDetails)
+      .filter(Boolean) as roomMemberWithComputed[];
   }
 }
 
