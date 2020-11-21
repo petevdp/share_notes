@@ -6,14 +6,13 @@ import {
   getSettingsForEditorWithComputed,
   settingsResolvedForEditor,
 } from 'Client/slices/settings/types';
-import { DEBUG_FLAGS } from 'Client/utils/debugFlags';
+import { sanitize as DOMPurifySanitize } from 'dompurify';
 import { uuidv4 } from 'lib0/random';
 import __isEqual from 'lodash/isEqual';
 import __random from 'lodash/random';
 import marked from 'marked';
 import * as monaco from 'monaco-editor';
 import { initVimMode } from 'monaco-vim';
-// import { Prism, PrismAsync } from 'react-syntax-highlighter';
 import { merge } from 'rxjs';
 import { BehaviorSubject } from 'rxjs/internal/BehaviorSubject';
 import { Observable } from 'rxjs/internal/Observable';
@@ -322,7 +321,7 @@ export class ClientSideRoomManager extends RoomManager {
           return content$.pipe(
             takeUntil(stopPreview$),
             map((content) => {
-              const markedContent = marked(content, { sanitize: true });
+              const markedContent = marked(content, { sanitizer: DOMPurifySanitize });
               return [tabId, markedContent];
             }),
           );

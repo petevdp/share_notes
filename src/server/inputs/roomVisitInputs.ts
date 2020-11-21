@@ -7,7 +7,7 @@ export class RoomVisitsInput implements roomVisitsInput {
   dateRangeStart?: Date;
   @Field(() => Date, { nullable: true })
   dateRangeEnd?: Date;
-  @Field(() => [String], { nullable: true })
+  @Field(() => [ID], { nullable: true })
   roomIds?: string[];
   @Field(() => [ID], { nullable: true })
   userIds?: string[];

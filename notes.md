@@ -24,6 +24,8 @@ if gist already created:
   - images and styling
 - what's up with populate's transact?
 
+- fix vim undo action
+
 ## later
 
 - automatic sign-in

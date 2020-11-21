@@ -42,8 +42,8 @@ async function runServer() {
     const loggingPlugin: ApolloServerPlugin = {
       requestDidStart: (requestContext) => {
         if (requestContext.request.operationName !== 'IntrospectionQuery') {
-          // console.log('gql query: ');
-          // console.log(requestContext.request.query);
+          console.log('gql query: ');
+          console.log(requestContext.request.query);
         }
         // console.log(requestContext.request.query);
         // console.log(requestContext.request.query);

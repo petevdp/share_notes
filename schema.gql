@@ -75,7 +75,7 @@ input RoomVisitsInput {
   dateRangeEnd: DateTime
   dateRangeStart: DateTime
   first: Int
-  roomIds: [String!]
+  roomIds: [ID!]
   sort: String
   userIds: [ID!]
 }
