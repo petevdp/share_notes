@@ -1,6 +1,6 @@
 import { BaseProvider, createTheme, DarkTheme, LightTheme, useStyletron } from 'baseui';
 import { Layer } from 'baseui/layer';
-import { SnackbarProvider } from 'baseui/snackbar';
+import { PLACEMENT, SnackbarProvider } from 'baseui/snackbar';
 import { Sizing, Theme } from 'baseui/theme';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';
@@ -80,7 +80,7 @@ function StylingProvider({ children }: React.Props<unknown>): ReactElement {
   return (
     <StyletronProvider value={styletronEngine} debug={debug}>
       <BaseProvider theme={theme}>
-        <SnackbarProvider>{children}</SnackbarProvider>
+        <SnackbarProvider placement={PLACEMENT.bottomRight}>{children}</SnackbarProvider>
       </BaseProvider>
     </StyletronProvider>
   );

@@ -22,7 +22,7 @@ import {
   settingsResolvedForEditor,
 } from 'Client/slices/settings/types';
 import __merge from 'lodash/merge';
-import React, { forwardRef, ReactNode, useEffect } from 'react';
+import React, { ReactNode, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 
@@ -31,7 +31,7 @@ import { EditRoomModal } from './EditRoomModal';
 import { RenameFileModal } from './RenameFileModal';
 import { GlobalSettingsDropdown } from './SettingsDropdown';
 import { TabContent } from './TabContent';
-import { getTabButtonOverrides, getTabIconActionButtonOverrides, TabList } from './Tabs';
+import { getTabButtonOverrides, TabList } from './Tabs';
 
 const RoomContainer = styled('div', {
   width: '100%',
@@ -65,8 +65,6 @@ const TabControls = styled('span', {
   justifyContent: 'flex-start',
 });
 
-console.log({ CONTROL_PANEL_GRID_AREA });
-
 export function Room() {
   const [css] = useStyletron();
   const { roomHashId } = useParams<{ roomHashId: string }>();
@@ -89,23 +87,8 @@ export function Room() {
     }
   }, [roomHashId]);
 
-  // obfuscate key for addNewFile with the room hash to avoid potential duplicate keys
-  const addNewFileKey = `${roomHashId}-add-new-file`;
-  let actionItems: ItemT[] = [
-    {
-      label: 'Rename File',
-      key: 'renameFile',
-    },
-  ];
-
-  if (currentRoom?.roomDetails) {
-    actionItems = [...actionItems, { label: 'Edit Room Details', key: 'editRoom' }];
-  }
-
-  if (currentRoom?.gistDetails) {
-    actionItems = [...actionItems, { label: 'Save Back to Gist', key: 'saveBackToGist' }];
-  }
-
+  // namespace key for addNewFile with the room hash to avoid potential duplicate keys
+  const addNewFileKey = `${roomHashId}/add-new-file`;
   const selectDisplayMode = (mode: settingsResolvedForEditor['displayMode']) => {
     dispatch(settingsActions.setGlobalEditorSetting({ key: 'displayMode', value: mode }));
   };
@@ -280,3 +263,8 @@ export function ControlPanelButtonWithTooltip({
     </StatefulTooltip>
   );
 }
+
+const getTabIconActionButtonOverrides = (gridArea?: string): ButtonOverrides =>
+  __merge<ButtonOverrides, ButtonOverrides>(getTabButtonOverrides(), {
+    BaseButton: { style: { gridArea }, props: { kind: 'tertiary', shape: 'pill' } },
+  });

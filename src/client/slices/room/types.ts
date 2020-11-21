@@ -1,4 +1,5 @@
 import { createAction } from '@reduxjs/toolkit';
+import { SnackbarElementPropsT } from 'baseui/snackbar';
 import { allColors } from 'Client/services/awarenessColors';
 import { tabToProvision } from 'Client/services/clientSideRoomManager';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -121,6 +122,12 @@ export const setRoomAwarenessState = createAction('setRoomAwarenessState', (awar
 
 export const deleteRoom = createAction('deleteRoom', (roomId: string) => ({ payload: roomId }));
 export const roomDeleted = createAction('roomDeleted', (roomId: string) => ({ payload: roomId }));
+export const copyToClipboard = createAction(
+  'copyToClipboard',
+  (text: string, enqueueSnackbar: (elementProps: SnackbarElementPropsT, duration?: any) => any) => ({
+    payload: { text, enqueueSnackbar },
+  }),
+);
 
 export enum RenameError {
   Empty,

@@ -3,7 +3,6 @@ import 'codemirror/theme/night.css';
 
 import { request as octokitRequest } from '@octokit/request';
 import { anonymousLoginActions, roomMemberInputSelector } from 'Client/slices/session/types';
-import { clientSettings, settingsActions } from 'Client/slices/settings/types';
 import { rootState } from 'Client/store';
 import { DELETE_ROOM, deleteRoomResponse, GET_ROOM, getRoomResponse } from 'Client/utils/queries';
 import { octokitRequestWithAuth as getOctokitRequestWithAuth } from 'Client/utils/utils';
@@ -20,6 +19,7 @@ import { concatMap } from 'rxjs/internal/operators/concatMap';
 import { distinctUntilChanged } from 'rxjs/internal/operators/distinctUntilChanged';
 import { filter } from 'rxjs/internal/operators/filter';
 import { first } from 'rxjs/internal/operators/first';
+import { ignoreElements } from 'rxjs/internal/operators/ignoreElements';
 import { map } from 'rxjs/internal/operators/map';
 import { mergeMap } from 'rxjs/internal/operators/mergeMap';
 import { startWith } from 'rxjs/internal/operators/startWith';
@@ -33,6 +33,7 @@ import { deleteRoomInput } from 'Shared/types/roomTypes';
 import { roomUpdateActions } from '../roomUpdating/types';
 import {
   addNewFile,
+  copyToClipboard,
   deleteRoom,
   destroyRoom,
   gistSaved,
@@ -268,4 +269,60 @@ export const deleteRoomEpic: Epic = (action$) =>
       });
       return roomDeleted(roomId);
     }),
+  );
+
+export const copyToClipboardEpic: Epic = (action$) =>
+  action$.pipe(
+    filter(copyToClipboard.match),
+    map(({ payload: { text, enqueueSnackbar } }) => {
+      //create our hidden div element
+      let hiddenCopy = document.createElement('div');
+      //set the innerHTML of the div
+      hiddenCopy.innerHTML = text;
+      //set the position to be absolute and off the screen
+      hiddenCopy.style.position = 'absolute';
+      hiddenCopy.style.left = '-9999px';
+
+      //check and see if the user had a text selection range
+      let currentRange: null | Range;
+      if ((document.getSelection() as Selection).rangeCount > 0) {
+        //the user has a text selection range, store it
+        currentRange = (document.getSelection() as Selection).getRangeAt(0);
+        //remove the current selection
+        (window.getSelection() as Selection).removeRange(currentRange);
+      } else {
+        //they didn't have anything selected
+        currentRange = null;
+      }
+
+      //append the div to the body
+      document.body.appendChild(hiddenCopy);
+      //create a selection range
+      let CopyRange = document.createRange();
+      //set the copy range to be the hidden div
+      CopyRange.selectNode(hiddenCopy);
+      //add the copy range
+      (window.getSelection() as Selection).addRange(CopyRange);
+
+      //since not all browsers support this, use a try block
+      try {
+        //copy the text
+        document.execCommand('copy');
+        enqueueSnackbar({ message: 'Room url copied to clipboard' });
+      } catch (err) {
+        window.alert(
+          "Your Browser Doesn't support copying from clipboard. Please copy the url directly from the search bar.",
+        );
+      }
+      //remove the selection range (Chrome throws a warning if we don't.)
+      (window.getSelection() as Selection).removeRange(CopyRange);
+      //remove the hidden div
+      document.body.removeChild(hiddenCopy);
+
+      //return the old selection range
+      if (currentRange) {
+        (window.getSelection() as Selection).addRange(currentRange);
+      }
+    }),
+    ignoreElements(),
   );

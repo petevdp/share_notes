@@ -48,6 +48,7 @@ export function RoomMemberDisplay() {
     name: u.roomMemberDetails.name,
     body: "hi I'm the body",
   }));
+
   return (
     <StatefulPopover
       placement="bottom"
@@ -65,7 +66,7 @@ export function RoomMemberDisplay() {
               component: React.forwardRef(function RoomMemberDisplayMenuOptionProfile(props, ref) {
                 const item: profileItem = props.item;
                 return (
-                  <ListItem ref={ref as Ref<any>} endEnhancer={() => <ColorSwatch $color={item.color} />}>
+                  <ListItem ref={ref as Ref<any>} endEnhancer={() => <ColorSwatch color={item.color} />}>
                     {item.profileUrl ? (
                       <a href={item.profileUrl} target="_blank" rel="noreferrer">
                         <Avatar src={item.imgUrl} name={item.title} />
@@ -74,7 +75,7 @@ export function RoomMemberDisplay() {
                       <Avatar
                         src={item.imgUrl}
                         name={item.title}
-                        overrides={{ Root: { style: { backgroundColor: item.color } } }}
+                        overrides={{ Root: { style: { backgroundColor: !item.imgUrl ? item.color : undefined } } }}
                       />
                     )}
                     <ListItemLabel>{item.title}</ListItemLabel>

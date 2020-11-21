@@ -1,3 +1,5 @@
+export { default as ContentCopy } from './ContentCopy'
+export { default as ContentPaste } from './ContentPaste'
 export { default as Github } from './Github'
 export { default as Logo } from './Logo'
 export { default as Markdown } from './Markdown'

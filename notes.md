@@ -9,6 +9,7 @@ if gist already created:
 
 # TODOs
 
+- fix diffs
 - handle room content changes better
 - timeout session
 - clean up session storage, logout action
@@ -23,7 +24,6 @@ if gist already created:
   - basic structure DONE
   - images and styling
 - what's up with populate's transact?
-
 - fix vim undo action
 
 ## later
