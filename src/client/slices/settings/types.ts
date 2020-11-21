@@ -89,7 +89,7 @@ export function getSettingsForEditorWithComputed(
   if (filetypeIsMarkdown) {
     resolvedDisplayMode = displayMode;
   } else {
-    resolvedDisplayMode = displayMode === 'markdownPreview' ? 'markdownPreview' : displayMode;
+    resolvedDisplayMode = displayMode === 'markdownPreview' ? 'regular' : displayMode;
   }
 
   return {

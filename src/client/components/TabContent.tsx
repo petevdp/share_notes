@@ -72,7 +72,7 @@ function EditorTab({ tabId, visible }: { tabId: string; visible: boolean }) {
               width: '50%',
               height: EDITOR_HEIGHT,
               display: editorSettings?.displayMode === 'markdownPreview' ? 'block' : 'none',
-              overflowY: 'scroll',
+              overflowY: 'auto',
               whiteSpace: 'normal',
             }) +
             ' markdown-preview ' +

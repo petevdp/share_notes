@@ -32,55 +32,37 @@ export class RoomVisitResolver {
 
   @Query(() => [RoomVisit])
   async roomVisits(@Arg('data') input: RoomVisitsInput, @Ctx() context: AuthorizedContext) {
-    const conditions: string[] = [];
-
     const id = await this.tedisService.getCurrentUserId(context.githubSessionToken);
 
     if (!id) {
       return null;
     }
-    // make sure records being returned are from this user or from owned rooms
-    conditions.push('user.id = :currentUserId OR roomOwner.id = :currentUserId');
-    const queryParameters: {
-      dateRangeStart?: Date;
-      dateRangeEnd?: Date;
-      roomIds?: string[];
-      userIds?: string[];
-      currentUserId: string;
-    } = { currentUserId: id };
-
-    if (input.dateRangeStart) {
-      conditions.push('roomVisit.createdAt >= :dateRangeStart');
-      queryParameters.dateRangeStart = input.dateRangeStart;
-    }
-
-    if (input.dateRangeEnd) {
-      conditions.push('roomVisit.createdAt < :dateRangeEnd');
-      queryParameters.dateRangeEnd = input.dateRangeEnd;
-    }
-
-    if (input.roomIds) {
-      conditions.push('room.id in (:...roomIds)');
-      queryParameters.roomIds = input.roomIds;
-    }
-
-    if (input.userIds) {
-      conditions.push('user.id in (:...userIds)');
-      queryParameters.userIds = input.userIds;
-    }
-
-    const condition = conditions.map((c) => `(${c})`).join(' AND ');
-
-    const visits = await this.roomVisitRepository
+    let query = this.roomVisitRepository
       .createQueryBuilder('roomVisit')
       .innerJoinAndSelect('roomVisit.room', 'room')
       .innerJoinAndSelect('roomVisit.user', 'user')
       .innerJoin('room.owner', 'roomOwner')
-      .where(condition, queryParameters)
+      .where('user.id = :currentUserId OR roomOwner.id = :currentUserId', { currentUserId: id });
+
+    if (input.dateRangeStart) {
+      query = query.andWhere('roomVisit.createdAt >= :dateRangeStart', { dateRangeStart: input.dateRangeStart });
+    }
+
+    if (input.dateRangeEnd) {
+      query = query.andWhere('roomVisit.createdAt < :dateRangeEnd', { dateRangeEnd: input.dateRangeEnd });
+    }
+
+    if (input.roomIds) {
+      query = query.andWhere('room.id in (:...roomIds)', { roomIds: input.roomIds });
+    }
+
+    if (input.userIds) {
+      query = query.andWhere('user.id in (:...userIds)', { userIds: input.userIds });
+    }
+
+    return query
       .orderBy('roomVisit.visitTime', input.sort === 'ascending' ? 'ASC' : 'DESC')
       .limit(input.first)
       .getMany();
-
-    return visits;
   }
 }

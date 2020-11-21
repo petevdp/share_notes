@@ -6,7 +6,10 @@ import {
   getSettingsForEditorWithComputed,
   settingsResolvedForEditor,
 } from 'Client/slices/settings/types';
+import { DEBUG_FLAGS } from 'Client/utils/debugFlags';
+import { uuidv4 } from 'lib0/random';
 import __isEqual from 'lodash/isEqual';
+import __random from 'lodash/random';
 import marked from 'marked';
 import * as monaco from 'monaco-editor';
 import { initVimMode } from 'monaco-vim';
@@ -30,7 +33,7 @@ import { takeUntil } from 'rxjs/internal/operators/takeUntil';
 import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { Subject } from 'rxjs/internal/Subject';
 import { getYjsDocNameForRoom, YJS_WEBSOCKET_URL_WS } from 'Shared/environment';
-import { allBaseFileDetailsStates, allComputedFileDetailsStates, roomDetails, RoomManager } from 'Shared/roomManager';
+import { allBaseFileDetailsStates, roomDetails, RoomManager } from 'Shared/roomManager';
 import {
   globalAwareness,
   globalAwarenessMap,
@@ -133,7 +136,7 @@ export class ClientSideRoomManager extends RoomManager {
           tabId,
           details.filetype === 'markdown',
         );
-        this.setEditorSettings(tabId, settingsForEditor, tab.monacoBinding.getEditor());
+        this.setEditorSettings(tabId, settingsForEditor);
         tab.monacoBinding.getEditor().updateOptions({ theme: ClientSideRoomManager.themeMap[settings.theme] });
       }
     });
@@ -194,7 +197,8 @@ export class ClientSideRoomManager extends RoomManager {
       .pipe(withLatestFrom(this.settings$, this.fileDetails$))
       .subscribe(async ([tabToProvision, settings, allFileDetails]) => {
         const { tabId, elements: tabElements } = tabToProvision;
-        const uri = monaco.Uri.file('regular-' + tabId);
+        const uriInput = uuidv4();
+        const uri = monaco.Uri.file(uriInput);
         const model = monaco.editor.createModel('', undefined, uri);
         const editor = monaco.editor.create(tabElements.editor, {
           value: '',
@@ -202,13 +206,6 @@ export class ClientSideRoomManager extends RoomManager {
           theme: ClientSideRoomManager.themeMap[settings.theme],
           automaticLayout: true,
         });
-        const settingsForEditor = getSettingsForEditorWithComputed(
-          settings,
-          roomHashId,
-          tabId,
-          allFileDetails[tabId].filetype === 'markdown',
-        );
-        this.setEditorSettings(tabId, settingsForEditor, editor);
         const content = this.yData.fileContents.get(tabId);
 
         if (!content) {
@@ -229,6 +226,13 @@ export class ClientSideRoomManager extends RoomManager {
           tabOrdinal,
         };
         this.newProvisionedTabs.next([tabId, tab]);
+        const settingsForEditor = getSettingsForEditorWithComputed(
+          settings,
+          roomHashId,
+          tabId,
+          allFileDetails[tabId].filetype === 'markdown',
+        );
+        this.setEditorSettings(tabId, settingsForEditor);
         tabOrdinal++;
       });
 
@@ -428,7 +432,7 @@ export class ClientSideRoomManager extends RoomManager {
         tabId,
         details.filetype === 'markdown',
       );
-      this.setEditorSettings(tabId, settingsForEditor, binding.monacoBinding.getEditor());
+      this.setEditorSettings(tabId, settingsForEditor);
       binding.monacoBinding.getEditor().updateOptions({ theme: ClientSideRoomManager.themeMap[settings.theme] });
     }
   }
@@ -476,7 +480,6 @@ export class ClientSideRoomManager extends RoomManager {
   }
 
   destroy() {
-    super.destroy();
     this.provider.destroy();
     this.currentFile$$.complete();
     this.roomDestroyed$$.next(true);
@@ -488,10 +491,11 @@ export class ClientSideRoomManager extends RoomManager {
       tab.monacoBinding.monacoModel.dispose();
       tab.monacoBinding.destroy();
     }
-    this.provisionedTabs$$.next(new Map());
+    this.provisionedTabs$$.complete();
+    super.destroy();
   }
 
-  setEditorSettings(tabId: string, settings: settingsResolvedForEditor, editor: monaco.editor.IStandaloneCodeEditor) {
+  setEditorSettings(tabId: string, settings: settingsResolvedForEditor) {
     const updates: monaco.editor.IEditorOptions & monaco.editor.IGlobalEditorOptions = {};
     const tabs = this.provisionedTabs$$.getValue();
     const tab = tabs.get(tabId);
@@ -499,6 +503,7 @@ export class ClientSideRoomManager extends RoomManager {
       console.warn('tried to set editor settings for undefined tabid ', tabId);
       return;
     }
+    const editor = tab.monacoBinding.getEditor();
     for (let option of Object.entries(settings)) {
       const key = option[0] as keyof settingsResolvedForEditor;
       const value = option[1] as settingsResolvedForEditor[keyof settingsResolvedForEditor];
@@ -524,7 +529,7 @@ export class ClientSideRoomManager extends RoomManager {
         (updates as any)[key] = value;
       }
     }
-    editor.updateOptions({ ...updates });
+    editor.updateOptions(updates);
   }
 
   getAwarenessStates() {

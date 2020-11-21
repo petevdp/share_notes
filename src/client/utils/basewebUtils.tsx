@@ -6,7 +6,7 @@ import { Override } from 'baseui/overrides';
 import { StyledSpinnerNext as Spinner } from 'baseui/spinner';
 import { BrandLink } from 'Client/components/GlobalHeader';
 import React, { Props, ReactNode } from 'react';
-import { Link, LinkProps, useHistory } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 
 export function RouterLinkButton({
   to,
