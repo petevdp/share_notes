@@ -24,6 +24,7 @@ import { map } from 'rxjs/internal/operators/map';
 import { mergeMap } from 'rxjs/internal/operators/mergeMap';
 import { startWith } from 'rxjs/internal/operators/startWith';
 import { takeUntil } from 'rxjs/internal/operators/takeUntil';
+import { takeWhile } from 'rxjs/internal/operators/takeWhile';
 import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { GRAPHQL_URL } from 'Shared/environment';
 import { gistDetails } from 'Shared/githubTypes';
@@ -78,7 +79,12 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
           startWith(startingSettings),
         );
 
-        const manager = new ClientSideRoomManager(roomHashId, settings$);
+        const gistDetails$ = state$.pipe(
+          takeWhile((state) => !!state.room.currentRoom && state.room.currentRoom.hashId === roomHashId),
+          map((state) => state.room.currentRoom?.gistDetails),
+        );
+
+        const manager = new ClientSideRoomManager(roomHashId, settings$, gistDetails$);
 
         const fileDetailsStateUpdateAction$ = manager.fileDetails$.pipe(
           map((fileDetails) => setFileDetailsState(fileDetails)),

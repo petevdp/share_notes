@@ -21,7 +21,7 @@ import { RoomVisit } from 'Server/models/roomVisit';
 import { User } from 'Server/models/user';
 import { getYjsDocNameForRoom } from 'Shared/environment';
 import { gistDetails } from 'Shared/githubTypes';
-import { allBaseFileDetailsStates, allFileContentsState, RoomManager } from 'Shared/roomManager';
+import { allBaseFileDetailsStates, allFileContentsState, roomDetails, RoomManager } from 'Shared/roomManager';
 import { clientAwareness, globalAwarenessMap, roomMemberWithComputed } from 'Shared/types/roomMemberAwarenessTypes';
 import { Service } from 'typedi';
 import { Repository } from 'typeorm';
@@ -156,7 +156,28 @@ export class YjsService {
 
       if (__isEmpty(manager.yData.details.toJSON())) {
         if (room.savedFileContentsAndDetails) {
-          manager.loadSavedDocumentContentsIntoYjs();
+          const combinedContents = JSON.parse(room.savedFileContentsAndDetails) as combinedFilesState;
+          manager.ydoc.transact(() => {
+            const details: roomDetails = {
+              gistName: clientSideRoom.gistName,
+              hashId: clientSideRoom.hashId,
+              id: clientSideRoom.id,
+              name: clientSideRoom.name,
+              gistLoaded: !!clientSideRoom.gistName,
+            };
+
+            for (let [key, detail] of Object.entries(details)) {
+              manager.yData.details.set(key, detail);
+            }
+
+            Object.entries(combinedContents.fileDetails).forEach(([tabId, details]) => {
+              manager.yData.fileDetails.set(tabId, details);
+            });
+
+            Object.entries(combinedContents.fileContents).forEach(([tabId, contents]) => {
+              manager.yData.fileContents.set(tabId, new Y.Text(contents));
+            });
+          });
         } else {
           manager.populate(
             {

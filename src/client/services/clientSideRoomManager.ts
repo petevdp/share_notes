@@ -28,7 +28,9 @@ import { mapTo } from 'rxjs/internal/operators/mapTo';
 import { mergeMap } from 'rxjs/internal/operators/mergeMap';
 import { publish } from 'rxjs/internal/operators/publish';
 import { scan } from 'rxjs/internal/operators/scan';
+import { startWith } from 'rxjs/internal/operators/startWith';
 import { takeUntil } from 'rxjs/internal/operators/takeUntil';
+import { tap } from 'rxjs/internal/operators/tap';
 import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { Subject } from 'rxjs/internal/Subject';
 import { getYjsDocNameForRoom, YJS_WEBSOCKET_URL_WS } from 'Shared/environment';
@@ -43,6 +45,7 @@ import { getKeysForMap } from 'Shared/utils/ydocUtils';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 
+import { gistDetails } from '../../../dist/src/shared/githubTypes';
 import { MonacoBinding, RemoteCursorStyleManager } from './monacoBinding';
 
 export interface langaugeDetectInput {
@@ -103,7 +106,11 @@ export class ClientSideRoomManager extends RoomManager {
   };
   newProvisionedTabs: Subject<[string, provisionedTab]>;
 
-  constructor(roomHashId: string, private settings$: Observable<clientSettings>) {
+  constructor(
+    roomHashId: string,
+    private settings$: Observable<clientSettings>,
+    gistDetails$: Observable<gistDetails | undefined>,
+  ) {
     super(roomHashId);
     this.currentFile$$ = new BehaviorSubject(null);
     this.tabsToProvision$$ = new Subject();
@@ -340,13 +347,13 @@ export class ClientSideRoomManager extends RoomManager {
 
     const provisionedDiffEditorDelta$ = combineLatest(this.provisionedTabs$$, this.roomDetails$).pipe(
       scan(
-        (acc, [bindings, roomDetails]) => {
-          const ids = new Set([...bindings.keys(), ...acc.prevShowDiffEditorState.keys()]);
+        (acc, [tabs, roomDetails]) => {
+          const ids = new Set([...tabs.keys(), ...acc.prevShowDiffEditorState.keys()]);
           let delta = new Map<string, boolean>();
           let showDiffEditorState = new Set<string>();
-
           for (let tabId of ids) {
-            const willProvisionDiffEditor = bindings.get(tabId) && roomDetails.gistLoaded;
+            console.log({ tabId, gistLoaded: roomDetails.gistLoaded });
+            const willProvisionDiffEditor = tabs.has(tabId) && roomDetails.gistLoaded;
             const didProvisionDiffEditor = acc.prevShowDiffEditorState.has(tabId);
             if (willProvisionDiffEditor) {
               showDiffEditorState.add(tabId);
@@ -365,45 +372,72 @@ export class ClientSideRoomManager extends RoomManager {
       concatMap(({ delta }) => from(delta.entries())),
     );
 
-    provisionedDiffEditorDelta$.pipe(filter(([, shouldProvision]) => shouldProvision)).subscribe(([tabId]) => {
-      const tab = this.provisionedTabs$$.value.get(tabId);
-      if (!tab) {
-        console.warn('tried to get unprovisioned tab ', tabId);
-        return;
-      }
+    provisionedDiffEditorDelta$.subscribe((delta) => {
+      console.log({ diffDelta: delta });
+    });
 
-      const originalContent = this.getFileDetails()[tabId].gistContent || '';
-      const editor = monaco.editor.createDiffEditor(tab.elements.diffViewer, { readOnly: true, automaticLayout: true });
-      const originalContentModel = monaco.editor.createModel(originalContent, undefined);
-      editor.setModel({
-        original: originalContentModel,
-        modified: tab.monacoBinding.monacoModel,
-      });
+    provisionedDiffEditorDelta$
+      .pipe(
+        filter(([, shouldProvision]) => shouldProvision),
+        withLatestFrom(gistDetails$),
+      )
+      .subscribe(([[tabId], gistDetails]) => {
+        const tab = this.provisionedTabs$$.value.get(tabId);
+        if (!tab) {
+          console.warn('tried to get unprovisioned tab ', tabId);
+          return;
+        }
 
-      const dispose$ = merge(
-        provisionedDiffEditorDelta$.pipe(
-          filter(([deltaTabId, shouldProvision]) => deltaTabId == tabId && !shouldProvision),
-          mapTo(true),
-        ),
-        this.roomDestroyed$$,
-      ).pipe(first());
-
-      this.fileDetails$
-        .pipe(
-          takeUntil(dispose$),
-          filter((allDetails) => allDetails[tabId] && typeof allDetails[tabId].gistContent === 'string'),
-          map((allDetails) => allDetails[tabId].gistContent),
-          distinctUntilChanged(),
-        )
-        .subscribe((content) => {
-          originalContentModel.setValue(content || '');
+        const originalContent = this.getFileDetails()[tabId].gistContent || '';
+        const editor = monaco.editor.createDiffEditor(tab.elements.diffViewer, {
+          readOnly: true,
+          automaticLayout: true,
+        });
+        const originalContentModel = monaco.editor.createModel(originalContent, undefined);
+        editor.setModel({
+          original: originalContentModel,
+          modified: tab.monacoBinding.monacoModel,
         });
 
-      dispose$.toPromise().then(() => {
-        editor.dispose();
-        originalContentModel.dispose();
+        const dispose$ = merge(
+          provisionedDiffEditorDelta$.pipe(
+            filter(([deltaTabId, shouldProvision]) => deltaTabId == tabId && !shouldProvision),
+            mapTo(true),
+          ),
+          this.roomDestroyed$$,
+        ).pipe(first());
+
+        this.fileDetails$.subscribe((filedetails) => {
+          console.log({ filedetails });
+        });
+
+        // update original content when it's changed
+        gistDetails$
+          .pipe(
+            startWith(gistDetails),
+            filter((gistDetails) => !!gistDetails),
+            withLatestFrom(
+              this.fileDetails$.pipe(
+                startWith(this.getFileDetails()),
+                filter((details) => !!details[tabId]),
+              ),
+            ),
+            map(([gistDetails, fileDetails]) => {
+              const originalFile = gistDetails?.files[fileDetails[tabId].filename];
+              const content = originalFile?.content || '';
+              return content;
+            }),
+            distinctUntilChanged(),
+          )
+          .subscribe((content) => {
+            originalContentModel.setValue(content);
+          });
+
+        dispose$.toPromise().then(() => {
+          editor.dispose();
+          originalContentModel.dispose();
+        });
       });
-    });
 
     // this.orderedClientID$ = this.yjsTypeToObservable<string[]>(this.yData.orderedUserIDs, this.roomDestroyed$$);
     this.remoteCursorStyleManager = new RemoteCursorStyleManager(
