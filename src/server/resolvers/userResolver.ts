@@ -22,6 +22,8 @@ export class UserResolver {
     private readonly tedisService: TedisService,
     private readonly hashIdService: HashIdService,
   ) {}
+
+  @Authorized()
   @Query(() => [User])
   users() {
     return this.userRepository.find();

@@ -5,7 +5,7 @@ import { RoomVisit } from 'Server/models/roomVisit';
 import { User } from 'Server/models/user';
 import { ClientSideRoomService } from 'Server/services/clientSideRoomService';
 import { TedisService } from 'Server/services/tedisService';
-import { Arg, Ctx, FieldResolver, Query, Resolver, Root } from 'type-graphql';
+import { Arg, Authorized, Ctx, FieldResolver, Query, Resolver, Root } from 'type-graphql';
 import { Service } from 'typedi';
 import { Repository } from 'typeorm';
 import { InjectRepository } from 'typeorm-typedi-extensions';
@@ -30,6 +30,7 @@ export class RoomVisitResolver {
     return visit.user;
   }
 
+  @Authorized()
   @Query(() => [RoomVisit])
   async roomVisits(@Arg('data') input: RoomVisitsInput, @Ctx() context: AuthorizedContext) {
     const id = await this.tedisService.getCurrentUserId(context.githubSessionToken);

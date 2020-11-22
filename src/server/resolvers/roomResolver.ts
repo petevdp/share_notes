@@ -54,6 +54,7 @@ export class RoomResolver {
     return this.yjsService.activeRoomMembers(room.hashId);
   }
 
+  @Authorized()
   @FieldResolver(() => [RoomVisit])
   async visits(
     @Root() room: Room,
@@ -89,6 +90,7 @@ export class RoomResolver {
     }
   }
 
+  @Authorized()
   @Mutation(() => ClientSideRoom)
   async createRoom(@Arg('data') userData: CreateRoomInput) {
     const owner = await this.userRepository.findOneOrFail({ id: parseInt(userData.ownerId) });
@@ -110,13 +112,9 @@ export class RoomResolver {
     if (!userId) {
       throw "got through authorization but session wasn't set for currentUser query";
     }
-    const rooms = await this.userRepository
-      .findOne({ id: parseInt(userId) }, { relations: ['ownedRooms'] })
+    await this.userRepository
+      .findOneOrFail({ id: parseInt(userId) }, { relations: ['ownedRooms'] })
       .then((u) => u?.ownedRooms);
-
-    if (!rooms) {
-      throw "got through authorization but session wasn't set for currentUser query";
-    }
 
     return true;
   }
