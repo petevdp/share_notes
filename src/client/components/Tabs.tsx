@@ -137,7 +137,16 @@ export function TabList() {
                       </svg>
                     ))}
                 </span>
-                <span className={css({ display: 'inline-block' })} key="filename">
+                <span
+                  className={css({
+                    display: 'inline-block',
+                    maxWidth: '200px',
+                    textOverflow: 'ellipsis',
+                    whitespace: 'nowrap',
+                    overflow: 'hidden',
+                  })}
+                  key="filename"
+                >
                   {tabState.filename}
                 </span>
               </span>

@@ -133,6 +133,7 @@ export function GlobalHeader() {
               style: {
                 display: 'flex',
                 alignItems: 'center',
+                whiteSpace: 'nowrap',
               },
             },
             List: {
@@ -153,7 +154,20 @@ export function GlobalHeader() {
         >
           <BrandRouterLink to="/">Share Notes</BrandRouterLink>
           {location.pathname.startsWith('/rooms') && <StyledRouterLink to="/rooms">Rooms</StyledRouterLink>}
-          {currentRoomDetails && <span>{currentRoomDetails.name}</span>}
+          {currentRoomDetails && (
+            <StatefulTooltip content={() => currentRoomDetails.name}>
+              <span
+                className={css({
+                  maxWidth: '20em',
+                  overflow: 'hidden',
+                  flexGrow: 1,
+                  textOverflow: 'ellipsis',
+                })}
+              >
+                {currentRoomDetails.name}
+              </span>
+            </StatefulTooltip>
+          )}
           {location.pathname === '/rooms/new' && <span>New Room</span>}
         </Breadcrumbs>
         <StyledNavigationList $align={ALIGN.center}>

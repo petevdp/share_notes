@@ -1,4 +1,4 @@
-import { withStyle } from 'baseui';
+import { useStyletron, withStyle } from 'baseui';
 import { Button, ButtonProps } from 'baseui/button';
 import { StyledLink } from 'baseui/link';
 import { ModalOverrides } from 'baseui/modal';
@@ -31,12 +31,18 @@ export function RouterLinkButton({
 
 export function StyledRouterLink({ to, children }: { to: string; children: ReactNode }) {
   const history = useHistory();
+  const [css, theme] = useStyletron();
   const onClick = (e: React.MouseEvent<HTMLAnchorElement, globalThis.MouseEvent>): any => {
     e.preventDefault();
     history.push(to);
   };
   return (
-    <StyledLink $as="a" href={to} onClick={onClick}>
+    <StyledLink
+      $as="a"
+      href={to}
+      onClick={onClick}
+      className={css({ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}
+    >
       {children}
     </StyledLink>
   );

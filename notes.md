@@ -1,13 +1,10 @@
 # TODOs
 
-- disable icons and actions depending on
-  - room ownership
-  - room having attached gist
-- text truncations
 - add snackbar when room is saved to gist
 - timeout session clean up session storage, logout action
 - loading and transitions
   - create room
+- make nav bar deal with small viewport width better
 - landing page
   - basic structure DONE
   - images and styling
