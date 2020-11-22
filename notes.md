@@ -1,5 +1,6 @@
 # TODOs
 
+- fix diff not loading again
 - user existing files during gist creation
 - general client side error handling
 - timeout session clean up session storage, logout action

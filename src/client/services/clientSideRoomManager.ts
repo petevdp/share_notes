@@ -34,6 +34,7 @@ import { tap } from 'rxjs/internal/operators/tap';
 import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { Subject } from 'rxjs/internal/Subject';
 import { getYjsDocNameForRoom, YJS_WEBSOCKET_URL_WS } from 'Shared/environment';
+import { gistDetails } from 'Shared/githubTypes';
 import { allBaseFileDetailsStates, roomDetails, RoomManager } from 'Shared/roomManager';
 import {
   globalAwareness,
@@ -45,7 +46,6 @@ import { getKeysForMap } from 'Shared/utils/ydocUtils';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 
-import { gistDetails } from '../../../dist/src/shared/githubTypes';
 import { MonacoBinding, RemoteCursorStyleManager } from './monacoBinding';
 
 export interface langaugeDetectInput {
@@ -141,7 +141,7 @@ export class ClientSideRoomManager extends RoomManager {
           roomHashId,
           tabId,
           details.filetype === 'markdown',
-          !!details.gistContent,
+          this.getRoomDetails().gistLoaded,
         );
         this.setEditorSettings(tabId, settingsForEditor);
         tab.monacoBinding.getEditor().updateOptions({ theme: ClientSideRoomManager.themeMap[settings.theme] });
@@ -248,7 +248,7 @@ export class ClientSideRoomManager extends RoomManager {
           roomHashId,
           tabId,
           allFileDetails[tabId].filetype === 'markdown',
-          !!allFileDetails[tabId].gistContent,
+          this.getRoomDetails().gistLoaded,
         );
         this.setEditorSettings(tabId, settingsForEditor);
         tabOrdinal++;
@@ -259,7 +259,7 @@ export class ClientSideRoomManager extends RoomManager {
         const tabDetails = details[tabId];
 
         const model = tab.monacoBinding.getEditor().getModel();
-        if (tabDetails.filetype && model) {
+        if (tabDetails?.filetype && model) {
           monaco.editor.setModelLanguage(model, tabDetails.filetype);
         }
       }
@@ -286,7 +286,7 @@ export class ClientSideRoomManager extends RoomManager {
               roomHashId,
               tabId,
               details && details.filetype === 'markdown',
-              !!details.gistContent,
+              this.getRoomDetails().gistLoaded,
             );
             const willShowMarkdownPreview = bindings.get(tabId) && settingsForEditor.displayMode === 'markdownPreview';
             const didShowMarkdownPreview = acc.prevShowPreviewState.has(tabId);
@@ -357,8 +357,8 @@ export class ClientSideRoomManager extends RoomManager {
           let delta = new Map<string, boolean>();
           let showDiffEditorState = new Set<string>();
           for (let tabId of ids) {
-            console.log({ tabId, gistLoaded: roomDetails.gistLoaded, roomDetails });
-            const willProvisionDiffEditor = tabs.has(tabId) && roomDetails.gistName;
+            console.log({ gistname: roomDetails.gistName, getGistName: this.getRoomDetails().gistName });
+            const willProvisionDiffEditor = tabs.has(tabId) && roomDetails.gistLoaded;
             const didProvisionDiffEditor = acc.prevShowDiffEditorState.has(tabId);
             if (willProvisionDiffEditor) {
               showDiffEditorState.add(tabId);
@@ -394,6 +394,7 @@ export class ClientSideRoomManager extends RoomManager {
         }
 
         const originalContent = this.getFileDetails()[tabId].gistContent || '';
+
         const editor = monaco.editor.createDiffEditor(tab.elements.diffViewer, {
           readOnly: true,
           automaticLayout: true,
@@ -469,7 +470,7 @@ export class ClientSideRoomManager extends RoomManager {
         this.roomHashId,
         tabId,
         details.filetype === 'markdown',
-        !!details.gistContent,
+        this.getRoomDetails().gistLoaded,
       );
       this.setEditorSettings(tabId, settingsForEditor);
       binding.monacoBinding.getEditor().updateOptions({ theme: ClientSideRoomManager.themeMap[settings.theme] });

@@ -98,7 +98,9 @@ function RoomListElement({ room }: { room: roomWithVisited }) {
         </>
       )}
     >
-      <StyledRouterLink to={`/rooms/${room.hashId}`}>{room.name}</StyledRouterLink>
+      <StyledRouterLink to={`/rooms/${room.hashId}`}>
+        <span>{room.name}</span>
+      </StyledRouterLink>
     </ListItem>
   );
 }

@@ -294,7 +294,7 @@ function RightSideDropdown() {
 }
 
 const getToggleThemeMenuItem = (themeSetting: theme) => ({
-  label: themeSetting === 'dark' ? `Toggle Light Mode` : 'Toggle Dark Mode',
+  label: themeSetting === 'dark' ? `Switch to Light Mode` : 'Switch to Dark Mode',
   key: 'toggleTheme',
 });
 

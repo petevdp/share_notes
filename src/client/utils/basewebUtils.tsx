@@ -42,7 +42,7 @@ export function StyledRouterLink({ to, children }: { to: string; children: React
       $as="a"
       href={to}
       onClick={onClick}
-      className={css({ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}
+      className={css({ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '300px' })}
     >
       {children}
     </StyledLink>
