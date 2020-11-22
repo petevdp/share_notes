@@ -7,13 +7,15 @@ import { currentRoomStateWithComputed, currentRoomStateWithComputedSelector } fr
 export type theme = 'light' | 'dark';
 export type keyMap = 'regular' | 'vim';
 
+export type displayMode = 'regular' | 'markdownPreview' | 'diffViewer';
+
 interface individualEditorSettings {
   tabSize: number;
   intellisense: boolean;
   autoIndent: 'none' | 'keep' | 'brackets' | 'advanced' | 'full';
   detectIndentation: boolean;
   tabCompletion: boolean;
-  displayMode: 'regular' | 'markdownPreview' | 'diffViewer';
+  displayMode: displayMode;
 }
 
 export type individualEditorSettingsPartial = Partial<individualEditorSettings>;
@@ -71,7 +73,13 @@ export function settingsForCurrentEditorSelector(rootState: rootState): settings
   }
   const tabId = currentRoom.currentTabId;
   const roomHashId = currentRoom.hashId;
-  return getSettingsForEditorWithComputed(rootState.settings, roomHashId, tabId, currentRoom.isCurrentFileMarkdown);
+  return getSettingsForEditorWithComputed(
+    rootState.settings,
+    roomHashId,
+    tabId,
+    currentRoom.isCurrentFileMarkdown,
+    !!currentRoom.gistDetails,
+  );
 }
 
 export function getSettingsForEditorWithComputed(
@@ -79,19 +87,21 @@ export function getSettingsForEditorWithComputed(
   roomHashId: string,
   tabId: string,
   filetypeIsMarkdown: boolean,
+  roomHasAssociatedGist: boolean,
 ): settingsResolvedForEditor {
   const individualSettings = settings.individualEditor[roomHashId][tabId] || {};
   const displayMode = individualSettings?.displayMode || settings.globalEditor.displayMode;
-  let resolvedDisplayMode: settingsResolvedForEditor['displayMode'];
+  let possibleDisplayModes: displayMode[] = ['regular'];
   if (filetypeIsMarkdown) {
-    resolvedDisplayMode = displayMode;
-  } else {
-    resolvedDisplayMode = displayMode === 'markdownPreview' ? 'regular' : displayMode;
+    possibleDisplayModes.push('markdownPreview');
+  }
+  if (roomHasAssociatedGist) {
+    possibleDisplayModes.push('diffViewer');
   }
 
   return {
     ...settings.globalEditor,
     ...individualSettings,
-    displayMode: resolvedDisplayMode,
+    displayMode: possibleDisplayModes.includes(displayMode) ? displayMode : 'regular',
   };
 }

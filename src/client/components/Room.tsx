@@ -13,6 +13,7 @@ import {
   destroyRoom,
   fileRenamingActions,
   initRoom,
+  isCurrentUserRoomOwnerSelector,
   saveBackToGist,
 } from 'Client/slices/room/types';
 import { roomUpdateActions } from 'Client/slices/roomUpdating/types';
@@ -71,6 +72,7 @@ export function Room() {
   const dispatch = useDispatch();
   const currentRoom = useSelector(currentRoomStateWithComputedSelector);
   const settingsForCurrentEditor = useSelector(settingsForCurrentEditorSelector);
+  const isCurrentUserRoomOwner = useSelector(isCurrentUserRoomOwnerSelector);
   const { enqueue } = useSnackbar();
 
   useEffect(() => {
@@ -131,13 +133,15 @@ export function Room() {
             >
               Regular
             </DiffSelectionButton>
-            <DiffSelectionButton
-              isSelected={settingsForCurrentEditor?.displayMode === 'diffViewer'}
-              key="diff"
-              onClick={() => selectDisplayMode('diffViewer')}
-            >
-              Diff
-            </DiffSelectionButton>
+            {currentRoom.gistDetails && (
+              <DiffSelectionButton
+                isSelected={settingsForCurrentEditor?.displayMode === 'diffViewer'}
+                key="diff"
+                onClick={() => selectDisplayMode('diffViewer')}
+              >
+                Diff
+              </DiffSelectionButton>
+            )}
             {currentRoom.isCurrentFileMarkdown && (
               <DiffSelectionButton
                 isSelected={settingsForCurrentEditor?.displayMode === 'markdownPreview'}
@@ -149,29 +153,33 @@ export function Room() {
             )}
           </ButtonGroup>
         )}
-        <ControlPanelButtonWithTooltip
-          onClick={() => {
-            if (currentRoom?.roomDetails && !currentRoom.roomDetails.gistName) {
-              dispatch(roomUpdateActions.initialize({ roomDetails: currentRoom.roomDetails }));
-            } else if (currentRoom?.roomDetails && currentRoom.gistDetails) {
-              dispatch(
-                roomUpdateActions.initialize({
-                  roomDetails: currentRoom.roomDetails,
-                  gistDetails: currentRoom.gistDetails,
-                }),
-              );
-            }
-          }}
-          Icon={SvgPencil}
-          tooltip="Edit Room Details"
-          gridArea="edit-details"
-        />
-        <ControlPanelButtonWithTooltip
-          Icon={SvgSave}
-          tooltip={'Save changes to Gist'}
-          onClick={() => dispatch(saveBackToGist())}
-          gridArea="save-to-gist"
-        />
+        {isCurrentUserRoomOwner && (
+          <>
+            <ControlPanelButtonWithTooltip
+              onClick={() => {
+                if (currentRoom?.roomDetails && !currentRoom.roomDetails.gistName) {
+                  dispatch(roomUpdateActions.initialize({ roomDetails: currentRoom.roomDetails }));
+                } else if (currentRoom?.roomDetails && currentRoom.gistDetails) {
+                  dispatch(
+                    roomUpdateActions.initialize({
+                      roomDetails: currentRoom.roomDetails,
+                      gistDetails: currentRoom.gistDetails,
+                    }),
+                  );
+                }
+              }}
+              Icon={SvgPencil}
+              tooltip="Edit Room Details"
+              gridArea="edit-details"
+            />
+            <ControlPanelButtonWithTooltip
+              Icon={SvgSave}
+              tooltip={'Save changes to Gist'}
+              onClick={() => dispatch(saveBackToGist())}
+              gridArea="save-to-gist"
+            />
+          </>
+        )}
         <span className={css({ gridArea: 'settings' })}>
           <GlobalSettingsDropdown />
         </span>

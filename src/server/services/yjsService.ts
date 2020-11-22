@@ -94,11 +94,17 @@ export class YjsService {
     //   }
     // });
     const docName = getYjsDocNameForRoom(roomHashId);
-    setupWSConnection(conn, req, { gc: true, docName: docName });
 
     if (!req.headers.cookie) {
+      if (this.roomManagers.has(docName)) {
+        setupWSConnection(conn, req, { gc: true, docName: docName });
+      } else {
+        console.warn('closing connection from anonymous user: connection to room that doesn\t exist');
+        conn.close(1008);
+      }
       return;
     }
+    setupWSConnection(conn, req, { gc: true, docName: docName });
 
     const userToken = getCookie('session-token', req.headers.cookie);
     if (!userToken) {
@@ -209,8 +215,6 @@ export class ServerSideRoomManager extends RoomManager {
 
     const awareness$ = new Observable<globalAwarenessMap>((observer) => {
       const listener = () => {
-        console.log('listener fired');
-        // console.log(ydoc.awareness.getStates());
         observer.next(ydoc.awareness.getStates() as globalAwarenessMap);
       };
       ydoc.awareness.on('change', listener);
@@ -243,7 +247,6 @@ export class ServerSideRoomManager extends RoomManager {
               deltas.push({ userID, deltaValue: false });
             }
           }
-          console.log({ deltas });
           return { deltas, prevIDs: currIDs };
         },
         { deltas: [], prevIDs: new Set<string>() },
@@ -255,7 +258,6 @@ export class ServerSideRoomManager extends RoomManager {
       .pipe(
         filter(({ deltaValue }) => !deltaValue),
         withLatestFrom(userId$),
-        tap(([, userIds]) => console.log({ userIds })),
         filter(([, userIds]) => userIds.length === 0),
       )
       .subscribe(async () => {

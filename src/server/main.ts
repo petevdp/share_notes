@@ -57,7 +57,10 @@ async function runServer() {
 
     const apolloServer = new ApolloServer({
       schema,
-      context: async ({ req }) => ({ githubSessionToken: req.cookies['session-token'] }),
+      context: async ({ req }) => {
+        const userRepository = dbConnection.getRepository(User);
+        return { githubSessionToken: req.cookies['session-token'] };
+      },
       plugins: [loggingPlugin],
     });
 

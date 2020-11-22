@@ -93,7 +93,7 @@ export class RoomResolver {
   @Authorized()
   @Mutation(() => ClientSideRoom)
   async createRoom(@Arg('data') userData: CreateRoomInput) {
-    const owner = await this.userRepository.findOneOrFail({ id: parseInt(userData.ownerId) });
+    const owner = await this.userRepository.findOneOrFail({ id: userData.ownerId });
     const room = new Room();
     room.createdAt = new Date();
     room.name = userData.name;
@@ -107,15 +107,14 @@ export class RoomResolver {
   @Authorized()
   @Mutation(() => Boolean)
   async deleteRoom(@Arg('data') data: DeleteRoomInput, @Ctx() context: AuthorizedContext) {
-    await this.roomRepository.delete(data.id);
+    const room = await this.roomRepository.findOneOrFail(data.id);
     const userId = await this.tedisService.getCurrentUserId(context.githubSessionToken);
-    if (!userId) {
-      throw "got through authorization but session wasn't set for currentUser query";
+    const owner = await room.owner;
+    if (userId && owner.id !== userId) {
+      throw "user doesn't own this room";
     }
-    await this.userRepository
-      .findOneOrFail({ id: parseInt(userId) }, { relations: ['ownedRooms'] })
-      .then((u) => u?.ownedRooms);
 
+    await this.roomRepository.delete(data.id);
     return true;
   }
 
@@ -130,7 +129,7 @@ export class RoomResolver {
     }
     const room = await this.roomRepository.findOneOrFail({ id: parseInt(roomId) }, { relations: ['owner'] });
 
-    if (parseInt(currentUserId) !== (await room.owner).id) {
+    if (currentUserId !== (await room.owner).id) {
       throw 'user doesnt own this room';
     }
 

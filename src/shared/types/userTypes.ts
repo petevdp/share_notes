@@ -1,11 +1,11 @@
 export interface user {
-  id: number;
+  id: string;
   githubDatabaseId: number;
   githubLogin: string;
 }
 
 export interface userInput {
-  id?: number;
+  id?: string;
   login?: string;
 }
 

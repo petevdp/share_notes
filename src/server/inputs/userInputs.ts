@@ -4,7 +4,7 @@ import { Field, ID, InputType, Int } from 'type-graphql';
 @InputType()
 export class UserInput implements userInput {
   @Field(() => ID, { nullable: true })
-  id?: number;
+  id?: string;
 
   @Field(() => ID, { nullable: true })
   login?: string;

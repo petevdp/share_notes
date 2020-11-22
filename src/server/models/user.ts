@@ -10,7 +10,7 @@ import { RoomVisit } from './roomVisit';
 export class User {
   @Field(() => ID)
   @PrimaryGeneratedColumn()
-  id: number;
+  id: string;
 
   @Field(() => ID)
   @Column()

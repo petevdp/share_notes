@@ -33,10 +33,10 @@ export class UserResolver {
   @Query(() => User)
   async currentUser(@Ctx() context: AuthorizedContext): Promise<User | null> {
     const userIdStr = await this.tedisService.tedis.hget(USER_ID_BY_SESSION_KEY, context.githubSessionToken);
-    if (userIdStr === undefined) {
+    if (!userIdStr) {
       throw "got through authorization but session wasn't set for currentUser query";
     }
-    return (await this.userRepository.findOne({ id: Number(userIdStr) })) || null;
+    return (await this.userRepository.findOne({ id: userIdStr })) || null;
   }
 
   @Query(() => User)

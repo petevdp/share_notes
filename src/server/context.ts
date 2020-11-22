@@ -6,4 +6,5 @@ export interface Context {
 export interface AuthorizedContext {
   githubSessionToken: string;
   login: string;
+  userId: string;
 }

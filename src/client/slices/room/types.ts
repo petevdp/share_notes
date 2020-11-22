@@ -274,3 +274,19 @@ export function currentRoomStateWithComputedSelector(state: rootState): currentR
       getAwarenessWithComputed(state.room.currentRoom.awareness, getAssignedColors(state.room.currentRoom.awareness)),
   };
 }
+
+export function isCurrentUserRoomOwnerSelector(state: rootState): boolean | undefined {
+  const currentOwnerId = state.room.currentRoom?.roomDetails?.owner.id;
+  const currentUserId = state.currentUserDetails.userDetails?.id;
+  if (!currentOwnerId || !currentUserId) {
+    return;
+  }
+  return currentOwnerId === currentUserId;
+}
+
+export function doesCurrentRoomHaveAssociatedGistSelector(state: rootState): boolean | undefined {
+  if (!state.room.currentRoom || state.room.currentRoom?.initializingRoom) {
+    return;
+  }
+  return !!state.room.currentRoom.roomDetails?.gistName;
+}

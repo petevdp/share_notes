@@ -141,6 +141,7 @@ export class ClientSideRoomManager extends RoomManager {
           roomHashId,
           tabId,
           details.filetype === 'markdown',
+          !!details.gistContent,
         );
         this.setEditorSettings(tabId, settingsForEditor);
         tab.monacoBinding.getEditor().updateOptions({ theme: ClientSideRoomManager.themeMap[settings.theme] });
@@ -247,6 +248,7 @@ export class ClientSideRoomManager extends RoomManager {
           roomHashId,
           tabId,
           allFileDetails[tabId].filetype === 'markdown',
+          !!allFileDetails[tabId].gistContent,
         );
         this.setEditorSettings(tabId, settingsForEditor);
         tabOrdinal++;
@@ -284,6 +286,7 @@ export class ClientSideRoomManager extends RoomManager {
               roomHashId,
               tabId,
               details && details.filetype === 'markdown',
+              !!details.gistContent,
             );
             const willShowMarkdownPreview = bindings.get(tabId) && settingsForEditor.displayMode === 'markdownPreview';
             const didShowMarkdownPreview = acc.prevShowPreviewState.has(tabId);
@@ -354,8 +357,8 @@ export class ClientSideRoomManager extends RoomManager {
           let delta = new Map<string, boolean>();
           let showDiffEditorState = new Set<string>();
           for (let tabId of ids) {
-            console.log({ tabId, gistLoaded: roomDetails.gistLoaded });
-            const willProvisionDiffEditor = tabs.has(tabId) && roomDetails.gistLoaded;
+            console.log({ tabId, gistLoaded: roomDetails.gistLoaded, roomDetails });
+            const willProvisionDiffEditor = tabs.has(tabId) && roomDetails.gistName;
             const didProvisionDiffEditor = acc.prevShowDiffEditorState.has(tabId);
             if (willProvisionDiffEditor) {
               showDiffEditorState.add(tabId);
@@ -466,6 +469,7 @@ export class ClientSideRoomManager extends RoomManager {
         this.roomHashId,
         tabId,
         details.filetype === 'markdown',
+        !!details.gistContent,
       );
       this.setEditorSettings(tabId, settingsForEditor);
       binding.monacoBinding.getEditor().updateOptions({ theme: ClientSideRoomManager.themeMap[settings.theme] });

@@ -15,7 +15,11 @@ import { LabelMedium } from 'baseui/typography';
 import { ContentCopy } from 'Client/generatedSvgComponents';
 import SvgGithub from 'Client/generatedSvgComponents/Github';
 import { currentUser, githubUserDetails } from 'Client/slices/currentUserDetails/types';
-import { copyToClipboard, currentRoomStateWithComputedSelector } from 'Client/slices/room/types';
+import {
+  copyToClipboard,
+  currentRoomStateWithComputedSelector,
+  doesCurrentRoomHaveAssociatedGistSelector,
+} from 'Client/slices/room/types';
 import { getLoginWithGithubHref, loginWithGithub } from 'Client/slices/session/epics';
 import { loggedInStatusSelector, LoginStatus, logOut } from 'Client/slices/session/types';
 import { settingsActions, theme } from 'Client/slices/settings/types';
@@ -93,6 +97,7 @@ export function GlobalHeader() {
   const roomAwareness = useSelector((state: rootState) => state.room.currentRoom?.awareness);
   const currentUser = useSelector((state: rootState) => state.currentUserDetails);
   const loginStatus = useSelector(loggedInStatusSelector);
+  const doesCurrentRoomHaveAssociatedGist = useSelector(doesCurrentRoomHaveAssociatedGistSelector);
   const { enqueue: enqueueSnackbar } = useSnackbar();
   const [css, theme] = useStyletron();
 
@@ -154,26 +159,28 @@ export function GlobalHeader() {
         <StyledNavigationList $align={ALIGN.center}>
           {currentRoom && (
             <StyledNavigationItem>
-              <StatefulTooltip
-                content={
-                  "Open this room's gist" + currentRoom.gistDetails
-                    ? ''
-                    : " (disabled: this room doesn't have an associated gist)"
-                }
-              >
-                <Button
-                  {...getGithubUrlIconNavButtonProps()}
-                  $as={'a'}
-                  href={currentRoom?.gistDetails?.html_url}
-                  target="_blank"
-                  overrides={__merge(getGithubUrlIconNavButtonProps().overrides, {
-                    BaseButton: { props: { rel: 'noopener noreferrer' } },
-                  })}
-                  disabled={!currentRoom?.gistDetails?.html_url}
+              {doesCurrentRoomHaveAssociatedGist && (
+                <StatefulTooltip
+                  content={
+                    "Open this room's gist" + currentRoom.gistDetails
+                      ? ''
+                      : " (disabled: this room doesn't have an associated gist)"
+                  }
                 >
-                  <SvgGithub {...getGithubUrlIconNavIconProps(theme)} />
-                </Button>
-              </StatefulTooltip>
+                  <Button
+                    {...getGithubUrlIconNavButtonProps()}
+                    $as={'a'}
+                    href={currentRoom?.gistDetails?.html_url}
+                    target="_blank"
+                    overrides={__merge(getGithubUrlIconNavButtonProps().overrides, {
+                      BaseButton: { props: { rel: 'noopener noreferrer' } },
+                    })}
+                    disabled={!currentRoom?.gistDetails?.html_url}
+                  >
+                    <SvgGithub {...getGithubUrlIconNavIconProps(theme)} />
+                  </Button>
+                </StatefulTooltip>
+              )}
               <StatefulTooltip content="Copy room url to clipboard">
                 <Button
                   {...getGithubUrlIconNavButtonProps()}
