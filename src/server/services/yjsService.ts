@@ -287,32 +287,6 @@ export class ServerSideRoomManager extends RoomManager {
       });
   }
 
-  async loadSavedDocumentContentsIntoYjs() {
-    const combinedContents = await this.getSavedCombinedFileContents();
-    if (!combinedContents) {
-      return;
-    }
-    this.ydoc.transact(() => {
-      Object.entries(combinedContents.fileDetails).forEach(([tabId, details]) => {
-        this.yData.fileDetails.set(tabId, details);
-      });
-
-      Object.entries(combinedContents.fileContents).forEach(([tabId, contents]) => {
-        this.yData.fileContents.set(tabId, new Y.Text(contents));
-      });
-    });
-  }
-
-  async getSavedCombinedFileContents() {
-    const room = await this.roomRepository.findOneOrFail(this.roomId);
-
-    if (!room.savedFileContentsAndDetails) {
-      return;
-    }
-
-    return JSON.parse(room.savedFileContentsAndDetails) as combinedFilesState;
-  }
-
   activeRoomMembers() {
     return ([...this.ydoc.awareness.getStates().values()] as clientAwareness[])
       .map((memberAwareness) => memberAwareness.roomMemberDetails)

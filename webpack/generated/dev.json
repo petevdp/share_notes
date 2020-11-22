@@ -13,54 +13,6 @@
       "Client": "/home/pete/projects/share_notes/src/client"
     }
   },
-  "module": {
-    "rules": [
-      {
-        "test": {},
-        "use": [
-          "style-loader",
-          "css-loader"
-        ]
-      },
-      {
-        "test": {},
-        "use": [
-          "file-loader"
-        ]
-      },
-      {
-        "test": {},
-        "loader": "url-loader",
-        "options": {
-          "limit": 8192
-        }
-      },
-      {
-        "test": {},
-        "include": [
-          "/home/pete/projects/share_notes/src/client",
-          "/home/pete/projects/share_notes/src/shared"
-        ],
-        "use": [
-          {
-            "loader": "babel-loader",
-            "options": {
-              "plugins": [
-                "react-refresh/babel"
-              ]
-            }
-          },
-          {
-            "loader": "ts-loader",
-            "options": {
-              "transpileOnly": true,
-              "projectReferences": true
-            }
-          }
-        ]
-      }
-    ]
-  },
   "plugins": [
     {
       "options": {
@@ -609,14 +561,59 @@
   "output": {
     "path": "/home/pete/projects/share_notes/bundleDev"
   },
+  "module": {
+    "rules": [
+      {
+        "test": {},
+        "use": [
+          "style-loader",
+          "css-loader"
+        ]
+      },
+      {
+        "test": {},
+        "use": [
+          "file-loader"
+        ]
+      },
+      {
+        "test": {},
+        "loader": "url-loader",
+        "options": {
+          "limit": 8192
+        }
+      },
+      {
+        "test": {},
+        "include": [
+          "/home/pete/projects/share_notes/src/client",
+          "/home/pete/projects/share_notes/src/shared"
+        ],
+        "use": [
+          {
+            "loader": "babel-loader",
+            "options": {
+              "plugins": [
+                "react-refresh/babel"
+              ]
+            }
+          },
+          {
+            "loader": "ts-loader",
+            "options": {
+              "transpileOnly": true,
+              "projectReferences": true
+            }
+          }
+        ]
+      }
+    ]
+  },
   "devServer": {
     "contentBase": "/home/pete/projects/share_notes/bundleDev",
     "proxy": {
       "/api": {
         "target": "http://localhost:1236",
-        "pathRewrite": {
-          "^/api": ""
-        },
         "secure": false,
         "changeOrigin": true
       }

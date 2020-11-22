@@ -8,6 +8,7 @@ import querystring from 'querystring';
 import * as GithubUtils from 'Server/utils/githubUtils';
 import {
   DEV_SERVER_PORT,
+  DOMAIN,
   GITHUB_0AUTH_ACCESS_TOKEN_URL,
   GITHUB_CLIENT_ID,
   GITHUB_GRAPHQL_API_URL,
@@ -71,7 +72,7 @@ export const getAuthRouter = (tedisService: TedisService, userRepository: Reposi
     } else {
       throw "couldn't find github user";
     }
-    res.redirect(`http://localhost:${DEV_SERVER_PORT}`);
+    res.redirect(DOMAIN);
   });
 
   authRouter.get('/logout', (req, res) => {

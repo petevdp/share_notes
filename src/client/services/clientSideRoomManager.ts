@@ -149,7 +149,7 @@ export class ClientSideRoomManager extends RoomManager {
 
     this.providerSynced = new Promise((resolve, reject) => {
       const roomDestroyedSubscription = this.roomDestroyed$$.subscribe(() => {
-        reject('room destroyed before sync');
+        reject();
       });
       const listener = () => {
         resolve(true);
@@ -157,6 +157,10 @@ export class ClientSideRoomManager extends RoomManager {
         this.provider.off('sync', listener);
       };
       this.provider.on('sync', listener);
+    });
+
+    this.providerSynced.catch(() => {
+      console.warn('room destroyed before sync');
     });
 
     this.awareness$ = (() => {
@@ -196,6 +200,12 @@ export class ClientSideRoomManager extends RoomManager {
       }),
       publish(),
     ) as ConnectableObservable<allBaseFileDetailsStates>;
+
+    console.log(
+      this.fileDetails$.subscribe((details) => {
+        console.log('emitted details.....: ', details);
+      }),
+    );
 
     // initialize provisioned tabs
     let tabOrdinal = 1;
@@ -242,21 +252,13 @@ export class ClientSideRoomManager extends RoomManager {
         tabOrdinal++;
       });
 
-    this.fileDetails$.subscribe((state) => {
-      for (let [id, { filename }] of Object.entries(state)) {
-        const tab = this.provisionedTabs$$.value.get(id);
-        if (!tab) {
-          continue;
-        }
-        const editor: monaco.editor.IStandaloneCodeEditor = tab.monacoBinding.getEditor();
-        const model = editor.getModel();
+    combineLatest(this.fileDetails$, this.provisionedTabs$$).subscribe(([details, tabs]) => {
+      for (let [tabId, tab] of tabs.entries()) {
+        const tabDetails = details[tabId];
 
-        if (!model) {
-          continue;
-        }
-        const language = ClientSideRoomManager.determineLanguage(filename);
-        if (language) {
-          monaco.editor.setModelLanguage(model, language);
+        const model = tab.monacoBinding.getEditor().getModel();
+        if (tabDetails.filetype && model) {
+          monaco.editor.setModelLanguage(model, tabDetails.filetype);
         }
       }
     });

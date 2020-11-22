@@ -1,7 +1,6 @@
 import { combineReducers, configureStore, getDefaultMiddleware } from '@reduxjs/toolkit';
 import { combineEpics, createEpicMiddleware } from 'redux-observable';
 import { FLUSH, PAUSE, PERSIST, persistReducer, persistStore, PURGE, REGISTER, REHYDRATE } from 'redux-persist';
-import autoMergeLevel1 from 'redux-persist/lib/stateReconciler/autoMergeLevel1';
 import storage from 'redux-persist/lib/storage';
 
 import { currentUserDetailsSlice } from './slices/currentUserDetails/slice';
@@ -14,7 +13,6 @@ import { createRoomEpic, initializeRoomCreationEpic } from './slices/roomCreatio
 import { roomCreationSlice } from './slices/roomCreation/slice';
 import { DEBUG__forceOpenEditRoomDetailsModalEpic, updateRoomEpic } from './slices/roomUpdating/epics';
 import { roomUpdatingSlice } from './slices/roomUpdating/slice';
-import { roomUpdateActions } from './slices/roomUpdating/types';
 import { logOutEpic, redirectAfterAuthEpic, retreiveSessionTokenEpic } from './slices/session/epics';
 import { sessionSlice } from './slices/session/slice';
 import { settingsSlice } from './slices/settings/slice';

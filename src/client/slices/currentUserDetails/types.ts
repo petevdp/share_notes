@@ -6,7 +6,6 @@ import {
   getCurrentUserResult,
 } from 'Client/utils/queries';
 import { getGithubGraphqlClient } from 'Client/utils/utils';
-import { request as gqlRequest } from 'graphql-request';
 import { merge } from 'rxjs/internal/observable/merge';
 import { GRAPHQL_URL } from 'Shared/environment';
 import { clientSideRoom } from 'Shared/types/roomTypes';
@@ -35,14 +34,18 @@ export const setCurrentUserDetails = createAction('setCurrentUserDetails', (data
 
 export function getCurrentUserDetails() {
   // get user data from server
-  const setCurrentUserDetailsPromise = gqlRequest<getCurrentUserResult>(GRAPHQL_URL, GET_CURRENT_USER).then((r) =>
-    setCurrentUserDetails(r.currentUser),
-  );
+  const setCurrentUserDetailsPromise = import('graphql-request').then(({ request: gqlRequest }) => {
+    return gqlRequest<getCurrentUserResult>(GRAPHQL_URL, GET_CURRENT_USER).then((r) =>
+      setCurrentUserDetails(r.currentUser),
+    );
+  });
 
   // get user data from github
-  const getGithubUserDetails = getGithubGraphqlClient()
-    .request<getCurrentUserGithubDetailsResponse>(GET_VIEWER_GITHUB_DETAILS)
-    .then((r) => setGithubUserDetails(r.viewer));
+  const getGithubUserDetails = getGithubGraphqlClient().then((client) => {
+    return client
+      .request<getCurrentUserGithubDetailsResponse>(GET_VIEWER_GITHUB_DETAILS)
+      .then((r) => setGithubUserDetails(r.viewer));
+  });
 
   // update the store as we get responses
   return merge(setCurrentUserDetailsPromise, getGithubUserDetails);

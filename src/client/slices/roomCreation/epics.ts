@@ -2,11 +2,9 @@ import { roomCreated } from 'Client/slices/room/types';
 import { rootState } from 'Client/store';
 import { CREATE_ROOM, createRoomResponse } from 'Client/utils/queries';
 import { octokitRequestWithAuth } from 'Client/utils/utils';
-import { request as gqlRequest } from 'graphql-request';
 import __isEmpty from 'lodash/isEmpty';
 import __isEqual from 'lodash/isEqual';
 import { useEffect, useRef } from 'react';
-import { AnyAction } from 'redux';
 import { Epic, StateObservable } from 'redux-observable';
 import { auditTime } from 'rxjs/internal/operators/auditTime';
 import { concatMap } from 'rxjs/internal/operators/concatMap';
@@ -77,7 +75,9 @@ export const createRoomEpic: Epic = (action$, state$: StateObservable<rootState>
         roomCreationInput.createdGistUrl = gistDetails.url;
       }
 
-      const res = await gqlRequest<createRoomResponse>(GRAPHQL_URL, CREATE_ROOM, { data: roomCreationInput });
+      const res = await import('graphql-request').then(({ request: gqlRequest }) =>
+        gqlRequest<createRoomResponse>(GRAPHQL_URL, CREATE_ROOM, { data: roomCreationInput }),
+      );
       return roomCreated(res);
     }),
   );

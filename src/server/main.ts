@@ -6,7 +6,7 @@ import { ApolloServerPlugin } from 'apollo-server-plugin-base';
 import cookieParser from 'cookie-parser';
 import express from 'express';
 import http from 'http';
-import { API_PORT } from 'Shared/environment';
+import { PORT } from 'Shared/environment';
 import { buildSchema } from 'type-graphql';
 import { Container } from 'typedi';
 import * as TypeORM from 'typeorm';
@@ -16,11 +16,14 @@ import { getAuthChecker } from './authChecker';
 import { getAuthRouter } from './authRouter';
 import { createDatabaseConnection } from './db';
 import { User } from './models/user';
+import { CLIENT_BUILD_PATH_PROD } from './paths';
 import { RoomResolver } from './resolvers/roomResolver';
 import { RoomVisitResolver } from './resolvers/roomVisitResolver';
 import { UserResolver } from './resolvers/userResolver';
 import { TedisService } from './services/tedisService';
 import { YjsService } from './services/yjsService';
+
+const VALID_HTML_PATHS = ['/', '/rooms', '/rooms/:roomId'];
 
 TypeORM.useContainer(Container);
 async function runServer() {
@@ -61,8 +64,11 @@ async function runServer() {
     const userRepository = dbConnection.getRepository(User);
 
     app.use(cookieParser());
-    apolloServer.applyMiddleware({ app });
-    app.use('/auth', getAuthRouter(tedisService, userRepository));
+    apolloServer.applyMiddleware({ app, path: '/api/graphql' });
+    app.use('/api/auth', getAuthRouter(tedisService, userRepository));
+    app.use('/', express.static(CLIENT_BUILD_PATH_PROD));
+    app.use('/rooms', express.static(CLIENT_BUILD_PATH_PROD));
+    app.use('/rooms/:roomId', express.static(CLIENT_BUILD_PATH_PROD));
     return http.createServer(app);
   })();
 
@@ -71,7 +77,7 @@ async function runServer() {
     const yjsService = Container.get(YjsService);
     const websocketServer = new WebSocket.Server({ server: httpServer });
     websocketServer.on('connection', (conn: WebSocket, req) => {
-      if (!(req.url && /^\/websocket\/yjs\-room\/.+$/.test(req.url))) {
+      if (!(req.url && /^\/api\/websocket\/yjs\-room\/.+$/.test(req.url))) {
         console.log('invalid upgrade');
         return;
       }
@@ -79,8 +85,8 @@ async function runServer() {
     });
   })();
 
-  httpServer.listen({ port: API_PORT }, () => {
-    console.log('running on ', API_PORT);
+  httpServer.listen({ port: PORT }, () => {
+    console.log('running on ', PORT);
   });
 }
 

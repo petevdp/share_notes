@@ -9,7 +9,6 @@ if gist already created:
 
 # TODOs
 
-- fix diffs
 - handle room content changes better
 - timeout session
 - clean up session storage, logout action

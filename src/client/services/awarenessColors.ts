@@ -1,5 +1,3 @@
-import { LightTheme } from 'baseui';
-
 export const allColors = ['#276EF1', '#E11900', '#FFC043', '#05944F'];
 
 export const lighterColors: { [key: string]: string } = {

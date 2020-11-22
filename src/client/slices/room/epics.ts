@@ -1,12 +1,8 @@
-import 'codemirror/lib/codemirror.css';
-import 'codemirror/theme/night.css';
-
 import { request as octokitRequest } from '@octokit/request';
 import { anonymousLoginActions, roomMemberInputSelector } from 'Client/slices/session/types';
 import { rootState } from 'Client/store';
 import { DELETE_ROOM, deleteRoomResponse, GET_ROOM, getRoomResponse } from 'Client/utils/queries';
 import { octokitRequestWithAuth as getOctokitRequestWithAuth } from 'Client/utils/utils';
-import { request as gqlRequest } from 'graphql-request';
 import _isEqual from 'lodash/isEqual';
 import { Action } from 'redux';
 import { Epic, StateObservable } from 'redux-observable';
@@ -90,9 +86,11 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
           map((fileDetails) => setFileDetailsState(fileDetails)),
         );
 
-        const roomDataPromise = gqlRequest<getRoomResponse>(GRAPHQL_URL, GET_ROOM, {
-          data: { hashId: roomHashId },
-        }).then((res) => res.room);
+        const roomDataPromise = import('graphql-request').then(({ request: gqlRequest }) =>
+          gqlRequest<getRoomResponse>(GRAPHQL_URL, GET_ROOM, {
+            data: { hashId: roomHashId },
+          }).then((res) => res.room),
+        );
 
         const gistDataPromise = roomDataPromise.then((r) => {
           if (!r) {
@@ -270,9 +268,11 @@ export const deleteRoomEpic: Epic = (action$) =>
   action$.pipe(
     filter(deleteRoom.match),
     concatMap(async ({ payload: roomId }) => {
-      const response = await gqlRequest<deleteRoomResponse, { data: deleteRoomInput }>(GRAPHQL_URL, DELETE_ROOM, {
-        data: { id: roomId },
-      });
+      await import('graphql-request').then(({ request: gqlRequest }) =>
+        gqlRequest<deleteRoomResponse, { data: deleteRoomInput }>(GRAPHQL_URL, DELETE_ROOM, {
+          data: { id: roomId },
+        }),
+      );
       return roomDeleted(roomId);
     }),
   );

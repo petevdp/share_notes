@@ -5,11 +5,11 @@ import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
 import { CLIENT_BUILD_PATH_DEV, CLIENT_ROOT, SHARED_ROOT, ROOT } from '../src/server/paths';
 import * as p from 'Server/paths';
 import commonConfig from './webpack.common';
-import { API_PORT, DEV_SERVER_PORT } from 'Shared/environment';
+import { PORT, DEV_SERVER_PORT } from 'Shared/environment';
 import { Configuration, DefinePlugin } from 'webpack';
 import { merge } from 'webpack-merge';
 
-import { API_URL } from '../dist/src/shared/environment';
+import { API_URL } from 'Shared/environment';
 import { writeGeneratedConfig } from './helpers';
 
 const config: Configuration = merge(commonConfig, {
@@ -26,6 +26,21 @@ const config: Configuration = merge(commonConfig, {
   ],
   module: {
     rules: [
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader'],
+      },
+      {
+        test: /\.ttf$/,
+        use: ['file-loader'],
+      },
+      {
+        test: /\.(png|jpe?g|gif|svg|eot|ttf|woff|woff2)$/i,
+        loader: 'url-loader',
+        options: {
+          limit: 8192,
+        },
+      },
       {
         test: /\.tsx?$/,
         include: [CLIENT_ROOT, SHARED_ROOT],
@@ -54,7 +69,7 @@ const devServer = {
   proxy: {
     '/api': {
       target: API_URL,
-      pathRewrite: { '^/api': '' },
+      // pathRewrite: { '^/api': '' },
       secure: false,
       changeOrigin: true,
     },

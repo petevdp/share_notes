@@ -1,9 +1,6 @@
 import { createAction } from '@reduxjs/toolkit';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';
-import { log } from 'console';
-import produce from 'immer';
-import * as monaco from 'monaco-editor';
 
 import { currentRoomStateWithComputed, currentRoomStateWithComputedSelector } from '../room/types';
 
@@ -11,10 +8,10 @@ export type theme = 'light' | 'dark';
 export type keyMap = 'regular' | 'vim';
 
 interface individualEditorSettings {
-  tabSize: monaco.editor.IGlobalEditorOptions['tabSize'];
+  tabSize: number;
   intellisense: boolean;
-  autoIndent: monaco.editor.IEditorOptions['autoIndent'];
-  detectIndentation: monaco.editor.IGlobalEditorOptions['detectIndentation'];
+  autoIndent: 'none' | 'keep' | 'brackets' | 'advanced' | 'full';
+  detectIndentation: boolean;
   tabCompletion: boolean;
   displayMode: 'regular' | 'markdownPreview' | 'diffViewer';
 }
@@ -25,7 +22,7 @@ export interface globalEditorSettings extends individualEditorSettings {
   keyMap: keyMap;
   lineWrapping: boolean;
   minimap: boolean;
-  lineNumbers: monaco.editor.IEditorOptions['lineNumbers'];
+  lineNumbers: 'on' | 'off' | 'relative' | 'interval';
 }
 
 export type settingsResolvedForEditor = individualEditorSettingsPartial & globalEditorSettings;

@@ -77,7 +77,7 @@ export function Room() {
     if (currentRoom?.forkedGistDetails) {
       enqueue({ message: 'Created new Fork for Gist.' });
     }
-  });
+  }, []);
   useEffect(() => {
     if (roomHashId) {
       dispatch(initRoom(roomHashId));

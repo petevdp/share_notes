@@ -1,9 +1,6 @@
 import { gql } from 'graphql-request';
-import { identity } from 'lodash';
-import { roomDetails } from 'Shared/roomManager';
 import { languageDetectionOutput } from 'Shared/types/languageDetectionTypes';
-import { clientSideRoom, gistUpdate, ROOM_DETAILS_FRAGMENT, updateRoomInput } from 'Shared/types/roomTypes';
-import { roomVisit } from 'Shared/types/roomVisitTypes';
+import { clientSideRoom, ROOM_DETAILS_FRAGMENT, updateRoomInput } from 'Shared/types/roomTypes';
 
 export const GET_ROOM = gql`
   query GetRoom($data: RoomInput!) {

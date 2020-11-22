@@ -136,7 +136,8 @@ export function GlobalSettingsDropdown() {
                       switch (item.type.typeName) {
                         case 'select': {
                           if (item.type.typeName !== 'select') {
-                            throw 'incorrect item type for setting';
+                            console.warn('incorrect item type for setting');
+                            return;
                           }
 
                           itemContent = (

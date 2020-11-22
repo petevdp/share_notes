@@ -1,11 +1,11 @@
 import { createAction } from '@reduxjs/toolkit';
 import { SnackbarElementPropsT } from 'baseui/snackbar';
 import { allColors } from 'Client/services/awarenessColors';
-import { tabToProvision } from 'Client/services/clientSideRoomManager';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';
 import { createRoomResponse } from 'Client/utils/queries';
 import __uniqBy from 'lodash/uniqBy';
+import { DOMAIN } from 'Shared/environment';
 import { gistDetails } from 'Shared/githubTypes';
 import { allBaseFileDetailsStates } from 'Shared/roomManager';
 import {
@@ -23,6 +23,16 @@ export const gistDetailKeys: gistDetailKeys[] = ['description', 'name', 'url'];
 export interface roomRealTimeData {
   documents: Y.Map<Y.Text>;
   metadata: Y.Map<string>;
+}
+
+interface tabToProvision {
+  tabId: string;
+  elements: {
+    editor: HTMLElement;
+    vimStatusBar: HTMLElement;
+    markdownPreview: HTMLElement;
+    diffViewer: HTMLElement;
+  };
 }
 
 interface anonymousLogin {
@@ -207,6 +217,7 @@ export type globalAwarenessMapWithComputedByUserID = Map<string, clientAwareness
 
 export interface currentRoomStateWithComputed extends currentRoomState {
   isCurrentFileMarkdown: boolean;
+  roomUrl: string;
   awarenessWithComputed?: globalAwarenessMapWithComputedByUserID;
 }
 
@@ -256,6 +267,7 @@ export function currentRoomStateWithComputedSelector(state: rootState): currentR
 
   return {
     ...currentRoom,
+    roomUrl: DOMAIN + `/rooms/${currentRoom.hashId}`,
     isCurrentFileMarkdown,
     awarenessWithComputed:
       state.room.currentRoom?.awareness &&

@@ -1,9 +1,8 @@
 import { Dispatch } from '@reduxjs/toolkit';
 import { styled, useStyletron, withStyle } from 'baseui';
-import { NavItemT } from 'baseui/app-nav-bar';
 import { Avatar } from 'baseui/avatar';
 import { Breadcrumbs } from 'baseui/breadcrumbs';
-import { Button, ButtonOverrides, ButtonProps } from 'baseui/button';
+import { Button, ButtonProps } from 'baseui/button';
 import { ALIGN, HeaderNavigation, StyledNavigationItem, StyledNavigationList } from 'baseui/header-navigation';
 import { ChevronDown } from 'baseui/icon';
 import { StyledLink } from 'baseui/link';
@@ -24,7 +23,7 @@ import { rootState } from 'Client/store';
 import { REGULAR_PAGE_FLOW_MAX_WIDTH } from 'Client/styleConstants';
 import { BrandRouterLink, RoomPopoverZIndexOverride, StyledRouterLink } from 'Client/utils/basewebUtils';
 import __merge from 'lodash/merge';
-import React, { useState } from 'react';
+import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom';
 
@@ -178,11 +177,7 @@ export function GlobalHeader() {
               <StatefulTooltip content="Copy room url to clipboard">
                 <Button
                   {...getGithubUrlIconNavButtonProps()}
-                  disabled={!currentRoom?.gistDetails?.html_url}
-                  onClick={() =>
-                    currentRoom?.gistDetails?.html_url &&
-                    dispatch(copyToClipboard(currentRoom.gistDetails.html_url, enqueueSnackbar))
-                  }
+                  onClick={() => currentRoom && dispatch(copyToClipboard(currentRoom.roomUrl, enqueueSnackbar))}
                 >
                   <ContentCopy {...getGithubUrlIconNavIconProps(theme)} />
                 </Button>

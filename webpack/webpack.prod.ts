@@ -22,40 +22,15 @@ const config: webpack.Configuration = merge(commonConfig, {
       'process.env.NODE_ENV': JSON.stringify('production'),
     }),
   ],
-  optimization: {
-    runtimeChunk: 'single',
-    moduleIds: 'hashed',
-    splitChunks: {
-      chunks: 'all',
-      cacheGroups: {
-        vendor: {
-          test: /[\\/]node_modules[\\/]/,
-          name: 'vendors',
-          chunks: 'all',
-        },
-      },
-    },
-  },
   module: {
     rules: [
       {
-        test: /\.tsx?$/,
-        include: [CLIENT_ROOT, SHARED_ROOT],
-        use: [
-          {
-            loader: 'ts-loader',
-            options: {
-              // type errors will be caught by npm run start:compile on front and backend, so we don't need to typecheck here
-              transpileOnly: true,
-              projectReferences: true,
-            },
-          },
-        ].filter(Boolean),
-      },
-      // monaco uses some css and font modules we need to load
-      {
-        test: /\.css$/i,
+        test: /\.css$/,
         use: ['style-loader', 'css-loader'],
+      },
+      {
+        test: /\.ttf$/,
+        use: ['file-loader'],
       },
       {
         test: /\.(png|jpe?g|gif|svg|eot|ttf|woff|woff2)$/i,
@@ -64,7 +39,28 @@ const config: webpack.Configuration = merge(commonConfig, {
           limit: 8192,
         },
       },
+      {
+        test: /\.tsx?$/,
+        include: [CLIENT_ROOT, SHARED_ROOT],
+        use: [
+          {
+            loader: 'babel-loader',
+          },
+          {
+            loader: 'ts-loader',
+            options: {
+              // type errors will be caught by npm run start:compile on front and backend, so we don't need to typecheck here
+              transpileOnly: true,
+              projectReferences: true,
+            },
+          },
+        ],
+      },
     ],
+  },
+  optimization: {
+    runtimeChunk: 'single',
+    moduleIds: 'hashed',
   },
 });
 

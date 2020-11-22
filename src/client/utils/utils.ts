@@ -1,5 +1,4 @@
 import { request as octokitRequest } from '@octokit/request';
-import { GraphQLClient } from 'graphql-request';
 import { DateTime } from 'luxon';
 import { GITHUB_GRAPHQL_API_URL, SESSION_TOKEN_COOKIE_KEY } from 'Shared/environment';
 
@@ -27,7 +26,8 @@ export function eraseCookie(name: string) {
   document.cookie = name + '=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
 }
 
-export function getGithubGraphqlClient() {
+export async function getGithubGraphqlClient() {
+  const { GraphQLClient } = await import('graphql-request');
   const client = new GraphQLClient(GITHUB_GRAPHQL_API_URL);
   const token = getCookie(SESSION_TOKEN_COOKIE_KEY);
   if (token) {
