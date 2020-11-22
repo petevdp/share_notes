@@ -8,7 +8,7 @@ import { fetchOwnedRoomsEpic } from './slices/ownedRooms/epics';
 import { ownedRoomsSlice } from './slices/ownedRooms/slice';
 import { copyToClipboardEpic, deleteRoomEpic, initRoomEpic } from './slices/room/epics';
 import { roomSlice } from './slices/room/slice';
-import { copyToClipboard, initRoom, provisionTab } from './slices/room/types';
+import { copyToClipboard, initRoom, provisionTab, saveBackToGist } from './slices/room/types';
 import { createRoomEpic, initializeRoomCreationEpic } from './slices/roomCreation/epics';
 import { roomCreationSlice } from './slices/roomCreation/slice';
 import { DEBUG__forceOpenEditRoomDetailsModalEpic, updateRoomEpic } from './slices/roomUpdating/epics';
@@ -63,6 +63,7 @@ export const store = configureStore({
         initRoom.type,
         provisionTab.type,
         copyToClipboard.type,
+        saveBackToGist.type,
       ],
     },
   }).concat([epicMiddleware]),

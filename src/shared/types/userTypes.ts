@@ -5,7 +5,7 @@ export interface user {
 }
 
 export interface userInput {
-  id?: string;
+  id?: number;
   login?: string;
 }
 

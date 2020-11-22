@@ -2,7 +2,6 @@ import { styled, useStyletron } from 'baseui';
 import { Button, ButtonOverrides, ButtonProps } from 'baseui/button';
 import { ButtonGroup } from 'baseui/button-group';
 import { Plus } from 'baseui/icon';
-import { ItemT } from 'baseui/menu';
 import { useSnackbar } from 'baseui/snackbar';
 import { StatefulTooltip } from 'baseui/tooltip';
 import { Label3 } from 'baseui/typography';
@@ -14,6 +13,7 @@ import {
   fileRenamingActions,
   initRoom,
   isCurrentUserRoomOwnerSelector,
+  roomInitialized,
   saveBackToGist,
 } from 'Client/slices/room/types';
 import { roomUpdateActions } from 'Client/slices/roomUpdating/types';
@@ -73,11 +73,11 @@ export function Room() {
   const currentRoom = useSelector(currentRoomStateWithComputedSelector);
   const settingsForCurrentEditor = useSelector(settingsForCurrentEditorSelector);
   const isCurrentUserRoomOwner = useSelector(isCurrentUserRoomOwnerSelector);
-  const { enqueue } = useSnackbar();
+  const { enqueue: enqueueSnackbar } = useSnackbar();
 
   useEffect(() => {
     if (currentRoom?.forkedGistDetails) {
-      enqueue({ message: 'Created new Fork for Gist.' });
+      enqueueSnackbar({ message: 'Created new Fork for Gist.' });
     }
   }, []);
   useEffect(() => {
@@ -175,7 +175,7 @@ export function Room() {
             <ControlPanelButtonWithTooltip
               Icon={SvgSave}
               tooltip={'Save changes to Gist'}
-              onClick={() => dispatch(saveBackToGist())}
+              onClick={() => dispatch(saveBackToGist(roomHashId, enqueueSnackbar))}
               gridArea="save-to-gist"
             />
           </>

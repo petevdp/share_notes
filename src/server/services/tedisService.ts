@@ -19,6 +19,9 @@ export class TedisService {
   }
 
   async getCurrentUserId(token: string) {
-    return await this.tedis.hget(USER_ID_BY_SESSION_KEY, token);
+    const userIdStr = await this.tedis.hget(USER_ID_BY_SESSION_KEY, token);
+    if (userIdStr) {
+      return parseInt(userIdStr);
+    }
   }
 }

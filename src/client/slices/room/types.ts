@@ -3,6 +3,7 @@ import { SnackbarElementPropsT } from 'baseui/snackbar';
 import { allColors } from 'Client/services/awarenessColors';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';
+import { enqueueSnackbar } from 'Client/utils/basewebUtils';
 import { createRoomResponse } from 'Client/utils/queries';
 import __uniqBy from 'lodash/uniqBy';
 import { DOMAIN } from 'Shared/environment';
@@ -114,7 +115,12 @@ export const setFileDetailsState = createAction(
   }),
 );
 export const removeFile = createAction('removeFile', (filename: string) => ({ payload: filename }));
-export const saveBackToGist = createAction('saveBackToGist');
+export const saveBackToGist = createAction(
+  'saveBackToGist',
+  (roomHashId: string, enqueueSnackbar: enqueueSnackbar) => ({
+    payload: { roomHashId, enqueueSnackbar },
+  }),
+);
 export const gistSaved = createAction('gistSaved', (updatedDetails: gistDetails) => ({ payload: updatedDetails }));
 
 export const linkGist = createAction('linkGist', (gistId: string) => ({ payload: gistId }));
@@ -132,12 +138,9 @@ export const setRoomAwarenessState = createAction('setRoomAwarenessState', (awar
 
 export const deleteRoom = createAction('deleteRoom', (roomId: string) => ({ payload: roomId }));
 export const roomDeleted = createAction('roomDeleted', (roomId: string) => ({ payload: roomId }));
-export const copyToClipboard = createAction(
-  'copyToClipboard',
-  (text: string, enqueueSnackbar: (elementProps: SnackbarElementPropsT, duration?: any) => any) => ({
-    payload: { text, enqueueSnackbar },
-  }),
-);
+export const copyToClipboard = createAction('copyToClipboard', (text: string, enqueueSnackbar: enqueueSnackbar) => ({
+  payload: { text, enqueueSnackbar },
+}));
 
 export enum RenameError {
   Empty,

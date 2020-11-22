@@ -1,5 +1,4 @@
 import { AuthorizedContext } from 'Server/context';
-import { RoomVisitsInput } from 'Server/inputs/roomVisitInputs';
 import { RoomVisitsForUserInput, UserInput } from 'Server/inputs/userInputs';
 import { ClientSideRoom, Room } from 'Server/models/room';
 import { RoomVisit } from 'Server/models/roomVisit';
@@ -32,7 +31,7 @@ export class UserResolver {
   @Authorized()
   @Query(() => User)
   async currentUser(@Ctx() context: AuthorizedContext): Promise<User | null> {
-    const userIdStr = await this.tedisService.tedis.hget(USER_ID_BY_SESSION_KEY, context.githubSessionToken);
+    const userIdStr = await this.tedisService.getCurrentUserId(context.githubSessionToken);
     if (!userIdStr) {
       throw "got through authorization but session wasn't set for currentUser query";
     }

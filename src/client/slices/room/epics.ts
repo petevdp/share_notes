@@ -183,50 +183,57 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
           filter(saveBackToGist.match),
           withLatestFrom(state$),
           takeUntil(manager.roomDestroyed$$),
-          concatMap(async ([, rootState]) => {
-            const gist = rootState.room?.currentRoom?.gistDetails;
-            const sessionData = rootState.session;
-            const { token } = sessionData;
-            if (!gist) {
-              throw 'no data from github retreived';
-            }
-            if (!token) {
-              throw 'no token set';
-            }
-
-            const originalFileData = rootState.room.currentRoom?.gistDetails?.files;
-            const allFileDetails = rootState.room.currentRoom?.roomSharedState.fileDetailsStates;
-            const allFileContents = manager.getAllFileContents();
-            if (!allFileDetails || !allFileContents || !originalFileData) {
-              throw 'no file details or contents';
-            }
-            const filesForGithub: { [filename: string]: { filename: string; content: string } | null } = {};
-            for (let key in allFileDetails) {
-              const details = allFileDetails[key];
-              const content = allFileContents[key];
-              filesForGithub[details.filename] = {
-                filename: details.filename,
-                content: content || details.filename,
-              };
-            }
-
-            // explicitely set nulls to delete removed files from the gist
-            Object.keys(originalFileData)
-              .filter((k) => !Object.keys(filesForGithub).includes(k))
-              .forEach((k) => {
-                filesForGithub[k] = null;
-              });
-
-            const updatedDetails: gistDetails = await octokitRequest('PATCH /gists/{id}', {
-              id: gist.id,
-              files: filesForGithub,
-              headers: {
-                Authorization: `bearer ${sessionData.token}`,
+          concatMap(
+            async ([
+              {
+                payload: { enqueueSnackbar },
               },
-            }).then((res) => res.data);
+              rootState,
+            ]) => {
+              const gist = rootState.room?.currentRoom?.gistDetails;
+              const sessionData = rootState.session;
+              const { token } = sessionData;
+              if (!gist) {
+                throw 'no data from github retreived';
+              }
+              if (!token) {
+                throw 'no token set';
+              }
 
-            return gistSaved(updatedDetails);
-          }),
+              const originalFileData = rootState.room.currentRoom?.gistDetails?.files;
+              const allFileDetails = rootState.room.currentRoom?.roomSharedState.fileDetailsStates;
+              const allFileContents = manager.getAllFileContents();
+              if (!allFileDetails || !allFileContents || !originalFileData) {
+                throw 'no file details or contents';
+              }
+              const filesForGithub: { [filename: string]: { filename: string; content: string } | null } = {};
+              for (let key in allFileDetails) {
+                const details = allFileDetails[key];
+                const content = allFileContents[key];
+                filesForGithub[details.filename] = {
+                  filename: details.filename,
+                  content: content || details.filename,
+                };
+              }
+
+              // explicitely set nulls to delete removed files from the gist
+              Object.keys(originalFileData)
+                .filter((k) => !Object.keys(filesForGithub).includes(k))
+                .forEach((k) => {
+                  filesForGithub[k] = null;
+                });
+
+              const updatedDetails: gistDetails = await octokitRequest('PATCH /gists/{id}', {
+                id: gist.id,
+                files: filesForGithub,
+                headers: {
+                  Authorization: `bearer ${sessionData.token}`,
+                },
+              }).then((res) => res.data);
+              enqueueSnackbar({ message: 'Successfully saved files to gist.' });
+              return gistSaved(updatedDetails);
+            },
+          ),
         );
 
         action$

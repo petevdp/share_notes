@@ -1,4 +1,3 @@
-import { user } from 'Shared/types/userTypes';
 import { Field, ID, ObjectType } from 'type-graphql';
 import { Column, Entity, JoinColumn, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
@@ -10,7 +9,7 @@ import { RoomVisit } from './roomVisit';
 export class User {
   @Field(() => ID)
   @PrimaryGeneratedColumn()
-  id: string;
+  id: number;
 
   @Field(() => ID)
   @Column()

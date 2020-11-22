@@ -1,6 +1,6 @@
 # TODOs
 
-- add snackbar when room is saved to gist
+- user existing files during gist creation
 - timeout session clean up session storage, logout action
 - loading and transitions
   - create room
