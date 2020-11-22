@@ -1,6 +1,7 @@
 # TODOs
 
 - user existing files during gist creation
+- general client side error handling
 - timeout session clean up session storage, logout action
 - loading and transitions
   - create room
@@ -13,9 +14,7 @@
 ## later
 
 - copy link to room button
-- add titles for routes
-- style scrollbar
-- create new gist
+- style scrollbar for dark mode
 - authorization
   - client-side routes
   - api

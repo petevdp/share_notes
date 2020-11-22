@@ -104,9 +104,9 @@ function Routes() {
       <Route exact path="/">
         <LandingPage />
       </Route>
-      <Route exact path="/rooms">
+      <AuthGuardedRoute exact path="/rooms">
         <Home />
-      </Route>
+      </AuthGuardedRoute>
       <AuthGuardedRoute exact path="/rooms/new">
         <RoomCreation />
       </AuthGuardedRoute>
