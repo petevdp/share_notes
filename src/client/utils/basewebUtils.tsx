@@ -5,7 +5,7 @@ import { ModalOverrides } from 'baseui/modal';
 import { Override } from 'baseui/overrides';
 import { SnackbarElementPropsT } from 'baseui/snackbar';
 import { StyledSpinnerNext as Spinner } from 'baseui/spinner';
-import { BrandLink } from 'Client/components/GlobalHeader';
+import { BrandLink } from 'Client/components/NavBar';
 import React, { Props, ReactNode } from 'react';
 import { useHistory } from 'react-router-dom';
 export type enqueueSnackbar = (elementProps: SnackbarElementPropsT, duration?: any) => any;

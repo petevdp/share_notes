@@ -1,3 +1,4 @@
+import { UserInputError } from 'apollo-server-express';
 import { AuthorizedContext } from 'Server/context';
 import {
   CreateRoomInput,
@@ -150,7 +151,11 @@ export class RoomResolver {
         const { gistId } = gistUpdate;
         const originalGistData = await githubRequestWithAuth(context.githubSessionToken)('GET /gists/:gist_id', {
           gist_id: gistId,
-        }).then((res) => res.data);
+        })
+          .catch((err) => {
+            throw new UserInputError('Unable to find gistId for import', { invalidArgs: gistId });
+          })
+          .then((res) => res.data);
 
         if (originalGistData.owner.id !== owner.githubDatabaseId) {
           // this user doesn't own the room, so we create a fork
@@ -166,7 +171,8 @@ export class RoomResolver {
         break;
 
       case GistUpdateType.Delete:
-        delete room.gistName;
+        // we have to do this to actually delete this field. Adding null to the type leads to typeorm issues.
+        room.gistName = (null as unknown) as undefined;
         break;
 
       case GistUpdateType.None:

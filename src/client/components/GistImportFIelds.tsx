@@ -27,8 +27,6 @@ export function GistImportFields({
   actionNamespace: string;
 }) {
   const dispatch = useDispatch();
-  const [css, theme] = useStyletron();
-
   const { setGistSelectionValue, setGistUrl, setIsForkCheckboxChecked } = createGistImportFieldsActions(sliceNamespace);
 
   return (
@@ -43,6 +41,19 @@ export function GistImportFields({
           placeholder="Choose from owned Gists"
           maxDropdownHeight="300px"
           type={'search'}
+          overrides={{
+            Popover: {
+              props: {
+                overrides: {
+                  Body: {
+                    style: {
+                      zIndex: 4,
+                    },
+                  },
+                },
+              },
+            },
+          }}
         />
       </FormControl>
       <FormControl error={fields.errorMessage} label={'Gist Url'}>

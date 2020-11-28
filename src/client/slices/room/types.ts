@@ -94,9 +94,12 @@ export const setRoomGistDetails = createAction('setRoomGistDetails', (data: gist
   payload: data,
 }));
 export const setIsCreatingRoom = createAction('setIsCreatingFroom');
-export const initRoom = createAction('initRoom', (roomHashId: string, startingTab?: string) => ({
-  payload: { roomHashId, startingTab },
-}));
+export const initRoom = createAction(
+  'initRoom',
+  (roomHashId: string, enqueueSnackbar: enqueueSnackbar, startingTab?: string) => ({
+    payload: { roomHashId, startingTab, enqueueSnackbar },
+  }),
+);
 export const roomInitialized = createAction('roomInitialized', (yjsClientId: number) => ({ payload: yjsClientId }));
 
 export const destroyRoom = createAction('destroyRoom');
@@ -287,9 +290,9 @@ export function isCurrentUserRoomOwnerSelector(state: rootState): boolean | unde
   return currentOwnerId === currentUserId;
 }
 
-export function doesCurrentRoomHaveAssociatedGistSelector(state: rootState): boolean | undefined {
-  if (!state.room.currentRoom || state.room.currentRoom?.initializingRoom) {
-    return;
+export function doesCurrentRoomHaveAssociatedAndLoadedGistSelector(state: rootState): boolean | undefined {
+  if (!state.room.currentRoom?.gistDetails?.html_url) {
+    return false;
   }
   return !!state.room.currentRoom.roomDetails?.gistName;
 }

@@ -1,5 +1,6 @@
 # TODOs
 
+- handle external gist deletion
 - fix diff not loading again
 - user existing files during gist creation
 - general client side error handling

@@ -72,16 +72,6 @@ function RoomListElement({ room }: { room: roomWithVisited }) {
   const [css] = useStyletron();
   return (
     <ListItem
-      overrides={
-        {
-          // Content: {
-          //   style: {
-          //     display: 'flex',
-          //     justifyContent: 'space-between',
-          //   },
-          // },
-        }
-      }
       endEnhancer={() => (
         <>
           <span className={css({ marginRight: '10px', fontSize: '15px', fontWeight: 'lighter' })}>

@@ -108,11 +108,13 @@ export class YjsService {
 
     const userToken = getCookie('session-token', req.headers.cookie);
     if (!userToken) {
+      console.log('Anonymous user connected to room.');
       return;
     }
-    const userId = await this.tedisService.tedis.hget(USER_ID_BY_SESSION_KEY, userToken);
+    const userId = await this.tedisService.getCurrentUserId(userToken);
     if (!userId) {
-      throw "user isn't logged in or doesn't exist";
+      console.warn("User isn't logged in or doesn't exist.");
+      return;
     }
 
     // setupWSConnection will create the doc for us
@@ -135,9 +137,9 @@ export class YjsService {
       console.log(err);
     }
 
-    const isNewRoom = !this.roomManagers.has(docName);
-    if (isNewRoom) {
-      console.log('new room, popoulating');
+    const isNewRoomOrIsntLoaded = !this.roomManagers.has(docName);
+    if (isNewRoomOrIsntLoaded) {
+      console.log('new room, populating');
       const room = await roomPromise;
       const clientSideRoom = this.clientSideRoomService.getClientSideRoom(room);
       if (!clientSideRoom) {
@@ -149,15 +151,19 @@ export class YjsService {
         this.roomManagers.delete(docName);
       });
 
-      const token = await this.tedisService.tedis.hget(TOKEN_BY_USER_ID, (await clientSideRoom.owner).id.toString());
-
       let details: gistDetails | undefined;
       if (clientSideRoom.gistName) {
-        details = await octokitRequest
+        const response = await octokitRequest
           .defaults({
-            headers: { authorization: `bearer ${token}` },
+            headers: { authorization: `bearer ${userToken}` },
           })('GET /gists/:gist_id', { gist_id: clientSideRoom.gistName })
-          .then((res) => res.data);
+          .catch((err) => {
+            console.warn(err);
+            return;
+          });
+        if (response) {
+          details = response.data;
+        }
       }
 
       if (__isEmpty(manager.yData.details.toJSON())) {
@@ -165,7 +171,7 @@ export class YjsService {
           const combinedContents = JSON.parse(room.savedFileContentsAndDetails) as combinedFilesState;
           manager.ydoc.transact(() => {
             const details: roomDetails = {
-              gistName: clientSideRoom.gistName,
+              gistName: clientSideRoom.gistName || undefined,
               hashId: clientSideRoom.hashId,
               id: clientSideRoom.id,
               name: clientSideRoom.name,
@@ -187,7 +193,7 @@ export class YjsService {
         } else {
           manager.populate(
             {
-              gistName: clientSideRoom.gistName,
+              gistName: clientSideRoom.gistName || undefined,
               hashId: clientSideRoom.hashId,
               id: clientSideRoom.id,
               name: clientSideRoom.name,
@@ -234,7 +240,6 @@ export class ServerSideRoomManager extends RoomManager {
             [...awareness.values()].map((client) => client.roomMemberDetails?.userIdOrAnonID).filter(Boolean),
           ) as Set<string>,
       ),
-      tap((ids) => console.log({ ids })),
       scan<Set<string>, { deltas: { userID: string; deltaValue: boolean }[]; prevIDs: Set<string> }>(
         ({ prevIDs }, currIDs) => {
           const deltas: { userID: string; deltaValue: boolean }[] = [];

@@ -11,6 +11,8 @@ import { Service } from 'typedi';
 import { Repository } from 'typeorm';
 import { InjectRepository } from 'typeorm-typedi-extensions';
 
+import { clientSideRoom } from '../../../dist/src/shared/types/roomTypes';
+
 @Service()
 @Resolver(() => User)
 export class UserResolver {
@@ -91,6 +93,7 @@ export class UserResolver {
   private getClientSideRoom(room: Room) {
     return {
       ...room,
+      gistName: room.gistName || undefined,
       hashId: this.hashIdService.hashIds.encode(room.id),
     };
   }

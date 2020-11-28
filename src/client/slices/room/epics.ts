@@ -1,14 +1,20 @@
 import { request as octokitRequest } from '@octokit/request';
+import { GistsGetResponseData } from '@octokit/types/dist-types';
+import { DURATION } from 'baseui/snackbar';
 import { anonymousLoginActions, roomMemberInputSelector } from 'Client/slices/session/types';
 import { rootState } from 'Client/store';
+import { enqueueSnackbar } from 'Client/utils/basewebUtils';
 import { DELETE_ROOM, deleteRoomResponse, GET_ROOM, getRoomResponse } from 'Client/utils/queries';
 import { octokitRequestWithAuth as getOctokitRequestWithAuth } from 'Client/utils/utils';
+import { response } from 'express';
 import _isEqual from 'lodash/isEqual';
-import { Action } from 'redux';
+import { Action, AnyAction } from 'redux';
 import { Epic, StateObservable } from 'redux-observable';
+import { EMPTY } from 'rxjs';
 import { Observable } from 'rxjs/internal/Observable';
 import { concat } from 'rxjs/internal/observable/concat';
 import { from } from 'rxjs/internal/observable/from';
+import { fromPromise } from 'rxjs/internal/observable/fromPromise';
 import { merge } from 'rxjs/internal/observable/merge';
 import { of } from 'rxjs/internal/observable/of';
 import { concatMap } from 'rxjs/internal/operators/concatMap';
@@ -25,7 +31,7 @@ import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { GRAPHQL_URL } from 'Shared/environment';
 import { gistDetails } from 'Shared/githubTypes';
 import { roomMemberInput } from 'Shared/types/roomMemberAwarenessTypes';
-import { deleteRoomInput } from 'Shared/types/roomTypes';
+import { clientSideRoom, deleteRoomInput, GistUpdateType } from 'Shared/types/roomTypes';
 
 import { roomUpdateActions } from '../roomUpdating/types';
 import {
@@ -63,7 +69,7 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
       ({
         ClientSideRoomManager,
         action: {
-          payload: { roomHashId },
+          payload: { roomHashId, enqueueSnackbar },
         },
         state: rootState,
       }) => {
@@ -92,19 +98,33 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
           }).then((res) => res.room),
         );
 
-        const gistDataPromise = roomDataPromise.then((r) => {
-          if (!r) {
-            throw 'room not found';
+        const attemptGetGistDataPromise = roomDataPromise.then((roomData) => {
+          if (!roomData) {
+            console.warn('room not found');
+            return;
           }
 
-          if (!r.gistName) {
+          if (!roomData.gistName) {
             return;
           }
 
           return getOctokitRequestWithAuth()('GET /gists/{gist_id}', {
-            gist_id: r.gistName,
-          }).then((r) => r.data as gistDetails);
+            gist_id: roomData.gistName,
+          }).catch(() => {
+            return promptGistNotFoundAndReturnDeletionAction(roomData, enqueueSnackbar);
+          });
         });
+
+        const updateFromDeletingGistRoomWhenNotFound$ = from(
+          attemptGetGistDataPromise.then((res) => !res?.data && (res as AnyAction | undefined)),
+        ).pipe(
+          filter((action) => !!action),
+          map((action) => action as AnyAction),
+        );
+
+        const gistDataPromise = attemptGetGistDataPromise.then(
+          (res) => res?.data && (res.data as gistDetails | undefined),
+        );
 
         state$
           .pipe(
@@ -184,7 +204,7 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
           withLatestFrom(state$),
           takeUntil(manager.roomDestroyed$$),
           concatMap(
-            async ([
+            ([
               {
                 payload: { enqueueSnackbar },
               },
@@ -194,10 +214,17 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
               const sessionData = rootState.session;
               const { token } = sessionData;
               if (!gist) {
-                throw 'no data from github retreived';
+                console.warn('no gist set when attempting to save gist');
+                return EMPTY;
+              }
+              const roomDetails = rootState.room.currentRoom?.roomDetails;
+              if (!roomDetails) {
+                console.warn('no room data set');
+                return EMPTY;
               }
               if (!token) {
-                throw 'no token set';
+                console.warn('no session token set');
+                return EMPTY;
               }
 
               const originalFileData = rootState.room.currentRoom?.gistDetails?.files;
@@ -223,15 +250,26 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
                   filesForGithub[k] = null;
                 });
 
-              const updatedDetails: gistDetails = await octokitRequest('PATCH /gists/{id}', {
+              const saveResultPromise = octokitRequest('PATCH /gists/{id}', {
                 id: gist.id,
                 files: filesForGithub,
                 headers: {
                   Authorization: `bearer ${sessionData.token}`,
                 },
-              }).then((res) => res.data);
-              enqueueSnackbar({ message: 'Successfully saved files to gist.' });
-              return gistSaved(updatedDetails);
+              })
+                .then((res) => {
+                  enqueueSnackbar({ message: 'Successfully saved files to gist.' });
+                  return gistSaved(res.data);
+                })
+                .catch((err) => {
+                  console.warn(err);
+                  return promptGistNotFoundAndReturnDeletionAction(roomDetails, enqueueSnackbar);
+                });
+
+              return from(saveResultPromise).pipe(
+                filter(Boolean),
+                map((res) => res as AnyAction),
+              );
             },
           ),
         );
@@ -259,12 +297,12 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
           of(roomInitialized(manager.provider.doc.clientID)),
           merge(
             roomDataPromise.then(setRoomData),
-            from(gistDataPromise).pipe(filter(Boolean), map(setRoomGistDetails)),
+            from(gistDataPromise).pipe(map(setRoomGistDetails)),
             fileDetailsStateUpdateAction$,
             roomAwarenessUpdate$,
             switchCurrentFileAfterAdded$,
             // reached end of merge's type signature, have to nest merges now
-            merge(leaveRoom$, gistSaved$),
+            merge(leaveRoom$, gistSaved$, updateFromDeletingGistRoomWhenNotFound$),
           ),
         );
       },
@@ -339,3 +377,19 @@ export const copyToClipboardEpic: Epic = (action$) =>
     }),
     ignoreElements(),
   );
+
+function promptGistNotFoundAndReturnDeletionAction(room: clientSideRoom, enqueueSnackbar: enqueueSnackbar) {
+  return new Promise<AnyAction>((resolve) => {
+    enqueueSnackbar(
+      {
+        message:
+          "Gist for this room was not found, or something else went wrong when accessing github. The room was most likely deleted. You'll have to add another one manually.",
+        actionMessage: 'ok',
+        actionOnClick: () => {
+          resolve(roomUpdateActions.updateRoom(room.name, room.id.toString(), { type: GistUpdateType.Delete }));
+        },
+      },
+      DURATION.infinite,
+    );
+  });
+}

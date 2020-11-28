@@ -13,9 +13,9 @@ import { DebugEngine, Provider as StyletronProvider } from 'styletron-react';
 
 import { AuthGuardedRoute } from './components/AuthGuard';
 import { RoomCreation } from './components/CreateRoom';
-import { GlobalHeader } from './components/GlobalHeader';
 import { Home } from './components/Home';
 import { LandingPage } from './components/LandingPage';
+import { NavBar } from './components/NavBar';
 import { Room } from './components/Room';
 import { settingsSelector } from './slices/settings/types';
 import { persistor, store } from './store';
@@ -27,7 +27,7 @@ export function App(): ReactElement {
       <StylingProvider>
         <Router>
           <Background>
-            <GlobalHeader />
+            <NavBar />
             <Routes />
           </Background>
         </Router>

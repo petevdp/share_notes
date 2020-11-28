@@ -82,7 +82,7 @@ export function Room() {
   }, []);
   useEffect(() => {
     if (roomHashId) {
-      dispatch(initRoom(roomHashId));
+      dispatch(initRoom(roomHashId, enqueueSnackbar));
       return () => {
         dispatch(destroyRoom());
       };
@@ -172,12 +172,14 @@ export function Room() {
               tooltip="Edit Room Details"
               gridArea="edit-details"
             />
-            <ControlPanelButtonWithTooltip
-              Icon={SvgSave}
-              tooltip={'Save changes to Gist'}
-              onClick={() => dispatch(saveBackToGist(roomHashId, enqueueSnackbar))}
-              gridArea="save-to-gist"
-            />
+            {currentRoom?.gistDetails && (
+              <ControlPanelButtonWithTooltip
+                gridArea="save-to-gist"
+                Icon={SvgSave}
+                tooltip={'Save changes to Gist'}
+                onClick={() => dispatch(saveBackToGist(roomHashId, enqueueSnackbar))}
+              />
+            )}
           </>
         )}
         <span className={css({ gridArea: 'settings' })}>

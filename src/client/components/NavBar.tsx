@@ -18,7 +18,7 @@ import { currentUser, githubUserDetails } from 'Client/slices/currentUserDetails
 import {
   copyToClipboard,
   currentRoomStateWithComputedSelector,
-  doesCurrentRoomHaveAssociatedGistSelector,
+  doesCurrentRoomHaveAssociatedAndLoadedGistSelector,
 } from 'Client/slices/room/types';
 import { getLoginWithGithubHref, loginWithGithub } from 'Client/slices/session/epics';
 import { loggedInStatusSelector, LoginStatus, logOut } from 'Client/slices/session/types';
@@ -89,7 +89,7 @@ const getGithubUrlIconNavIconProps = (theme: Theme): React.SVGProps<SVGSVGElemen
   height: theme.sizing.scale800,
 });
 
-export function GlobalHeader() {
+export function NavBar() {
   const dispatch = useDispatch();
   const location = useLocation();
   const currentRoomDetails = useSelector((state: rootState) => state.room.currentRoom?.roomDetails);
@@ -97,7 +97,7 @@ export function GlobalHeader() {
   const roomAwareness = useSelector((state: rootState) => state.room.currentRoom?.awareness);
   const currentUser = useSelector((state: rootState) => state.currentUserDetails);
   const loginStatus = useSelector(loggedInStatusSelector);
-  const doesCurrentRoomHaveAssociatedGist = useSelector(doesCurrentRoomHaveAssociatedGistSelector);
+  const doesCurrentRoomHaveAssociatedGist = useSelector(doesCurrentRoomHaveAssociatedAndLoadedGistSelector);
   const { enqueue: enqueueSnackbar } = useSnackbar();
   const [css, theme] = useStyletron();
 
@@ -173,23 +173,17 @@ export function GlobalHeader() {
         <StyledNavigationList $align={ALIGN.center}>
           {currentRoom && (
             <StyledNavigationItem>
-              {doesCurrentRoomHaveAssociatedGist && (
-                <StatefulTooltip
-                  content={
-                    "Open this room's gist" + currentRoom.gistDetails
-                      ? ''
-                      : " (disabled: this room doesn't have an associated gist)"
-                  }
-                >
+              {currentRoom.gistDetails?.html_url && (
+                <StatefulTooltip content="Open this room's gist">
                   <Button
                     {...getGithubUrlIconNavButtonProps()}
                     $as={'a'}
-                    href={currentRoom?.gistDetails?.html_url}
+                    href={currentRoom?.gistDetails.html_url}
                     target="_blank"
                     overrides={__merge(getGithubUrlIconNavButtonProps().overrides, {
                       BaseButton: { props: { rel: 'noopener noreferrer' } },
                     })}
-                    disabled={!currentRoom?.gistDetails?.html_url}
+                    disabled={!currentRoom.gistDetails.html_url}
                   >
                     <SvgGithub {...getGithubUrlIconNavIconProps(theme)} />
                   </Button>

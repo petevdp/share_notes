@@ -79,9 +79,7 @@ export function EditRoomModal() {
       }
     })();
 
-    dispatch(
-      updateRoom(state.roomName, state.startingDetails.roomDetails.id.toString(), gistUpdate, state.startingDetails),
-    );
+    dispatch(updateRoom(state.roomName, state.startingDetails.roomDetails.id.toString(), gistUpdate));
   };
   return (
     <Modal
