@@ -157,16 +157,7 @@ export function Room() {
           <>
             <ControlPanelButtonWithTooltip
               onClick={() => {
-                if (currentRoom?.roomDetails && !currentRoom.roomDetails.gistName) {
-                  dispatch(roomUpdateActions.initialize({ roomDetails: currentRoom.roomDetails }));
-                } else if (currentRoom?.roomDetails && currentRoom.gistDetails) {
-                  dispatch(
-                    roomUpdateActions.initialize({
-                      roomDetails: currentRoom.roomDetails,
-                      gistDetails: currentRoom.gistDetails,
-                    }),
-                  );
-                }
+                dispatch(roomUpdateActions.initializeForCurrentRoom());
               }}
               Icon={SvgPencil}
               tooltip="Edit Room Details"

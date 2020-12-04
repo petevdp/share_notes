@@ -8,6 +8,9 @@ import {
   createGistCreationFieldsActions,
   getGistCreationFieldsWithComputed,
   gistCreationFields,
+  gistCreationFieldsCreatingRoom,
+  gistCreationFieldsCreatingRoomWithComputed,
+  gistCreationFieldsEditingRoomWithComputed,
   gistCreationFieldsWithComputed,
 } from '../partials/gistCreationFields';
 import {
@@ -32,7 +35,7 @@ export interface roomCreationSliceState {
   submitted: boolean;
   roomName: string;
   formSelected: RoomCreationFormType;
-  gistCreationFields: gistCreationFields;
+  gistCreationFields: gistCreationFieldsCreatingRoom;
   gistImportFields: gistImportFields;
   ownedGists?: gistDetailsStore;
   otherGists: gistDetailsStore;
@@ -46,7 +49,7 @@ export interface computedRoomCreationSliceState extends roomCreationSliceState {
 }
 
 export interface roomCreationSliceStateWithComputed extends roomCreationSliceState {
-  gistCreationFields: gistCreationFieldsWithComputed;
+  gistCreationFields: gistCreationFieldsCreatingRoomWithComputed;
   gistImportFields: gistImportFieldsWithComputed;
   gistSelectionOptions: Option[];
   canSubmit: boolean;
@@ -80,7 +83,7 @@ export function getComputedRoomCreationSliceState(
 
   return {
     ...roomCreation,
-    gistCreationFields: gistCreationForm,
+    gistCreationFields: gistCreationForm as gistCreationFieldsCreatingRoomWithComputed,
     gistImportFields: gistImportForm,
     canSubmit,
     gistSelectionOptions: roomCreation.ownedGists

@@ -8,6 +8,8 @@ import {
   createGistCreationFieldsActions,
   getGistCreationFieldsWithComputed,
   gistCreationFields,
+  gistCreationFieldsEditingRoom,
+  gistCreationFieldsEditingRoomWithComputed,
   gistCreationFieldsWithComputed,
 } from '../partials/gistCreationFields';
 import {
@@ -24,13 +26,13 @@ export interface roomUpdatingState {
   gistUpdateType: GistUpdateType;
   ownedGists?: gistDetailsStore;
   otherGists?: gistDetailsStore;
-  gistCreationFields: gistCreationFields;
+  gistCreationFields: gistCreationFieldsEditingRoom;
   gistImportFields: gistImportFields;
   submitted: boolean;
 }
 
 export interface roomUpdatingStateWithComputed extends roomUpdatingState {
-  gistCreationFields: gistCreationFieldsWithComputed;
+  gistCreationFields: gistCreationFieldsEditingRoomWithComputed;
   gistImportFields: gistImportFieldsWithComputed;
   gistSelectionOptions: Option[];
   modifiedFields: {
@@ -44,7 +46,9 @@ export type roomUpdatingSliceState = roomUpdatingState | null;
 export type roomUpdatingSliceStateWithComputed = roomUpdatingStateWithComputed | null;
 
 export function getComputedRoomUpdatingSliceState(state: roomUpdatingState): roomUpdatingStateWithComputed {
-  const gistCreationFields = getGistCreationFieldsWithComputed(state.gistCreationFields);
+  const gistCreationFields = getGistCreationFieldsWithComputed(
+    state.gistCreationFields,
+  ) as gistCreationFieldsEditingRoomWithComputed;
   const gistImportFields = getGistImportFieldsWithComputed(state.gistImportFields, state.ownedGists, state.otherGists);
 
   const modifiedFields = {
@@ -97,9 +101,15 @@ export interface startingRoomDetails {
   gistDetails?: gistDetails;
 }
 
+export interface updatedRoomDetails {
+  roomDetails: clientSideRoom;
+  gistDetails?: gistDetails;
+}
+
 const namespaceAction = (action: string) => `${ROOM_UPDATE_ACTION_NAMESPACE}/${action}`;
 
 export const roomUpdateActions = {
+  initializeForCurrentRoom: createAction('initializeForCurrentRoom'),
   initialize: createAction(namespaceAction('initialize'), (startingRoomDetails: startingRoomDetails) => ({
     payload: startingRoomDetails,
   })),

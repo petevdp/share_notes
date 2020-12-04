@@ -13,49 +13,6 @@
       "Client": "/home/pete/projects/share_notes/src/client"
     }
   },
-  "module": {
-    "rules": [
-      {
-        "test": {},
-        "use": [
-          "style-loader",
-          "css-loader"
-        ]
-      },
-      {
-        "test": {},
-        "use": [
-          "file-loader"
-        ]
-      },
-      {
-        "test": {},
-        "loader": "url-loader",
-        "options": {
-          "limit": 8192
-        }
-      },
-      {
-        "test": {},
-        "include": [
-          "/home/pete/projects/share_notes/src/client",
-          "/home/pete/projects/share_notes/src/shared"
-        ],
-        "use": [
-          {
-            "loader": "babel-loader"
-          },
-          {
-            "loader": "ts-loader",
-            "options": {
-              "transpileOnly": true,
-              "projectReferences": true
-            }
-          }
-        ]
-      }
-    ]
-  },
   "plugins": [
     {
       "options": {
@@ -608,6 +565,49 @@
     "globalObject": "self",
     "filename": "[name].[contenthash].js",
     "path": "/home/pete/projects/share_notes/bundleProd"
+  },
+  "module": {
+    "rules": [
+      {
+        "test": {},
+        "use": [
+          "style-loader",
+          "css-loader"
+        ]
+      },
+      {
+        "test": {},
+        "use": [
+          "file-loader"
+        ]
+      },
+      {
+        "test": {},
+        "loader": "url-loader",
+        "options": {
+          "limit": 8192
+        }
+      },
+      {
+        "test": {},
+        "include": [
+          "/home/pete/projects/share_notes/src/client",
+          "/home/pete/projects/share_notes/src/shared"
+        ],
+        "use": [
+          {
+            "loader": "babel-loader"
+          },
+          {
+            "loader": "ts-loader",
+            "options": {
+              "transpileOnly": true,
+              "projectReferences": true
+            }
+          }
+        ]
+      }
+    ]
   },
   "optimization": {
     "runtimeChunk": "single",

@@ -10,6 +10,13 @@ export interface gistFileDetails {
   [k: string]: unknown;
 }
 
+export interface fileInputForGithub {
+  [filename: string]: {
+    filename: string;
+    content: string;
+  };
+}
+
 export type gistDetails = GistsGetResponseData;
 
 export type fileDetails = gistDetails['files'][string];

@@ -1,5 +1,4 @@
 import { request as octokitRequest } from '@octokit/request';
-import { DateTime } from 'luxon';
 import { GITHUB_GRAPHQL_API_URL, SESSION_TOKEN_COOKIE_KEY } from 'Shared/environment';
 
 export function setCookie(name: string, value: string, days = 5) {
@@ -87,5 +86,5 @@ export function formatRoomVisitedTime(visitedDateStr: string) {
   if (diff <= 777600) {
     return '1 week ago';
   }
-  return 'on ' + DateTime.fromJSDate(visitedDate).toLocaleString(DateTime.DATE_MED);
+  return 'on ' + visitedDate.toLocaleDateString();
 }

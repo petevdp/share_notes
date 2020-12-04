@@ -71,7 +71,6 @@ export const gistUpdateTypeArr = [
 export type gistUpdate =
   | {
       type: GistUpdateType.Create;
-      name: string;
       description: string;
     }
   | {
@@ -86,7 +85,7 @@ export type gistUpdate =
     };
 
 export interface updateRoomInput {
-  roomId: string;
+  roomHashId: string;
   roomName: string;
   gistUpdate: gistUpdate;
 }

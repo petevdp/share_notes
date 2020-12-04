@@ -3,6 +3,7 @@ import { AuthorizedContext } from 'Server/context';
 import {
   CreateRoomInput,
   DeleteRoomInput,
+  FileInput,
   RoomInput,
   UpdateRoomInput,
   validateUpdateRoomGistInput,
@@ -15,6 +16,7 @@ import { ClientSideRoomService } from 'Server/services/clientSideRoomService';
 import { TedisService } from 'Server/services/tedisService';
 import { YjsService } from 'Server/services/yjsService';
 import { githubRequestWithAuth } from 'Server/utils/githubUtils';
+import { fileInputForGithub, gistDetails } from 'Shared/githubTypes';
 import { GistUpdateType } from 'Shared/types/roomTypes';
 import { Arg, Authorized, Ctx, FieldResolver, Mutation, Query, Resolver, Root } from 'type-graphql';
 import { Service } from 'typedi';
@@ -122,13 +124,15 @@ export class RoomResolver {
   @Authorized()
   @Mutation(() => ClientSideRoom)
   async updateRoom(@Arg('input') input: UpdateRoomInput, @Ctx() context: AuthorizedContext) {
-    const { gistUpdate: gistUpdateInput, roomName, roomId } = input;
+    const { gistUpdate: gistUpdateInput, roomName, roomHashId } = input;
     const gistUpdate = validateUpdateRoomGistInput(gistUpdateInput);
     const currentUserId = await this.tedisService.getCurrentUserId(context.githubSessionToken);
     if (!currentUserId) {
       throw 'idk';
     }
-    const room = await this.roomRepository.findOneOrFail(roomId, { relations: ['owner'] });
+    const room = await this.roomRepository.findOneOrFail(this.clientSideRoomService.getIdFromHashId(roomHashId), {
+      relations: ['owner'],
+    });
     console.log({ currentUserId: currentUserId, owner: await room.owner });
 
     if (currentUserId !== (await room.owner).id) {
@@ -139,16 +143,18 @@ export class RoomResolver {
 
     switch (gistUpdate.type) {
       case GistUpdateType.Create:
-        const { name, description } = gistUpdate;
+        const { description } = gistUpdate;
+        const filesForGithub = this.yjsService.getDocForRoom(roomHashId)?.getFilesForGithub();
+
         const newGistData = await githubRequestWithAuth(context.githubSessionToken)('POST /gists', {
-          files: { [name]: { content: name } },
+          files: filesForGithub as fileInputForGithub,
           description,
         }).then((res) => res.data);
         room.gistName = newGistData.id;
         break;
 
       case GistUpdateType.Import:
-        const { gistId } = gistUpdate;
+        const gistId = gistUpdate.gistId as string;
         const originalGistData = await githubRequestWithAuth(context.githubSessionToken)('GET /gists/:gist_id', {
           gist_id: gistId,
         })

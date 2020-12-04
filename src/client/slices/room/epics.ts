@@ -4,8 +4,16 @@ import { DURATION } from 'baseui/snackbar';
 import { anonymousLoginActions, roomMemberInputSelector } from 'Client/slices/session/types';
 import { rootState } from 'Client/store';
 import { enqueueSnackbar } from 'Client/utils/basewebUtils';
-import { DELETE_ROOM, deleteRoomResponse, GET_ROOM, getRoomResponse } from 'Client/utils/queries';
-import { octokitRequestWithAuth as getOctokitRequestWithAuth } from 'Client/utils/utils';
+import {
+  DELETE_ROOM,
+  deleteRoomResponse,
+  GET_ROOM,
+  getRoomResponse,
+  UPDATE_ROOM,
+  updateRoomResponse,
+  updateRoomVariables,
+} from 'Client/utils/queries';
+import { octokitRequestWithAuth as getOctokitRequestWithAuth, octokitRequestWithAuth } from 'Client/utils/utils';
 import { response } from 'express';
 import _isEqual from 'lodash/isEqual';
 import { Action, AnyAction } from 'redux';
@@ -292,6 +300,40 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
             }
           });
 
+        const initializeRoomUpdate$ = action$.pipe(
+          filter(roomUpdateActions.initializeForCurrentRoom.match),
+          takeUntil(manager.roomDestroyed$$),
+          withLatestFrom(state$),
+          filter(([, state]) => !!state.room.currentRoom?.roomDetails),
+          map(([, state]) =>
+            roomUpdateActions.initialize({
+              roomDetails: state.room.currentRoom?.roomDetails as clientSideRoom,
+              gistDetails: state.room.currentRoom?.gistDetails,
+            }),
+          ),
+        );
+
+        const roomUpdated$ = action$.pipe(
+          filter(roomUpdateActions.updateRoom.match),
+          takeUntil(manager.roomDestroyed$$),
+          concatMap(async ({ payload: { gistUpdate, roomName, roomId } }) => {
+            const response = await import('graphql-request').then(({ request: gqlRequest }) =>
+              gqlRequest<updateRoomResponse, updateRoomVariables>(GRAPHQL_URL, UPDATE_ROOM, {
+                input: { roomHashId: roomHashId, roomName, gistUpdate: { ...gistUpdate } },
+              }),
+            );
+
+            const gist =
+              (response.updateRoom.gistName &&
+                (await octokitRequestWithAuth()('GET /gists/:gist_id', {
+                  gist_id: response.updateRoom.gistName,
+                }).then((r) => r.data))) ||
+              undefined;
+
+            return roomUpdateActions.roomUpdated({ gistDetails: gist, roomDetails: response.updateRoom });
+          }),
+        );
+
         manager.connect();
         return concat(
           of(roomInitialized(manager.provider.doc.clientID)),
@@ -302,7 +344,7 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
             roomAwarenessUpdate$,
             switchCurrentFileAfterAdded$,
             // reached end of merge's type signature, have to nest merges now
-            merge(leaveRoom$, gistSaved$, updateFromDeletingGistRoomWhenNotFound$),
+            merge(leaveRoom$, gistSaved$, updateFromDeletingGistRoomWhenNotFound$, initializeRoomUpdate$, roomUpdated$),
           ),
         );
       },

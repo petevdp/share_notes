@@ -89,7 +89,7 @@ input UpdateRoomGistInput {
 
 input UpdateRoomInput {
   gistUpdate: UpdateRoomGistInput!
-  roomId: ID!
+  roomHashId: ID!
   roomName: String!
 }
 

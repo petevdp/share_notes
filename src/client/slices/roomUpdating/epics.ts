@@ -31,22 +31,23 @@ export const DEBUG__forceOpenEditRoomDetailsModalEpic: Epic = (action$, state$: 
     first(),
   );
 
-export const updateRoomEpic: Epic = (action$) =>
-  action$.pipe(
-    filter(roomUpdateActions.updateRoom.match),
-    concatMap(async ({ payload: { gistUpdate, roomName, roomId } }) => {
-      const variables: updateRoomVariables = { input: { roomId, roomName, gistUpdate } };
-      const { updateRoom: updatedRoom } = await import('graphql-request').then(({ request: gqlRequest }) =>
-        gqlRequest<updateRoomResponse>(GRAPHQL_URL, UPDATE_ROOM, variables),
-      );
+// export const updateRoomEpic: Epic = (action$) =>
+//   action$.pipe(
+//     filter(roomUpdateActions.updateRoom.match),
+//     concatMap(async ({ payload: { gistUpdate, roomName, roomId } }) => {
+//       const response = await import('graphql-request').then(({ request: gqlRequest }) =>
+//         gqlRequest<updateRoomResponse, updateRoomVariables>(GRAPHQL_URL, UPDATE_ROOM, {
+//           input: { roomId, roomName, gistUpdate },
+//         }),
+//       );
 
-      let gist: gistDetails | undefined;
-      if (updatedRoom.gistName) {
-        gist = await octokitRequestWithAuth()('GET /gists/:gist_id', { gist_id: updatedRoom.gistName }).then(
-          (r) => r.data,
-        );
-      }
+//       const gist =
+//         (response.updateRoom.gistName &&
+//           (await octokitRequestWithAuth()('GET /gists/:gist_id', { gist_id: response.updateRoom.gistName }).then(
+//             (r) => r.data,
+//           ))) ||
+//         undefined;
 
-      return roomUpdateActions.roomUpdated({ gistDetails: gist, roomDetails: updatedRoom });
-    }),
-  );
+//       return roomUpdateActions.roomUpdated({ gistDetails: gist, roomDetails: response.updateRoom });
+//     }),
+//   );

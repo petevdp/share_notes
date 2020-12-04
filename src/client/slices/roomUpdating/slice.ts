@@ -11,11 +11,15 @@ import { roomUpdateActions, roomUpdatingSliceState } from './types';
 
 const { initialize, setRoomName, roomUpdated, close, setGistUpdateType, setOwnedGists, updateRoom } = roomUpdateActions;
 
-function initializeRoom(roomDetails: clientSideRoom, gistDetails?: gistDetails) {
+function initializeRoom(roomDetails: clientSideRoom, gistDetails?: gistDetails): roomUpdatingSliceState {
   return {
     startingDetails: { roomDetails, gistDetails },
     roomName: roomDetails.name,
-    gistCreationFields: gistCreation.initialState,
+    gistCreationFields: {
+      type: 'usePreexistingFiles',
+      isPrivate: false,
+      description: '',
+    },
     gistImportFields: gistImporting.initialState,
     gistUpdateType: GistUpdateType.None,
     submitted: false,
@@ -27,9 +31,9 @@ export const roomUpdatingSlice = createSlice({
   initialState: null as roomUpdatingSliceState,
   reducers: {},
   extraReducers: (builder) => {
-    builder.addCase(initialize, (state, { payload: { roomDetails, gistDetails } }) =>
-      initializeRoom(roomDetails, gistDetails),
-    );
+    builder.addCase(initialize, (state, { payload: { roomDetails, gistDetails } }) => {
+      return initializeRoom(roomDetails, gistDetails);
+    });
 
     builder.addCase(close, () => null);
 

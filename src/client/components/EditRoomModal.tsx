@@ -5,6 +5,7 @@ import { FormControl } from 'baseui/form-control';
 import { Input } from 'baseui/input';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from 'baseui/modal';
 import { StyledSpinnerNext as Spinner } from 'baseui/spinner';
+import { gistCreationFieldsEditingRoomWithComputed } from 'Client/slices/partials/gistCreationFields';
 import { fetchCurrentUsersGists } from 'Client/slices/roomCreation/epics';
 import {
   ROOM_UPDATE_ACTION_NAMESPACE,
@@ -54,13 +55,12 @@ export function EditRoomModal() {
       return;
     }
 
-    const gistUpdate: gistUpdate = ((): gistUpdate => {
+    const gistUpdate = ((): gistUpdate => {
       const { Create, Import, Delete, None } = GistUpdateType;
       switch (state.gistUpdateType) {
         case Create:
           return {
             type: Create,
-            name: state.gistCreationFields.name,
             description: state.gistCreationFields.description,
           };
         case Import:

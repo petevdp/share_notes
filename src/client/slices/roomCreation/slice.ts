@@ -38,7 +38,7 @@ export const roomCreationSlice = createSlice({
     builder.addCase(setIsCheckboxChecked, (s, { payload: checked }) => ({ ...s, shouldForkCheckboxChecked: checked }));
 
     const gistImportFieldsReducer = createGistImportFieldsReducer('roomCreation', initialState.gistImportFields);
-    const gistCreationFieldsReducer = createGistCreationFieldsReducer('roomCreation', initialState.gistCreationFields);
+    const gistCreationFieldsReducer = createGistCreationFieldsReducer('roomCreation');
 
     builder.addDefaultCase((state, action) => {
       gistImportFieldsReducer(state.gistImportFields, action, state.ownedGists);
@@ -59,6 +59,7 @@ function getInitialState(): roomCreationSliceState {
       selectedGistValue: [],
     },
     gistCreationFields: {
+      type: 'noPreexistingFiles',
       name: '',
       description: '',
       isPrivate: false,

@@ -1,5 +1,4 @@
 import { createAction } from '@reduxjs/toolkit';
-import { SnackbarElementPropsT } from 'baseui/snackbar';
 import { allColors } from 'Client/services/awarenessColors';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { rootState } from 'Client/store';

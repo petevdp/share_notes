@@ -2,7 +2,7 @@ import { Subject } from 'rxjs/internal/Subject';
 import { v4 as uuidv4 } from 'uuid';
 import * as Y from 'yjs';
 
-import { fileDetails } from './githubTypes';
+import { fileDetails, fileInputForGithub } from './githubTypes';
 import { getKeysForMap } from './utils/ydocUtils';
 
 export interface baseFileDetails {
@@ -142,5 +142,17 @@ export abstract class RoomManager {
 
   getFileDetails(): allBaseFileDetailsStates {
     return this.yData.fileDetails.toJSON() as allBaseFileDetailsStates;
+  }
+
+  getFilesForGithub(): fileInputForGithub {
+    const contents = this.getAllFileContents();
+    const details = this.getFileDetails();
+
+    const inputForGithub: fileInputForGithub = {};
+
+    for (let [tabId, { filename }] of Object.entries(details)) {
+      inputForGithub[filename] = { filename, content: contents[tabId] };
+    }
+    return inputForGithub;
   }
 }
