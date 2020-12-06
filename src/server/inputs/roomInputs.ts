@@ -1,23 +1,11 @@
-import { IsIn, IsNotEmpty, IsString, validate, ValidationError } from 'class-validator';
-import { FieldsOnCorrectTypeRule } from 'graphql';
-import {
-  createRoomInput,
-  deleteRoomInput,
-  gistUpdate,
-  GistUpdateType,
-  gistUpdateTypeArr,
-  roomInput,
-} from 'Shared/types/roomTypes';
-import { ArgumentValidationError, Field, ID, InputType, Int } from 'type-graphql';
-import { fileURLToPath } from 'url';
+import { IsIn, IsString, validate } from 'class-validator';
+import { createRoomInput, deleteRoomInput, GistUpdateType, gistUpdateTypeArr, roomInput } from 'Shared/types/roomTypes';
+import { Field, ID, InputType, Int } from 'type-graphql';
 
 @InputType()
 export class RoomInput implements roomInput {
-  @Field(() => String, { nullable: true })
-  hashId?: string;
-
-  @Field(() => ID, { nullable: true })
-  id?: number;
+  @Field(() => String)
+  hashId: string;
 }
 @InputType()
 export class CreateRoomInput implements createRoomInput {
@@ -36,8 +24,8 @@ export class CreateRoomInput implements createRoomInput {
 
 @InputType()
 export class DeleteRoomInput implements deleteRoomInput {
-  @Field(() => ID)
-  id: string;
+  @Field(() => String)
+  hashId: string;
 }
 
 @InputType()

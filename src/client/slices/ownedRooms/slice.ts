@@ -16,9 +16,9 @@ export const ownedRoomsSlice = createSlice({
       allRooms,
     }));
     builder.addCase(resetOwnedRooms, () => null);
-    builder.addCase(roomDeleted, (state, { payload: roomId }) => {
+    builder.addCase(roomDeleted, (state, { payload: roomHashId }) => {
       if (state?.allRooms) {
-        state.allRooms = state.allRooms.filter((r) => r.id !== roomId);
+        state.allRooms = state.allRooms.filter((r) => r.hashId !== roomHashId);
       }
     });
   },

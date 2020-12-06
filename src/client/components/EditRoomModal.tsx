@@ -79,7 +79,7 @@ export function EditRoomModal() {
       }
     })();
 
-    dispatch(updateRoom(state.roomName, state.startingDetails.roomDetails.id.toString(), gistUpdate));
+    dispatch(updateRoom(state.roomName, gistUpdate));
   };
   return (
     <Modal

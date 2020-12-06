@@ -34,7 +34,6 @@ export interface allUnifiedFileDetailsStates {
 }
 
 export interface startingRoomDetails {
-  id: number;
   hashId: string;
   name: string;
   gistName?: string;

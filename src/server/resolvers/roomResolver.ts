@@ -3,7 +3,6 @@ import { AuthorizedContext } from 'Server/context';
 import {
   CreateRoomInput,
   DeleteRoomInput,
-  FileInput,
   RoomInput,
   UpdateRoomInput,
   validateUpdateRoomGistInput,
@@ -16,7 +15,7 @@ import { ClientSideRoomService } from 'Server/services/clientSideRoomService';
 import { TedisService } from 'Server/services/tedisService';
 import { YjsService } from 'Server/services/yjsService';
 import { githubRequestWithAuth } from 'Server/utils/githubUtils';
-import { fileInputForGithub, gistDetails } from 'Shared/githubTypes';
+import { fileInputForGithub } from 'Shared/githubTypes';
 import { GistUpdateType } from 'Shared/types/roomTypes';
 import { Arg, Authorized, Ctx, FieldResolver, Mutation, Query, Resolver, Root } from 'type-graphql';
 import { Service } from 'typedi';
@@ -110,14 +109,15 @@ export class RoomResolver {
   @Authorized()
   @Mutation(() => Boolean)
   async deleteRoom(@Arg('data') data: DeleteRoomInput, @Ctx() context: AuthorizedContext) {
-    const room = await this.roomRepository.findOneOrFail(data.id, { relations: ['owner'] });
+    const room = await this.roomRepository.findOneOrFail(this.clientSideRoomService.getIdFromHashId(data.hashId), {
+      relations: ['owner'],
+    });
     const userId = await this.tedisService.getCurrentUserId(context.githubSessionToken);
     const owner = await room.owner;
     if (userId && owner.id !== userId) {
-      throw "user doesn't own this room";
+      throw new UserInputError("user doesn't own this room");
     }
-
-    await this.roomRepository.delete(data.id);
+    await this.roomRepository.delete(room.id);
     return true;
   }
 

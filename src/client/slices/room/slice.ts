@@ -75,7 +75,7 @@ export const roomSlice = createSlice({
       if (
         !state ||
         !state.currentRoom?.roomDetails ||
-        state.currentRoom.roomDetails.id !== updatedRoom.roomDetails.id
+        state.currentRoom.roomDetails.hashId !== updatedRoom.roomDetails.hashId
       ) {
         return;
       }

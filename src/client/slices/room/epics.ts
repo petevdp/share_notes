@@ -287,16 +287,16 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
             filter(roomUpdateActions.roomUpdated.match),
             filter(
               ({ payload: { roomDetails } }) =>
-                roomDetails.hashId === roomHashId && manager.getRoomDetails().id === roomDetails.id,
+                roomDetails.hashId === roomHashId && manager.getRoomDetails().hashId === roomDetails.hashId,
             ),
             takeUntil(manager.roomDestroyed$$),
           )
           .subscribe(async ({ payload: { roomDetails, gistDetails } }) => {
             const existingDetails = manager.getRoomDetails();
             if (roomDetails.gistName && existingDetails.gistName !== roomDetails.gistName) {
-              manager.populate({ ...roomDetails, id: roomDetails.id }, gistDetails?.files);
+              manager.populate({ ...roomDetails }, gistDetails?.files);
             } else {
-              manager.populate({ ...roomDetails, id: roomDetails.id });
+              manager.populate({ ...roomDetails });
             }
           });
 
@@ -316,7 +316,7 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
         const roomUpdated$ = action$.pipe(
           filter(roomUpdateActions.updateRoom.match),
           takeUntil(manager.roomDestroyed$$),
-          concatMap(async ({ payload: { gistUpdate, roomName, roomId } }) => {
+          concatMap(async ({ payload: { gistUpdate, roomName } }) => {
             const response = await import('graphql-request').then(({ request: gqlRequest }) =>
               gqlRequest<updateRoomResponse, updateRoomVariables>(GRAPHQL_URL, UPDATE_ROOM, {
                 input: { roomHashId: roomHashId, roomName, gistUpdate: { ...gistUpdate } },
@@ -354,13 +354,13 @@ export const initRoomEpic: Epic = (action$, state$: StateObservable<rootState>):
 export const deleteRoomEpic: Epic = (action$) =>
   action$.pipe(
     filter(deleteRoom.match),
-    concatMap(async ({ payload: roomId }) => {
+    concatMap(async ({ payload: roomHashId }) => {
       await import('graphql-request').then(({ request: gqlRequest }) =>
         gqlRequest<deleteRoomResponse, { data: deleteRoomInput }>(GRAPHQL_URL, DELETE_ROOM, {
-          data: { id: roomId },
+          data: { hashId: roomHashId },
         }),
       );
-      return roomDeleted(roomId);
+      return roomDeleted(roomHashId);
     }),
   );
 
@@ -428,7 +428,7 @@ function promptGistNotFoundAndReturnDeletionAction(room: clientSideRoom, enqueue
           "Gist for this room was not found, or something else went wrong when accessing github. The room was most likely deleted. You'll have to add another one manually.",
         actionMessage: 'ok',
         actionOnClick: () => {
-          resolve(roomUpdateActions.updateRoom(room.name, room.id.toString(), { type: GistUpdateType.Delete }));
+          resolve(roomUpdateActions.updateRoom(room.name, { type: GistUpdateType.Delete }));
         },
       },
       DURATION.infinite,

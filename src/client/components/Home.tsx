@@ -1,9 +1,9 @@
 import { useStyletron } from 'baseui';
-import { Button, StyledBaseButton } from 'baseui/button';
+import { Button } from 'baseui/button';
 import { Card } from 'baseui/card';
 import { Delete } from 'baseui/icon';
-import { StyledLink } from 'baseui/link';
 import { ListItem } from 'baseui/list';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from 'baseui/modal';
 import { Paragraph1 } from 'baseui/typography';
 import { ownedRoomsActions } from 'Client/slices/ownedRooms/types';
 import { deleteRoom } from 'Client/slices/room/types';
@@ -11,9 +11,8 @@ import { rootState } from 'Client/store';
 import { RouterLinkButton, StyledRouterLink } from 'Client/utils/basewebUtils';
 import { roomWithVisited } from 'Client/utils/queries';
 import { formatRoomVisitedTime } from 'Client/utils/utils';
-import React, { ReactNode, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
 
 export function Home() {
   const [css] = useStyletron();
@@ -69,6 +68,7 @@ export function Home() {
 function RoomListElement({ room }: { room: roomWithVisited }) {
   const dispatch = useDispatch();
   const lastVisit = room.visits[0];
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [css] = useStyletron();
   return (
     <ListItem
@@ -77,14 +77,21 @@ function RoomListElement({ room }: { room: roomWithVisited }) {
           <span className={css({ marginRight: '10px', fontSize: '15px', fontWeight: 'lighter' })}>
             last visted: {lastVisit && formatRoomVisitedTime(lastVisit.visitTime)}{' '}
           </span>
-          <Button
-            onClick={() => dispatch(deleteRoom(room.id.toString()))}
-            size="compact"
-            kind="secondary"
-            shape="round"
-          >
+          <Button onClick={() => setIsDeleteModalOpen(true)} size="compact" kind="secondary" shape="round">
             <Delete />
           </Button>
+          <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)}>
+            <ModalHeader>Delete room {room.name}</ModalHeader>
+            <ModalBody>Are you sure you want to delete room {room.name}?</ModalBody>
+            <ModalFooter>
+              <Button
+                overrides={{ BaseButton: { style: { width: '100%' } } }}
+                onClick={() => dispatch(deleteRoom(room.hashId))}
+              >
+                Confirm
+              </Button>
+            </ModalFooter>
+          </Modal>
         </>
       )}
     >

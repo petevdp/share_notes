@@ -26,16 +26,9 @@ export class ClientSideRoomService {
   async findRoom(input: RoomInput) {
     const { hashId: _, ...rest } = input;
     let roomPartial: Partial<Room> = rest;
-    if (input.id) {
-      roomPartial = { id: input.id };
-    } else if (input.hashId) {
-      const id = this.getIdFromHashId(input.hashId);
-      if (id) {
-        roomPartial = {
-          ...roomPartial,
-          id,
-        };
-      }
+    const id = this.getIdFromHashId(input.hashId);
+    if (!id) {
+      return;
     }
     const room = await this.roomRepository.findOne(roomPartial, { relations: ['owner'] });
     return room && this.getClientSideRoom(room);

@@ -12,8 +12,13 @@ export interface room {
   visits: roomVisit[];
 }
 
-export interface clientSideRoom extends room {
+export interface clientSideRoom {
   hashId: string;
+  name: string;
+  gistName?: string;
+  owner: user;
+  createdAt: Date;
+  visits: roomVisit[];
 }
 
 export interface roomInput {
@@ -29,7 +34,7 @@ export interface createRoomInput {
 }
 
 export interface deleteRoomInput {
-  id: string;
+  hashId: string;
 }
 
 export const ROOM_DETAILS_FRAGMENT = gql`

@@ -30,40 +30,41 @@ export class RoomVisitResolver {
     return visit.user;
   }
 
-  @Authorized()
-  @Query(() => [RoomVisit])
-  async roomVisits(@Arg('data') input: RoomVisitsInput, @Ctx() context: AuthorizedContext) {
-    const id = await this.tedisService.getCurrentUserId(context.githubSessionToken);
+  // not needed for now, and contains queries based on internal roomId which shouldn't be allowed
+  // @Authorized()
+  // @Query(() => [RoomVisit])
+  // async roomVisits(@Arg('data') input: RoomVisitsInput, @Ctx() context: AuthorizedContext) {
+  //   const id = await this.tedisService.getCurrentUserId(context.githubSessionToken);
 
-    if (!id) {
-      return null;
-    }
-    let query = this.roomVisitRepository
-      .createQueryBuilder('roomVisit')
-      .innerJoinAndSelect('roomVisit.room', 'room')
-      .innerJoinAndSelect('roomVisit.user', 'user')
-      .innerJoin('room.owner', 'roomOwner')
-      .where('user.id = :currentUserId OR roomOwner.id = :currentUserId', { currentUserId: id });
+  //   if (!id) {
+  //     return null;
+  //   }
+  //   let query = this.roomVisitRepository
+  //     .createQueryBuilder('roomVisit')
+  //     .innerJoinAndSelect('roomVisit.room', 'room')
+  //     .innerJoinAndSelect('roomVisit.user', 'user')
+  //     .innerJoin('room.owner', 'roomOwner')
+  //     .where('user.id = :currentUserId OR roomOwner.id = :currentUserId', { currentUserId: id });
 
-    if (input.dateRangeStart) {
-      query = query.andWhere('roomVisit.createdAt >= :dateRangeStart', { dateRangeStart: input.dateRangeStart });
-    }
+  //   if (input.dateRangeStart) {
+  //     query = query.andWhere('roomVisit.createdAt >= :dateRangeStart', { dateRangeStart: input.dateRangeStart });
+  //   }
 
-    if (input.dateRangeEnd) {
-      query = query.andWhere('roomVisit.createdAt < :dateRangeEnd', { dateRangeEnd: input.dateRangeEnd });
-    }
+  //   if (input.dateRangeEnd) {
+  //     query = query.andWhere('roomVisit.createdAt < :dateRangeEnd', { dateRangeEnd: input.dateRangeEnd });
+  //   }
 
-    if (input.roomIds) {
-      query = query.andWhere('room.id in (:...roomIds)', { roomIds: input.roomIds });
-    }
+  //   if (input.roomIds) {
+  //     query = query.andWhere('room.id in (:...roomIds)', { roomIds: input.roomIds });
+  //   }
 
-    if (input.userIds) {
-      query = query.andWhere('user.id in (:...userIds)', { userIds: input.userIds });
-    }
+  //   if (input.userIds) {
+  //     query = query.andWhere('user.id in (:...userIds)', { userIds: input.userIds });
+  //   }
 
-    return query
-      .orderBy('roomVisit.visitTime', input.sort === 'ascending' ? 'ASC' : 'DESC')
-      .limit(input.first)
-      .getMany();
-  }
+  //   return query
+  //     .orderBy('roomVisit.visitTime', input.sort === 'ascending' ? 'ASC' : 'DESC')
+  //     .limit(input.first)
+  //     .getMany();
+  // }
 }

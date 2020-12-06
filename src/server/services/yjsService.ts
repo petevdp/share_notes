@@ -14,7 +14,6 @@ import { first } from 'rxjs/internal/operators/first';
 import { map } from 'rxjs/internal/operators/map';
 import { mapTo } from 'rxjs/internal/operators/mapTo';
 import { scan } from 'rxjs/internal/operators/scan';
-import { tap } from 'rxjs/internal/operators/tap';
 import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { Room } from 'Server/models/room';
 import { RoomVisit } from 'Server/models/roomVisit';
@@ -173,7 +172,6 @@ export class YjsService {
             const details: roomDetails = {
               gistName: clientSideRoom.gistName || undefined,
               hashId: clientSideRoom.hashId,
-              id: clientSideRoom.id,
               name: clientSideRoom.name,
               gistLoaded: !!clientSideRoom.gistName,
             };
@@ -195,7 +193,6 @@ export class YjsService {
             {
               gistName: clientSideRoom.gistName || undefined,
               hashId: clientSideRoom.hashId,
-              id: clientSideRoom.id,
               name: clientSideRoom.name,
             },
             details?.files,

@@ -138,8 +138,8 @@ export const setRoomAwarenessState = createAction('setRoomAwarenessState', (awar
   payload: awareness,
 }));
 
-export const deleteRoom = createAction('deleteRoom', (roomId: string) => ({ payload: roomId }));
-export const roomDeleted = createAction('roomDeleted', (roomId: string) => ({ payload: roomId }));
+export const deleteRoom = createAction('deleteRoom', (roomHashId: string) => ({ payload: roomHashId }));
+export const roomDeleted = createAction('roomDeleted', (roomHashId: string) => ({ payload: roomHashId }));
 export const copyToClipboard = createAction('copyToClipboard', (text: string, enqueueSnackbar: enqueueSnackbar) => ({
   payload: { text, enqueueSnackbar },
 }));

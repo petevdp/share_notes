@@ -113,12 +113,9 @@ export const roomUpdateActions = {
   initialize: createAction(namespaceAction('initialize'), (startingRoomDetails: startingRoomDetails) => ({
     payload: startingRoomDetails,
   })),
-  updateRoom: createAction(
-    namespaceAction('updateRoom'),
-    (roomName: string, roomId: string, gistUpdate: gistUpdate) => ({
-      payload: { roomName, roomId, gistUpdate },
-    }),
-  ),
+  updateRoom: createAction(namespaceAction('updateRoom'), (roomName: string, gistUpdate: gistUpdate) => ({
+    payload: { roomName, gistUpdate },
+  })),
   roomUpdated: createAction(namespaceAction('roomUpdated'), (startingRoomDetails: startingRoomDetails) => ({
     payload: startingRoomDetails,
   })),

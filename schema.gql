@@ -27,7 +27,7 @@ The javascript `Date` as string. Type represents date and time as the ISO Date s
 scalar DateTime
 
 input DeleteRoomInput {
-  id: ID!
+  hashId: String!
 }
 
 type Mutation {
@@ -40,14 +40,12 @@ type Query {
   currentUser: User!
   room(data: RoomInput!): ClientSideRoom
   rooms: [ClientSideRoom!]!
-  roomVisits(data: RoomVisitsInput!): [RoomVisit!]!
   user(data: UserInput!): User!
   users: [User!]!
 }
 
 input RoomInput {
-  hashId: String
-  id: ID
+  hashId: String!
 }
 
 type RoomMember {
@@ -69,15 +67,6 @@ input RoomVisitsForUserInput {
   first: Int!
   perRoom: Boolean!
   sort: String!
-}
-
-input RoomVisitsInput {
-  dateRangeEnd: DateTime
-  dateRangeStart: DateTime
-  first: Int
-  roomIds: [ID!]
-  sort: String
-  userIds: [ID!]
 }
 
 input UpdateRoomGistInput {
