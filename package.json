@@ -73,7 +73,7 @@
     "redux-persist": "^6.0.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^6.6.3",
-    "sanitize-html": "^2.1.2",
+    "sanitize-html": "^2.3.2",
     "simple-icons": "^3.12.4",
     "styletron-engine-atomic": "^1.4.6",
     "styletron-react": "^5.2.7",
