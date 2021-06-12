@@ -52,7 +52,7 @@
     "isomorphic-ws": "^4.0.1",
     "language-detect": "^1.1.0",
     "lib0": "^0.2.34",
-    "lodash": "^4.17.20",
+    "lodash": "^4.17.21",
     "luxon": "^1.25.0",
     "marked": "^1.2.5",
     "material-design-icons": "^3.0.1",
