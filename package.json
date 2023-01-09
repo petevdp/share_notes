@@ -53,7 +53,7 @@
     "language-detect": "^1.1.0",
     "lib0": "^0.2.34",
     "lodash": "^4.17.21",
-    "luxon": "^1.25.0",
+    "luxon": "^2.5.2",
     "marked": "^2.0.0",
     "material-design-icons": "^3.0.1",
     "module-alias": "^2.2.2",
