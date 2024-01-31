@@ -114,7 +114,7 @@ export function getOverrides(
 export const RoomPopoverZIndexOverride = {
   Body: {
     style: {
-      zIndex: 3,
+      zIndex: 25,
     },
   },
 };
