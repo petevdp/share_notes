@@ -85,6 +85,4 @@ const joinedConfig = {
   devServer,
 };
 
-writeGeneratedConfig(joinedConfig, 'dev');
-
 export default joinedConfig;
