@@ -8,6 +8,7 @@ import querystring from 'querystring';
 import * as GithubUtils from 'Server/utils/githubUtils';
 import { GITHUB_0AUTH_ACCESS_TOKEN_URL, GITHUB_CLIENT_ID, SESSION_TOKEN_COOKIE_KEY } from 'Shared/environment';
 import { Repository } from 'typeorm';
+
 import { User } from './models/user';
 import { TedisService, TOKEN_BY_USER_ID, USER_ID_BY_SESSION_KEY } from './services/tedisService';
 
@@ -31,7 +32,6 @@ export const getAuthRouter = (tedisService: TedisService, userRepository: Reposi
 
   authRouter.use(bodyParser.json({ type: 'application/*+json' }));
   authRouter.get('/redirect', async (req, res) => {
-    console.log('hit redirect');
     const oathCode = req.query.code as string;
 
     const params: github0AuthIdentityParams = {
@@ -69,7 +69,6 @@ export const getAuthRouter = (tedisService: TedisService, userRepository: Reposi
   });
 
   authRouter.get('/logout', (req, res) => {
-    console.log('hit logout');
     if (req.cookies.get(SESSION_TOKEN_COOKIE_KEY)) {
       tedisService.tedis.hdel(USER_ID_BY_SESSION_KEY, req.cookies(SESSION_TOKEN_COOKIE_KEY));
       // tedisService.tedis.hdel(TOKEN_BY_USER_ID, user.id.toString());

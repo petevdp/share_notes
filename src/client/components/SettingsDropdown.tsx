@@ -193,7 +193,6 @@ const SettingsListItem = (props: any) => {
     }
     case 'numericSelect': {
       let options = item.type.options.map((option) => ({ id: option, label: option }));
-      console.log({options});
       itemContent = (
         <>
           <label>{item.label}</label>

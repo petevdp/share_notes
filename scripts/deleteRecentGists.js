@@ -7,7 +7,6 @@ const { request } = require('@octokit/request');
   });
 
   const { data: gists } = await req('GET /gists');
-  // console.log(gists);
 
   const dates = gists.map((g) => new Date(g.created_at).getMinutes());
 
