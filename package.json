@@ -10,6 +10,7 @@
     "start:compile": "tsc --build --watch ./src/tsconfig.json",
     "compile": "tsc --build ./src/tsconfig.json",
     "start:server": "nodemon --inspect --config ./nodemon.server.json server",
+    "server:prod": "node --unhandled-rejections=strict --enable-source-maps --trace-warnings ./dist/src/server/main.js",
     "svgr": "svgr --typescript ./src/client/assets/svgs/ -d ./src/client/generatedSvgComponents/",
     "build:client": "webpack --config webpack/webpack.prod.ts",
     "build:client:analyze": "webpack --config webpack/webpack.prod-analyze.ts",
