@@ -272,7 +272,7 @@ export function currentRoomStateWithComputedSelector(state: rootState): currentR
 
   return {
     ...currentRoom,
-    roomUrl: DOMAIN + `/rooms/${currentRoom.hashId}`,
+    roomUrl: `${window.location.protocol}//${window.location.host}/rooms/${currentRoom.hashId}`,
     isCurrentFileMarkdown,
     awarenessWithComputed:
       state.room.currentRoom?.awareness &&

@@ -123,9 +123,12 @@ export class ClientSideRoomManager extends RoomManager {
       this.provisionedTabs$$.next(tabs);
     });
 
+    // check if development
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    // gross but works for now
+    const host = window.location.hostname === 'localhost' ? 'localhost:1236' : window.location.host;
     this.provider = new WebsocketProvider(
-      `${protocol}//${window.location.host}/api/websocket`,
+      `${protocol}//${host}/api/websocket`,
       getYjsDocNameForRoom(roomHashId),
       this.ydoc,
     );
