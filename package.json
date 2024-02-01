@@ -8,6 +8,7 @@
     "start:client": "nodemon --config ./nodemon.client.json",
     "lint": "eslint ./ --fix",
     "start:compile": "tsc --build --watch ./src/tsconfig.json",
+    "compile": "tsc --build ./src/tsconfig.json",
     "start:server": "nodemon --inspect --config ./nodemon.server.json server",
     "svgr": "svgr --typescript ./src/client/assets/svgs/ -d ./src/client/generatedSvgComponents/",
     "build:client": "webpack --config webpack/webpack.prod.ts",
