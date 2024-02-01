@@ -5,6 +5,6 @@ bundle/*
 .env
 **/*.tsbuildinfo
 
-bundleProd/*
-bundleDev/*
 /.idea
+/bundleProd/
+/bundleDev/
