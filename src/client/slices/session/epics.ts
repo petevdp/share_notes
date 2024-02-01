@@ -48,7 +48,7 @@ export const logOutEpic: Epic = (action$) =>
     filter(logOut.match),
     concatMap(async () => {
       eraseCookie(SESSION_TOKEN_COOKIE_KEY);
-      await fetch('/auth/logout');
+      await fetch('/api/auth/logout');
       return clearSessionData();
     }),
   );
