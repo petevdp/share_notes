@@ -5,7 +5,6 @@ import { rootState } from 'Client/store';
 import { enqueueSnackbar } from 'Client/utils/basewebUtils';
 import { createRoomResponse } from 'Client/utils/queries';
 import __uniqBy from 'lodash/uniqBy';
-import { DOMAIN } from 'Shared/environment';
 import { gistDetails } from 'Shared/githubTypes';
 import { allBaseFileDetailsStates } from 'Shared/roomManager';
 import {

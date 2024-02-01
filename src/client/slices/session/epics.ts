@@ -53,6 +53,15 @@ export const logOutEpic: Epic = (action$) =>
     }),
   );
 
+export const sessionDataClearedEpic: Epic = (action$) =>
+  action$.pipe(
+    filter(clearSessionData.match),
+    map(() => {
+      window.location.href = '/';
+    }),
+    ignoreElements(),
+  );
+
 export function getLoginWithGithubHref() {
   const url = new URL(GITHUB_0AUTH_URL);
   url.searchParams.set('client_id', GITHUB_CLIENT_ID);
