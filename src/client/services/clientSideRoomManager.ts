@@ -33,7 +33,7 @@ import { takeUntil } from 'rxjs/internal/operators/takeUntil';
 import { tap } from 'rxjs/internal/operators/tap';
 import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { Subject } from 'rxjs/internal/Subject';
-import { getYjsDocNameForRoom, YJS_WEBSOCKET_URL_WS } from 'Shared/environment';
+import { getYjsDocNameForRoom} from 'Shared/environment';
 import { gistDetails } from 'Shared/githubTypes';
 import { allBaseFileDetailsStates, roomDetails, RoomManager } from 'Shared/roomManager';
 import {
@@ -123,7 +123,12 @@ export class ClientSideRoomManager extends RoomManager {
       this.provisionedTabs$$.next(tabs);
     });
 
-    this.provider = new WebsocketProvider(YJS_WEBSOCKET_URL_WS, getYjsDocNameForRoom(roomHashId), this.ydoc);
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    this.provider = new WebsocketProvider(
+      `${protocol}//${window.location.host}/api/websocket`,
+      getYjsDocNameForRoom(roomHashId),
+      this.ydoc,
+    );
 
     /*
       3024-night
