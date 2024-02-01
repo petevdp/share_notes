@@ -38,19 +38,17 @@ interface globalSettingsItem<K extends keyof globalEditorSettings> extends ItemT
 }
 
 export function GlobalSettingsDropdown() {
-  const dispatch = useDispatch();
-  const settings = useSelector(settingsSelector);
-  const [css, theme] = useStyletron();
+  const [_, theme] = useStyletron();
 
   const globalSettingItems = (() => {
-    const keymap: globalSettingsItem<'keyMap'> = {
-      label: 'Keybindings',
-      key: 'keyMap',
-      type: {
-        typeName: 'select',
-        options: [{ key: 'regular' }, { key: 'vim' }],
-      },
-    };
+    // const keymap: globalSettingsItem<'keyMap'> = {
+    //   label: 'Keybindings',
+    //   key: 'keyMap',
+    //   type: {
+    //     typeName: 'select',
+    //     options: [{ key: 'regular' }],
+    //   },
+    // };
     const smartIndent: globalSettingsItem<'autoIndent'> = {
       label: 'Auto Indent',
       key: 'autoIndent',
@@ -100,16 +98,8 @@ export function GlobalSettingsDropdown() {
         options: [{ key: 'on' }, { key: 'off' }, { key: 'relative' }],
       },
     };
-    // const tabSize: globalSettingsItem<'tabSize'> = {
-    //   label: 'Tab Size',
-    //   key: 'tabSize',
-    //   type: {
-    //     typeName: 'numericSelect',
-    //     options: [2, 3, 4, 5],
-    //   },
-    // };
 
-    return [tabSize, keymap, lineWrapping, smartIndent, minimap, intellisense, lineNumbers];
+    return [tabSize, /* keymap, */ lineWrapping, smartIndent, minimap, intellisense, lineNumbers];
   })();
 
   return (
@@ -128,123 +118,7 @@ export function GlobalSettingsDropdown() {
             Option: {
               props: {
                 overrides: {
-                  ListItem: {
-                    component: (props: any) => {
-                      const item: globalSettingsItem<keyof globalEditorSettings> = props.item;
-                      const itemState = settings.globalEditor[item.key];
-                      let itemContent: React.ReactElement;
-                      switch (item.type.typeName) {
-                        case 'select': {
-                          if (item.type.typeName !== 'select') {
-                            console.warn('incorrect item type for setting');
-                            return;
-                          }
-
-                          itemContent = (
-                            <>
-                              <label className={css({ marginRight: '5px' })}>{item.label}</label>
-                              <ButtonGroup
-                                shape="pill"
-                                size="compact"
-                                selected={item.type.options.map((option) => option.key).indexOf(itemState)}
-                              >
-                                {item.type.options.map((option) => (
-                                  <Button
-                                    onClick={() => {
-                                      dispatch(
-                                        settingsActions.setGlobalEditorSetting({
-                                          key: item.key,
-                                          value: option.key,
-                                        }),
-                                      );
-                                    }}
-                                    key={option.key as string}
-                                  >
-                                    {option.label || option.key}
-                                  </Button>
-                                ))}
-                              </ButtonGroup>
-                            </>
-                          );
-                          break;
-                        }
-                        case 'toggle': {
-                          if (item.type.typeName !== 'toggle') {
-                            throw 'incorrect item type for setting';
-                          }
-                          itemContent = (
-                            <>
-                              <label>{item.label}</label>
-                              <Checkbox
-                                checked={itemState as boolean}
-                                onChange={(event) => {
-                                  const checked = (event?.target as any).checked as boolean;
-                                  dispatch(
-                                    settingsActions.setGlobalEditorSetting({
-                                      key: item.key,
-                                      value: checked,
-                                    } as globalEditorSetting),
-                                  );
-                                }}
-                                checkmarkType="toggle_round"
-                              ></Checkbox>
-                            </>
-                          );
-                          break;
-                        }
-                        case 'numericSelect': {
-                          if (item.type.typeName !== 'numericSelect') {
-                            throw 'incorrect item type for setting';
-                          }
-
-                          itemContent = (
-                            <>
-                              <label>{item.label}</label>
-                              <Select
-                                options={item.type.options.map((option) => ({ id: option, label: option }))}
-                                value={[{ id: itemState as string, label: itemState }]}
-                                valueKey="id"
-                                searchable={false}
-                                type="select"
-                                clearable={false}
-                                onChange={({ value }) =>
-                                  dispatch(
-                                    settingsActions.setGlobalEditorSetting({
-                                      key: item.key,
-                                      value: Number(value[0].id),
-                                    }),
-                                  )
-                                }
-                                overrides={{
-                                  Root: {
-                                    style: {
-                                      width: '75px',
-                                    },
-                                  },
-                                  Popover: {
-                                    props: {
-                                      overrides: {
-                                        Body: {
-                                          style: {
-                                            zIndex: 4,
-                                          },
-                                        },
-                                      },
-                                    },
-                                  },
-                                }}
-                              />
-                            </>
-                          );
-                          break;
-                        }
-                        default: {
-                          throw 'idk';
-                        }
-                      }
-                      return <ListItem overrides={{ Root: { style: { zIndex: 15 } } }}>{itemContent}</ListItem>;
-                    },
-                  },
+                  ListItem: SettingsListItem,
                 },
               },
             },
@@ -258,3 +132,113 @@ export function GlobalSettingsDropdown() {
     </StatefulPopover>
   );
 }
+
+const SettingsListItem = (props: any) => {
+  const dispatch = useDispatch();
+  const settings = useSelector(settingsSelector);
+  const [css, theme] = useStyletron();
+  const item: globalSettingsItem<keyof globalEditorSettings> = props.item;
+  const itemState = settings.globalEditor[item.key];
+  let itemContent: React.ReactElement;
+  switch (item.type.typeName) {
+    case 'select': {
+      itemContent = (
+        <>
+          <label className={css({ marginRight: '5px' })}>{item.label}</label>
+          <ButtonGroup
+            shape="pill"
+            size="compact"
+            selected={item.type.options.map((option) => option.key).indexOf(itemState)}
+          >
+            {item.type.options.map((option) => (
+              <Button
+                onClick={() => {
+                  dispatch(
+                    settingsActions.setGlobalEditorSetting({
+                      key: item.key,
+                      value: option.key,
+                    }),
+                  );
+                }}
+                key={option.key as string}
+              >
+                {option.label || option.key}
+              </Button>
+            ))}
+          </ButtonGroup>
+        </>
+      );
+      break;
+    }
+    case 'toggle': {
+      itemContent = (
+        <>
+          <label>{item.label}</label>
+          <Checkbox
+            checked={itemState as boolean}
+            onChange={(event) => {
+              const checked = (event?.target as any).checked as boolean;
+              dispatch(
+                settingsActions.setGlobalEditorSetting({
+                  key: item.key,
+                  value: checked,
+                } as globalEditorSetting),
+              );
+            }}
+            checkmarkType="toggle_round"
+          ></Checkbox>
+        </>
+      );
+      break;
+    }
+    case 'numericSelect': {
+      let options = item.type.options.map((option) => ({ id: option, label: option }));
+      console.log({options});
+      itemContent = (
+        <>
+          <label>{item.label}</label>
+          <Select
+            options={options}
+            value={[{ id: itemState as string, label: itemState }]}
+            valueKey="id"
+            searchable={false}
+            openOnClick={true}
+            type="select"
+            clearable={false}
+            onChange={({ value }) =>
+              dispatch(
+                settingsActions.setGlobalEditorSetting({
+                  key: item.key,
+                  value: Number(value[0].id),
+                }),
+              )
+            }
+            overrides={{
+              Root: {
+                style: {
+                  width: '75px',
+                },
+              },
+              Popover: {
+                props: {
+                  overrides: {
+                    Body: {
+                      style: {
+                        zIndex: 25,
+                      },
+                    },
+                  },
+                },
+              },
+            }}
+          />
+        </>
+      );
+      break;
+    }
+    default: {
+      throw 'idk';
+    }
+  }
+  return <ListItem overrides={{ Root: { style: { zIndex: 15 } } }}>{itemContent}</ListItem>;
+};
