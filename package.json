@@ -149,7 +149,7 @@
     "typescript": "^3.9.7",
     "url-loader": "^4.1.1",
     "webpack": "^4.44.2",
-    "webpack-bundle-analyzer": "^3.9.0",
+    "webpack-bundle-analyzer": "^4.10.1",
     "webpack-cli": "^3.3.12",
     "webpack-dev-server": "^3.11.0",
     "webpack-material-design-icons": "^0.1.0",
