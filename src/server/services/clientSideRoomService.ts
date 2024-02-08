@@ -30,7 +30,7 @@ export class ClientSideRoomService {
     if (!id) {
       return;
     }
-    const room = await this.roomRepository.findOne(roomPartial, { relations: ['owner'] });
+    const room = await this.roomRepository.findOne(id, { relations: ['owner'] });
     return room && this.getClientSideRoom(room);
   }
 

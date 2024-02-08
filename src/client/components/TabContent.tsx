@@ -1,17 +1,21 @@
-import { useStyletron } from 'baseui';
-import { StyledIconsContainer } from 'baseui/select';
-import { provisionTab, unprovisionTab } from 'Client/slices/room/types';
-import { settingsForCurrentEditorSelector, settingsSelector } from 'Client/slices/settings/types';
-import { rootState } from 'Client/store';
-import { some } from 'lodash';
-import React, { useEffect, useRef } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useStyletron } from "baseui";
+import { Spinner } from "baseui/spinner";
+import { provisionTab, unprovisionTab } from "Client/slices/room/types";
+import { settingsForCurrentEditorSelector, settingsSelector } from "Client/slices/settings/types";
+import { rootState } from "Client/store";
+import React, { useEffect, useRef } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 export function TabContent() {
   const currentRoom = useSelector((s: rootState) => s.room.currentRoom);
+  const [css, theme] = useStyletron();
 
   if (!currentRoom?.roomSharedState.fileDetailsStates) {
-    return <div>empty</div>;
+    return (
+      <div className={css({ position: "absolute", top: "50%", left: "50%" })}>
+        <Spinner />
+      </div>
+    );
   }
 
   const contentArr = currentRoom.loadedTabs.map((tabId) => (
@@ -21,7 +25,7 @@ export function TabContent() {
   return <div>{contentArr}</div>;
 }
 
-const EDITOR_HEIGHT = 'calc(100vh - (165px))';
+const EDITOR_HEIGHT = "calc(100vh - (165px))";
 
 function EditorTab({ tabId, visible }: { tabId: string; visible: boolean }) {
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
@@ -33,7 +37,7 @@ function EditorTab({ tabId, visible }: { tabId: string; visible: boolean }) {
   const [css, theme] = useStyletron();
   const dispatch = useDispatch();
   const fileDetailsPresent = useSelector(
-    (state: rootState) => !!state.room.currentRoom?.roomSharedState.fileDetailsStates,
+    (state: rootState) => !!state.room.currentRoom?.roomSharedState.fileDetailsStates
   );
   useEffect(() => {
     if (![editorContainerRef, vimStatusBarRef, markdownPreviewRef].some((ref) => !ref.current)) {
@@ -44,9 +48,9 @@ function EditorTab({ tabId, visible }: { tabId: string; visible: boolean }) {
             editor: editorContainerRef.current as HTMLElement,
             vimStatusBar: vimStatusBarRef.current as HTMLElement,
             markdownPreview: markdownPreviewRef.current as HTMLElement,
-            diffViewer: diffViewerRef.current as HTMLElement,
-          },
-        }),
+            diffViewer: diffViewerRef.current as HTMLElement
+          }
+        })
       );
     }
     return () => {
@@ -54,37 +58,37 @@ function EditorTab({ tabId, visible }: { tabId: string; visible: boolean }) {
     };
   }, [tabId, editorContainerRef, fileDetailsPresent]);
   return (
-    <div className={css({ display: visible ? 'block' : 'none' })}>
-      <span className={css({ width: '100%', display: 'flex', flexWrap: 'nowrap' })}>
+    <div className={css({ display: visible ? "block" : "none" })}>
+      <span className={css({ width: "100%", display: "flex", flexWrap: "nowrap" })}>
         <div
           ref={editorContainerRef}
           className={css({
-            margin: '2px',
+            margin: "2px",
             height: `${EDITOR_HEIGHT} !important`,
-            width: editorSettings?.displayMode === 'markdownPreview' ? '50%' : '100%',
-            display: editorSettings?.displayMode !== 'diffViewer' ? 'block' : 'none',
+            width: editorSettings?.displayMode === "markdownPreview" ? "50%" : "100%",
+            display: editorSettings?.displayMode !== "diffViewer" ? "block" : "none"
           })}
         />
         <div
           ref={markdownPreviewRef}
           className={
             css({
-              width: '50%',
+              width: "50%",
               height: EDITOR_HEIGHT,
-              display: editorSettings?.displayMode === 'markdownPreview' ? 'block' : 'none',
-              overflowY: 'auto',
-              whiteSpace: 'normal',
+              display: editorSettings?.displayMode === "markdownPreview" ? "block" : "none",
+              overflowY: "auto",
+              whiteSpace: "normal"
             }) +
-            ' markdown-preview ' +
+            " markdown-preview " +
             settings.theme // we manually add styles to the html generated from the markup using this class
           }
         />
         <div
           ref={diffViewerRef}
           className={css({
-            width: '100%',
+            width: "100%",
             height: `${EDITOR_HEIGHT} !important`,
-            display: editorSettings?.displayMode === 'diffViewer' ? 'block' : 'none',
+            display: editorSettings?.displayMode === "diffViewer" ? "block" : "none"
           })}
         ></div>
       </span>
