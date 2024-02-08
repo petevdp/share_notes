@@ -48,10 +48,6 @@ async function runServer() {
           console.log('gql query: ');
           console.log(requestContext.request.query);
         }
-        // console.log(requestContext.request.query);
-        // console.log(requestContext.request.query);
-        // console.log(requestContext.request.variables);
-        // console.log(requestContext.response?.data);
       },
     };
 

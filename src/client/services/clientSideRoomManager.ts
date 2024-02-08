@@ -33,7 +33,7 @@ import { takeUntil } from 'rxjs/internal/operators/takeUntil';
 import { tap } from 'rxjs/internal/operators/tap';
 import { withLatestFrom } from 'rxjs/internal/operators/withLatestFrom';
 import { Subject } from 'rxjs/internal/Subject';
-import { getYjsDocNameForRoom, YJS_WEBSOCKET_URL_WS } from 'Shared/environment';
+import { getYjsDocNameForRoom } from 'Shared/environment';
 import { gistDetails } from 'Shared/githubTypes';
 import { allBaseFileDetailsStates, roomDetails, RoomManager } from 'Shared/roomManager';
 import {
@@ -123,7 +123,15 @@ export class ClientSideRoomManager extends RoomManager {
       this.provisionedTabs$$.next(tabs);
     });
 
-    this.provider = new WebsocketProvider(YJS_WEBSOCKET_URL_WS, getYjsDocNameForRoom(roomHashId), this.ydoc);
+    // check if development
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    // gross but works for now
+    const host = window.location.hostname === 'localhost' ? 'localhost:1236' : window.location.host;
+    this.provider = new WebsocketProvider(
+      `${protocol}//${host}/api/websocket`,
+      getYjsDocNameForRoom(roomHashId),
+      this.ydoc,
+    );
 
     /*
       3024-night
@@ -201,12 +209,6 @@ export class ClientSideRoomManager extends RoomManager {
       }),
       publish(),
     ) as ConnectableObservable<allBaseFileDetailsStates>;
-
-    console.log(
-      this.fileDetails$.subscribe((details) => {
-        console.log('emitted details.....: ', details);
-      }),
-    );
 
     // initialize provisioned tabs
     let tabOrdinal = 1;
@@ -357,7 +359,6 @@ export class ClientSideRoomManager extends RoomManager {
           let delta = new Map<string, boolean>();
           let showDiffEditorState = new Set<string>();
           for (let tabId of ids) {
-            console.log({ gistname: roomDetails.gistName, getGistName: this.getRoomDetails().gistName });
             const willProvisionDiffEditor = tabs.has(tabId) && roomDetails.gistLoaded;
             const didProvisionDiffEditor = acc.prevShowDiffEditorState.has(tabId);
             if (willProvisionDiffEditor) {
@@ -376,10 +377,6 @@ export class ClientSideRoomManager extends RoomManager {
       ),
       concatMap(({ delta }) => from(delta.entries())),
     );
-
-    provisionedDiffEditorDelta$.subscribe((delta) => {
-      console.log({ diffDelta: delta });
-    });
 
     provisionedDiffEditorDelta$
       .pipe(
@@ -412,10 +409,6 @@ export class ClientSideRoomManager extends RoomManager {
           ),
           this.roomDestroyed$$,
         ).pipe(first());
-
-        this.fileDetails$.subscribe((filedetails) => {
-          console.log({ filedetails });
-        });
 
         // update original content when it's changed
         gistDetails$

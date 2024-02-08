@@ -13,10 +13,16 @@ import { createRoomEpic, initializeRoomCreationEpic } from './slices/roomCreatio
 import { roomCreationSlice } from './slices/roomCreation/slice';
 import { DEBUG__forceOpenEditRoomDetailsModalEpic } from './slices/roomUpdating/epics';
 import { roomUpdatingSlice } from './slices/roomUpdating/slice';
-import { logOutEpic, redirectAfterAuthEpic, retreiveSessionTokenEpic } from './slices/session/epics';
+import {
+  logOutEpic,
+  redirectAfterAuthEpic,
+  retreiveSessionTokenEpic,
+  sessionDataClearedEpic
+} from "./slices/session/epics";
 import { sessionSlice } from './slices/session/slice';
 import { settingsSlice } from './slices/settings/slice';
 import { DEBUG_FLAGS } from './utils/debugFlags';
+import { clearSessionData } from "Client/slices/session/types";
 
 const epicMiddleware = createEpicMiddleware();
 
@@ -77,6 +83,7 @@ const epics = [
   initializeRoomCreationEpic,
   redirectAfterAuthEpic,
   logOutEpic,
+  sessionDataClearedEpic,
   createRoomEpic,
   initRoomEpic,
   deleteRoomEpic,
