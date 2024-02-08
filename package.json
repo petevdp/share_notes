@@ -96,7 +96,7 @@
     "yjs": "^13.4.5"
   },
   "devDependencies": {
-    "@pmmmwh/react-refresh-webpack-plugin": "^0.4.3",
+    "@pmmmwh/react-refresh-webpack-plugin": "^0.5.11",
     "@svgr/cli": "^5.5.0",
     "@types/codemirror": "0.0.97",
     "@types/cookie-parser": "^1.4.2",
@@ -151,7 +151,7 @@
     "webpack": "^4.44.2",
     "webpack-bundle-analyzer": "^4.10.1",
     "webpack-cli": "^3.3.12",
-    "webpack-dev-server": "^3.11.0",
+    "webpack-dev-server": "^4.15.1",
     "webpack-material-design-icons": "^0.1.0",
     "webpack-merge": "^5.4.0"
   },
