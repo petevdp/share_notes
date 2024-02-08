@@ -6,19 +6,12 @@ import { config } from 'dotenv';
 import { Router } from 'express';
 import querystring from 'querystring';
 import * as GithubUtils from 'Server/utils/githubUtils';
-import {
-  DEV_SERVER_PORT,
-  DOMAIN,
-  GITHUB_0AUTH_ACCESS_TOKEN_URL,
-  GITHUB_CLIENT_ID,
-  GITHUB_GRAPHQL_API_URL,
-  SESSION_TOKEN_COOKIE_KEY,
-} from 'Shared/environment';
+import { GITHUB_0AUTH_ACCESS_TOKEN_URL, GITHUB_CLIENT_ID, SESSION_TOKEN_COOKIE_KEY } from 'Shared/environment';
 import { Repository } from 'typeorm';
 
-import { AuthorizedContext, Context } from './context';
 import { User } from './models/user';
 import { TedisService, TOKEN_BY_USER_ID, USER_ID_BY_SESSION_KEY } from './services/tedisService';
+
 interface github0AuthIdentityParams {
   client_id: string;
   client_secret: string;
@@ -72,11 +65,11 @@ export const getAuthRouter = (tedisService: TedisService, userRepository: Reposi
     } else {
       throw "couldn't find github user";
     }
-    res.redirect(DOMAIN);
+    res.redirect('/');
   });
 
   authRouter.get('/logout', (req, res) => {
-    if (req.cookies(SESSION_TOKEN_COOKIE_KEY)) {
+    if (req.cookies.get(SESSION_TOKEN_COOKIE_KEY)) {
       tedisService.tedis.hdel(USER_ID_BY_SESSION_KEY, req.cookies(SESSION_TOKEN_COOKIE_KEY));
       // tedisService.tedis.hdel(TOKEN_BY_USER_ID, user.id.toString());
       res.cookie(SESSION_TOKEN_COOKIE_KEY, '');

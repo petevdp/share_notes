@@ -61,11 +61,6 @@ export function AnonymousLoginModal() {
               </Button>
             </span>
           </FormControl>
-          {/* <span className={css({ display: 'flex', justifyContent: 'space-between' })}>
-            <Button overrides={{ BaseButton: { style: { width: '80px', height: '45px' } } }} type="button">
-              Log In
-            </Button>
-          </span> */}
         </form>
       </ModalBody>
       <ModalHeader>Or Log In with Github:</ModalHeader>

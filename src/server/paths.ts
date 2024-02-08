@@ -1,10 +1,6 @@
-import findUp from 'find-up';
 import path from 'path';
 
-export const PROJECT_ROOT_NAME = 'share_notes';
-export const ROOT = path.resolve(
-  path.basename(process.cwd()) === PROJECT_ROOT_NAME ? '.' : (findUp.sync(PROJECT_ROOT_NAME) as string),
-);
+export const ROOT = path.resolve('.');
 export const SRC = path.join(ROOT, 'src');
 export const DIST = path.join(ROOT, 'dist');
 export const SERVER_ROOT = path.join(SRC, 'server');

@@ -95,16 +95,7 @@ function RoomCreationForm({ currentUserDetails }: { currentUserDetails: currentU
             onChange={(e) => dispatch(roomCreationActions.setRoomName(e.currentTarget.value))}
           />
         </FormControl>
-        <FormControl
-          label={() => (
-            <>
-              Gist Configuration{'   '}
-              <StatefulTooltip content="Create a Github gist to save your notes, or import an existing gist.">
-                <StyledLink>?</StyledLink>
-              </StatefulTooltip>
-            </>
-          )}
-        >
+        <FormControl>
           <Tabs
             fill={FILL.fixed}
             activeKey={roomCreation.formSelected}

@@ -1,12 +1,9 @@
 import 'module-alias/register';
 import webpack, { DefinePlugin } from 'webpack';
-import fs from 'fs';
 import { CLIENT_ROOT, SHARED_ROOT, ROOT, CLIENT_BUILD_PATH_PROD } from '../src/server/paths';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 import { merge } from 'webpack-merge';
-import path from 'path';
 import commonConfig from './webpack.common';
-import { writeGeneratedConfig } from './helpers';
 
 const config: webpack.Configuration = merge(commonConfig, {
   mode: 'production',
@@ -63,7 +60,4 @@ const config: webpack.Configuration = merge(commonConfig, {
     moduleIds: 'hashed',
   },
 });
-
-writeGeneratedConfig(config, 'prod');
-
 export default config;

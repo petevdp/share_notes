@@ -138,11 +138,10 @@ export class YjsService {
 
     const isNewRoomOrIsntLoaded = !this.roomManagers.has(docName);
     if (isNewRoomOrIsntLoaded) {
-      console.log('new room, populating');
       const room = await roomPromise;
       const clientSideRoom = this.clientSideRoomService.getClientSideRoom(room);
       if (!clientSideRoom) {
-        throw "couldn't find clintsideroom";
+        throw "couldn't find clientside room";
       }
       const manager = new ServerSideRoomManager(doc, roomId, clientSideRoom.hashId, this.roomRepository);
       this.roomManagers.set(docName, manager);
