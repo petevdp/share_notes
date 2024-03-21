@@ -83,7 +83,7 @@
     "tedis": "^0.1.12",
     "type-graphql": "^1.1.1",
     "typedi": "^0.8.0",
-    "typeorm": "^0.2.29",
+    "typeorm": "^0.3.0",
     "typeorm-typedi-extensions": "^0.2.3",
     "uuid": "^8.3.1",
     "ws": "^7.4.6",
